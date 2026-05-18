@@ -59,7 +59,7 @@ function DashboardContainer({ children }: { children: React.ReactNode }) {
         fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-100 transform transition-transform duration-200 ease-out lg:static lg:translate-x-0
         ${sidebarOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'}
       `}>
-        <AppSidebar />
+        <AppSidebar onClose={() => setSidebarOpen(false)} />
       </div>
 
       {/* Content area */}

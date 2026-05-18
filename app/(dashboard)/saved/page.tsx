@@ -130,7 +130,7 @@ export default function LibraryPage() {
            <p className="text-slate-400 font-black uppercase tracking-[0.2em] text-[10px]">Cet espace est encore vide</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
            {items.map((item) => (
               <Card key={item.id} className={`${item.type === 'video' ? 'min-h-[160px] md:min-h-[180px]' : 'h-[260px] md:h-[320px]'} flex flex-col bg-white border border-slate-100 rounded-2xl md:rounded-[28px] overflow-hidden group hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500`}>
                  <div className="p-4 md:p-6 flex flex-col h-full">

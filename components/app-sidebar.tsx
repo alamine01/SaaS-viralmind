@@ -81,7 +81,7 @@ const menuItems = [
   },
 ]
 
-function SidebarContent() {
+function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [userName, setUserName] = useState<string>("User")
@@ -106,7 +106,20 @@ function SidebarContent() {
 
       {/* Workspaces / Projects */}
       <div className="flex-1 px-4 space-y-1 py-4 overflow-y-auto">
-        <p className="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-4 opacity-60">Menu Principal</p>
+        <div className="flex items-center justify-between px-3 mb-4">
+           <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest opacity-60">Menu Principal</p>
+           {onClose && (
+             <button 
+               onClick={onClose}
+               className="lg:hidden text-slate-400 hover:text-slate-900 transition-colors p-1"
+               title="Fermer le menu"
+             >
+               <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+               </svg>
+             </button>
+           )}
+        </div>
         
         {menuItems.map((item) => {
           const isActive = pathname === item.url
@@ -115,6 +128,7 @@ function SidebarContent() {
             <Link 
               key={item.title}
               href={item.url}
+              onClick={() => onClose?.()}
               className={`
                 flex items-center px-4 py-2.5 rounded-xl transition-all duration-200 group
                 ${isActive 
@@ -151,6 +165,7 @@ function SidebarContent() {
                   <Link 
                     key={ws.slug}
                     href={`/saved?collection=${ws.slug}`} 
+                    onClick={() => onClose?.()}
                     className={`
                       flex items-center px-4 py-2 rounded-xl text-[13px] font-medium transition-all
                       ${isActive ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}
@@ -181,6 +196,7 @@ function SidebarContent() {
           <div className="grid grid-cols-2 gap-2">
             <Link 
               href="/settings"
+              onClick={() => onClose?.()}
               className="flex items-center justify-center gap-2 py-2 bg-white border border-slate-200 rounded-lg text-[12px] font-semibold text-slate-600 hover:text-slate-900 hover:border-slate-300 transition-all shadow-xs"
             >
               <Settings className="size-3.5" />
@@ -188,6 +204,7 @@ function SidebarContent() {
             </Link>
             <button 
               onClick={async () => {
+                onClose?.()
                 await supabase.auth.signOut()
                 toast.success("Déconnexion réussie")
                 window.location.href = "/signin"
@@ -204,10 +221,10 @@ function SidebarContent() {
   )
 }
 
-export function AppSidebar() {
+export function AppSidebar({ onClose }: { onClose?: () => void }) {
   return (
     <Suspense fallback={<div className="h-full bg-white border-r border-slate-100 w-64" />}>
-      <SidebarContent />
+      <SidebarContent onClose={onClose} />
     </Suspense>
   )
 }

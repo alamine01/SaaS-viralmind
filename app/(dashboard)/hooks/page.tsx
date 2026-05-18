@@ -113,21 +113,21 @@ export default function HooksLibraryPage() {
                   <h2 className="text-2xl font-black">Générateur Magique par <span className="text-indigo-400">IA</span></h2>
                   <p className="text-slate-400 text-sm font-medium">Laissez l'IA créer 3 hooks uniques pour votre prochain sujet.</p>
                </div>
-               <div className="flex items-center gap-2 bg-white/5 p-2 rounded-2xl border border-white/10">
-                  <input 
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
-                    placeholder="Sujet (ex: Fitness, Crypto...)" 
-                    className="bg-transparent border-0 px-4 py-2 text-sm font-medium focus:ring-0 outline-hidden w-40 md:w-64"
-                  />
-                  <button 
-                    onClick={generateAIHooks}
-                    disabled={isGenerating}
-                    className="bg-indigo-500 hover:bg-indigo-400 text-white px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center gap-2 disabled:opacity-50"
-                  >
-                    {isGenerating ? <Loader2 className="size-4 animate-spin" /> : <><Sparkles className="size-4" /> Générer 3 Hooks</>}
-                  </button>
-               </div>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white/5 p-2 rounded-3xl sm:rounded-2xl border border-white/10 w-full sm:w-auto">
+                   <input 
+                     value={topic}
+                     onChange={(e) => setTopic(e.target.value)}
+                     placeholder="Sujet (ex: Fitness, Crypto...)" 
+                     className="bg-transparent border-0 px-4 py-3 text-sm font-medium focus:ring-0 outline-hidden w-full sm:w-48 lg:w-64"
+                   />
+                   <button 
+                     onClick={generateAIHooks}
+                     disabled={isGenerating}
+                     className="bg-indigo-500 hover:bg-indigo-400 text-white px-6 py-4 sm:py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50 shrink-0"
+                   >
+                     {isGenerating ? <Loader2 className="size-4 animate-spin" /> : <><Sparkles className="size-4" /> Générer 3 Hooks</>}
+                   </button>
+                </div>
             </div>
 
             {aiHooks.length > 0 && (

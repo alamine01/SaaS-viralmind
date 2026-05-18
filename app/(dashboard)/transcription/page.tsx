@@ -100,7 +100,7 @@ export default function TranscriptionPage() {
         ) : transcript ? (
           <Card className="border-none shadow-2xl shadow-indigo-500/5 rounded-[40px] bg-white overflow-hidden border border-slate-50 animate-in slide-in-from-bottom-8 duration-500">
             <CardContent className="p-8 md:p-14 space-y-10">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div className="size-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center">
                     <FileText className="size-6" />
