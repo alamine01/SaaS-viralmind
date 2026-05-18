@@ -92,22 +92,51 @@ export default function VideosPage() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
            {filteredVideos.map((vid) => (
              <div key={vid.id} className="bg-white rounded-[32px] border border-slate-100 overflow-hidden shadow-sm hover:shadow-xl transition-all group">
-                <div className="aspect-video bg-slate-100 relative overflow-hidden">
-                   {vid.thumbnail ? (
-                     <img src={vid.thumbnail} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                   ) : (
-                     <div className="w-full h-full flex items-center justify-center text-slate-300">
-                        <PlayCircle className="size-12" />
-                     </div>
-                   )}
-                   <div className="absolute top-4 left-4">
-                      <div className="bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10">
-                         {vid.platform}
+                <div className="aspect-video relative overflow-hidden bg-slate-100">
+                    {/* Premium Gradient Background Fallback */}
+                    <div className={`absolute inset-0 flex flex-col items-center justify-center transition-transform duration-500 group-hover:scale-105 ${
+                      vid.platform === 'instagram' 
+                        ? 'bg-gradient-to-tr from-purple-600 via-pink-500 to-orange-400' 
+                        : vid.platform === 'tiktok' 
+                        ? 'bg-gradient-to-tr from-slate-950 via-cyan-900 to-slate-900' 
+                        : 'bg-gradient-to-tr from-slate-950 via-red-950 to-slate-900'
+                    }`}>
+                      <div className="size-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-xl">
+                         {vid.platform === 'instagram' && (
+                           <svg className="size-6 text-white fill-current" viewBox="0 0 24 24">
+                             <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                           </svg>
+                         )}
+                         {vid.platform === 'tiktok' && (
+                           <svg className="size-6 text-white fill-current" viewBox="0 0 24 24">
+                             <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.6-4.12-1.31a6.33 6.33 0 0 1-1.87-1.7c-.02 3.18-.03 6.35-.03 9.53 0 1.14-.24 2.26-.7 3.3-.8 1.82-2.62 3.19-4.6 3.4-2.1.23-4.3-.34-5.93-1.71-1.81-1.51-2.65-4.02-2.1-6.29.39-1.56 1.45-2.97 2.9-3.67 1.13-.54 2.45-.74 3.69-.53V10.9a3.71 3.71 0 0 0-1.39.28c-1.46.62-2.43 2.13-2.39 3.73.03 1.46.76 2.87 2 3.61 1.41.81 3.29.73 4.6-.22.86-.63 1.37-1.63 1.35-2.7-.01-4.49-.01-8.99-.01-13.48-.12-.02-.2-.04-.26-.05z"/>
+                           </svg>
+                         )}
+                         {vid.platform === 'youtube' && (
+                           <svg className="size-6 text-white fill-current" viewBox="0 0 24 24">
+                             <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                           </svg>
+                         )}
                       </div>
-                   </div>
-                </div>
-                
-                <div className="p-6 space-y-4">
+                    </div>
+
+                    {vid.thumbnail && (
+                      <img 
+                        src={vid.thumbnail} 
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 z-10" 
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    )}
+                    <div className="absolute top-4 left-4 z-20">
+                       <div className="bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10">
+                          {vid.platform}
+                       </div>
+                    </div>
+                 </div>
+                 
+                 <div className="p-6 space-y-4">
                    <div className="space-y-1">
                       <h3 className="font-bold text-slate-900 line-clamp-1 text-sm">{vid.title}</h3>
                       <div className="flex items-center gap-2">
