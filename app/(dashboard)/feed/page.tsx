@@ -142,7 +142,11 @@ export default function ViralFeedPage() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
           {getSortedVideos().map((item) => (
-            <div key={item.id} className="relative aspect-[3/4] bg-slate-100 rounded-2xl overflow-hidden group cursor-pointer shadow-xs hover:shadow-xl transition-all duration-500 border border-slate-100">
+            <div 
+              key={item.id} 
+              onClick={() => window.open(item.url, '_blank')}
+              className="relative aspect-[3/4] bg-slate-100 rounded-2xl overflow-hidden group cursor-pointer shadow-xs hover:shadow-xl transition-all duration-500 border border-slate-100"
+            >
               {/* Premium Gradient Background Fallback */}
               <div className={`absolute inset-0 flex flex-col items-center justify-center p-4 text-center transition-transform duration-500 group-hover:scale-105 ${
                 item.platform === 'instagram' 
