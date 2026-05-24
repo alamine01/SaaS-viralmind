@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { analyzeCompetitorProfile } from "@/lib/ai-service";
 
 export async function POST(req: Request) {
@@ -12,6 +12,9 @@ export async function POST(req: Request) {
 
     const cleanHandle = handle.trim().replace("@", "");
     const apiKey = process.env.RAPIDAPI_KEY;
+
+    // Authenticated Supabase Server Client to respect RLS policies
+    const supabase = await createSupabaseServerClient();
 
     // 1. VÉRIFICATION DU CACHE : charger l'audit si déjà existant
     if (!forceRefresh) {

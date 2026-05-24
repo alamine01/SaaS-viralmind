@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function GET(req: Request) {
   try {
@@ -7,6 +7,7 @@ export async function GET(req: Request) {
     const userId = searchParams.get("userId");
     const type = searchParams.get("type"); // 'video' or 'script'
 
+    const supabase = await createSupabaseServerClient();
     let query = supabase
       .from("saved_items")
       .select(`
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Données manquantes" }, { status: 400 });
     }
 
+    const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
       .from("saved_items")
       .insert([

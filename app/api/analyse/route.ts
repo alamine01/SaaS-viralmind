@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { analyzeVideo } from "@/lib/ai-service";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { scrapeVideoData, getUniqueVideoId } from "@/lib/scraper";
 
 export async function POST(req: Request) {
@@ -10,6 +10,8 @@ export async function POST(req: Request) {
     if (!url) {
       return NextResponse.json({ error: "URL manquante" }, { status: 400 });
     }
+
+    const supabase = await createSupabaseServerClient();
 
     // 1. SCRAPING : Récupérer les vraies données de la vidéo
     const scrapedData = await scrapeVideoData(url);
