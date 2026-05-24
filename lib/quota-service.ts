@@ -11,14 +11,51 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
 };
 
 export async function getUserQuotas(supabase: any, userId: string) {
-  const { data: profile, error } = await supabase
+  let { data: profile, error } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
-  if (error || !profile) {
-    throw new Error(error?.message || "Profil utilisateur introuvable.");
+  // Self-Healing: Si le profil n'existe pas en BDD, on le crée à la volée !
+  if (!profile) {
+    let username = "Utilisateur";
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData?.user?.email) {
+        username = userData.user.email.split('@')[0];
+      }
+    } catch (e) {}
+
+    const { data: newProfile, error: insertError } = await supabase
+      .from("profiles")
+      .insert([
+        {
+          id: userId,
+          full_name: username,
+          plan: "free",
+          daily_script_count: 0,
+          monthly_analysis_count: 0,
+          last_script_reset: new Date().toISOString(),
+          last_analysis_reset: new Date().toISOString()
+        }
+      ])
+      .select()
+      .single();
+
+    if (insertError || !newProfile) {
+      profile = {
+        id: userId,
+        full_name: username,
+        plan: "free",
+        daily_script_count: 0,
+        monthly_analysis_count: 0,
+        last_script_reset: new Date().toISOString(),
+        last_analysis_reset: new Date().toISOString()
+      };
+    } else {
+      profile = newProfile;
+    }
   }
 
   const plan = (profile.plan || "free").toLowerCase();
