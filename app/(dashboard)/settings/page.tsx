@@ -262,8 +262,6 @@ export default function SettingsPage() {
             </div>
          )}
 
-         )}
-
          {activeTab === "Abonnement" && (
              <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500 py-4">
                 
