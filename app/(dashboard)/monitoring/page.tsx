@@ -34,12 +34,30 @@ export default function MonitoringPage() {
   const [loading, setLoading] = useState(true)
   const [auditLoading, setAuditLoading] = useState(false)
   const [auditStatus, setAuditStatus] = useState("")
+  const [auditStep, setAuditStep] = useState(0)
   const [activeTab, setActiveTab] = useState<"outliers" | "audit">("outliers")
   
   // Form states
   const [handle, setHandle] = useState("")
   const [platform, setPlatform] = useState("instagram")
   const [isPlatformDropdownOpen, setIsPlatformDropdownOpen] = useState(false)
+
+  const getStepIcon = (step: number) => {
+    switch (step) {
+      case 0:
+        return <Eye className="size-4 text-indigo-600 shrink-0" />
+      case 1:
+        return <Video className="size-4 text-indigo-600 shrink-0" />
+      case 2:
+        return <TrendingUp className="size-4 text-indigo-600 shrink-0" />
+      case 3:
+        return <Target className="size-4 text-indigo-600 shrink-0" />
+      case 4:
+        return <Sparkles className="size-4 text-indigo-600 shrink-0 animate-pulse" />
+      default:
+        return <Loader2 className="size-4 text-indigo-600 shrink-0 animate-spin" />
+    }
+  }
 
   useEffect(() => {
     fetchAccounts()
@@ -105,14 +123,15 @@ export default function MonitoringPage() {
     }
 
     setAuditLoading(true)
+    setAuditStep(0)
     
-    // Simulation d'états de progression pour un effet visuel premium
+    // Simulation d'états de progression pour un effet visuel premium (sans emojis)
     const steps = [
-      "🔍 Analyse de l'existence du profil...",
-      "⚡ Scraping des 10 dernières publications...",
-      "📊 Calcul de la médiane des vues...",
-      "🎯 Identification des vidéos Outliers...",
-      "🧠 Génération du rapport stratégique par Gemini IA..."
+      "Analyse de l'existence du profil...",
+      "Scraping des 10 dernières publications...",
+      "Calcul de la médiane des vues...",
+      "Identification des vidéos Outliers...",
+      "Génération du rapport stratégique par Gemini IA..."
     ];
     
     let currentStep = 0;
@@ -120,6 +139,7 @@ export default function MonitoringPage() {
     const statusInterval = setInterval(() => {
       if (currentStep < steps.length - 1) {
         currentStep++;
+        setAuditStep(currentStep);
         setAuditStatus(steps[currentStep]);
       }
     }, 2800);
@@ -291,9 +311,10 @@ export default function MonitoringPage() {
            </div>
            <div className="space-y-3">
               <h3 className="text-2xl font-black text-slate-900 tracking-tight">Audit en cours...</h3>
-              <p className="text-slate-500 font-bold text-sm uppercase tracking-widest bg-slate-50 px-6 py-2.5 rounded-2xl border border-slate-100/50 animate-pulse text-indigo-600">
-                 {auditStatus || "Connexion au profil du concurrent..."}
-              </p>
+              <div className="inline-flex items-center gap-2.5 text-slate-500 font-bold text-sm uppercase tracking-widest bg-slate-50 px-6 py-3 rounded-2xl border border-slate-100/50 animate-pulse text-indigo-600">
+                 {getStepIcon(auditStep)}
+                 <span>{auditStatus || "Connexion au profil du concurrent..."}</span>
+              </div>
            </div>
            <p className="text-slate-400 font-medium text-xs max-w-sm">
               Cela prend généralement 10 à 15 secondes selon les quotas d'API et la taille du profil. Merci de patienter.
