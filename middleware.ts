@@ -21,9 +21,13 @@ export async function middleware(request: NextRequest) {
           response = NextResponse.next({
             request,
           })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            (response.cookies as any).set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => {
+            const opt = { ...options }
+            if (opt.sameSite === 'none' || opt.sameSite === 'None') {
+              opt.secure = true
+            }
+            ;(response.cookies as any).set(name, value, opt)
+          })
         },
       },
     }
