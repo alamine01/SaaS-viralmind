@@ -346,193 +346,190 @@ export default function SettingsPage() {
                    <p className="text-slate-500 font-medium max-w-lg mx-auto">Débloquez la puissance des analyses virales en temps réel et libérez votre créativité.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
                    
-                   {/* FREE PLAN */}
-                   <div className={`border rounded-[32px] p-6 space-y-6 flex flex-col transition-all duration-300 hover:scale-[1.02] shadow-xl ${
-                      quotas?.plan === "free" 
-                        ? "bg-slate-900 text-white border-slate-800" 
-                        : "bg-white text-slate-900 border-slate-100"
-                   }`}>
-                      <div className="space-y-3">
-                         <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold">Gratuit</h3>
-                            {quotas?.plan === "free" && (
-                               <span className="px-2 py-0.5 bg-indigo-500 text-white text-[9px] font-black uppercase tracking-widest rounded-full">Actif</span>
-                            )}
-                         </div>
-                         <p className={`text-[11px] leading-relaxed font-medium ${quotas?.plan === "free" ? "text-slate-400" : "text-slate-500"}`}>Pour tester l'outil de base.</p>
-                         <div className="flex items-baseline gap-1">
-                            <span className="text-3xl font-black">$0</span>
-                            <span className={`font-bold text-xs ${quotas?.plan === "free" ? "text-slate-500" : "text-slate-400"}`}>/toujours</span>
-                         </div>
-                      </div>
-                      <div className={`h-px w-full ${quotas?.plan === "free" ? "bg-slate-800" : "bg-slate-100"}`} />
-                      <ul className="space-y-3 flex-1">
-                         {[
-                            "5 analyses profondes / mois",
-                            "3 scripts IA / jour (Freemium)",
-                            "Historique des analyses en cache",
-                            "Profils de voix limités",
-                         ].map((item, i) => (
-                            <li key={i} className={`flex items-start gap-2.5 text-[11px] font-medium ${quotas?.plan === "free" ? "text-slate-300" : "text-slate-600"}`}>
-                               <CheckCircle2 className="size-3.5 text-indigo-500 shrink-0 mt-0.5" /> {item}
-                            </li>
-                         ))}
-                      </ul>
-                      <button 
-                         onClick={() => handleUpgrade("free")}
-                         disabled={saving || quotas?.plan === "free"}
-                         className={`w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                            quotas?.plan === "free" 
-                              ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700" 
-                              : "bg-slate-900 text-white hover:bg-slate-800 shadow-md"
-                         }`}
-                      >
-                         {quotas?.plan === "free" ? "Plan Actif" : "Rétrograder"}
-                      </button>
-                   </div>
+                   {/* Plan Card Component — render each plan */}
+                   {([
+                      {
+                        id: "free",
+                        name: "Gratuit",
+                        desc: "Pour tester l'outil de base.",
+                        price: "$0",
+                        period: "/toujours",
+                        popular: false,
+                        upgradeLabel: "Rétrograder",
+                        features: [
+                          "5 analyses profondes / mois",
+                          "3 scripts IA / jour (Freemium)",
+                          "Historique des analyses en cache",
+                          "Profils de voix limités",
+                        ],
+                        prefix: null,
+                      },
+                      {
+                        id: "pro",
+                        name: "Pro",
+                        desc: "Croissance rapide des réseaux.",
+                        price: "$49",
+                        period: "/mois",
+                        popular: false,
+                        upgradeLabel: "Choisir Pro",
+                        features: [
+                          "50 analyses profondes / mois",
+                          "20 scripts IA / jour",
+                          "Zéro-Quota Cache illimité",
+                          "Playbooks d'analyse IA concurrents",
+                          "Espaces par niche configurables",
+                        ],
+                        prefix: null,
+                      },
+                      {
+                        id: "visionary",
+                        name: "Visionary",
+                        desc: "Levier maximal pour experts.",
+                        price: "$99",
+                        period: "/mois",
+                        popular: true,
+                        upgradeLabel: "Devenir Visionary",
+                        features: [
+                          "250 analyses profondes / mois",
+                          "100 scripts IA / jour",
+                          "Support prioritaire ultra-rapide 24/7",
+                          "Accès anticipé aux nouveaux modèles",
+                          "Audit de concurrents approfondi illimité",
+                        ],
+                        prefix: "Tout de Pro, plus :",
+                      },
+                      {
+                        id: "titan",
+                        name: "Titan",
+                        desc: "Stratégies industrielles.",
+                        price: "$499",
+                        period: "/mois",
+                        popular: false,
+                        upgradeLabel: "Choisir Titan",
+                        features: [
+                          "1500 analyses profondes / mois",
+                          "Génération de scripts ILLIMITÉE",
+                          "Gestion d'équipe complète (5 invités)",
+                          "Accès à l'API de scraping brute",
+                          "Liaison Webhooks & Automations",
+                        ],
+                        prefix: "Tout de Visionary, plus :",
+                      },
+                   ] as const).map((plan) => {
+                      const isActive = quotas?.plan === plan.id
+                      const isDark = isActive
+                      const isPopular = plan.popular
 
-                   {/* PRO PLAN */}
-                   <div className={`border rounded-[32px] p-6 space-y-6 flex flex-col transition-all duration-300 hover:scale-[1.02] shadow-xl ${
-                      quotas?.plan === "pro" 
-                        ? "bg-slate-900 text-white border-slate-800" 
-                        : "bg-white text-slate-900 border-slate-100"
-                   }`}>
-                      <div className="space-y-3">
-                         <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold">Pro</h3>
-                            {quotas?.plan === "pro" && (
-                               <span className="px-2 py-0.5 bg-indigo-500 text-white text-[9px] font-black uppercase tracking-widest rounded-full">Actif</span>
-                            )}
-                         </div>
-                         <p className={`text-[11px] leading-relaxed font-medium ${quotas?.plan === "pro" ? "text-slate-400" : "text-slate-500"}`}>Croissance rapide des réseaux.</p>
-                         <div className="flex items-baseline gap-1">
-                            <span className="text-3xl font-black">$49</span>
-                            <span className={`font-bold text-xs ${quotas?.plan === "pro" ? "text-slate-500" : "text-slate-400"}`}>/mois</span>
-                         </div>
-                      </div>
-                      <div className={`h-px w-full ${quotas?.plan === "pro" ? "bg-slate-800" : "bg-slate-100"}`} />
-                      <ul className="space-y-3 flex-1">
-                         {[
-                            "50 analyses profondes / mois",
-                            "20 scripts IA / jour",
-                            "Zéro-Quota Cache illimité",
-                            "Playbooks d'analyse IA concurrents",
-                            "Espaces par niche configurables",
-                         ].map((item, i) => (
-                            <li key={i} className={`flex items-start gap-2.5 text-[11px] font-medium ${quotas?.plan === "pro" ? "text-slate-300" : "text-slate-600"}`}>
-                               <CheckCircle2 className="size-3.5 text-indigo-500 shrink-0 mt-0.5" /> {item}
-                            </li>
-                         ))}
-                      </ul>
-                      <button 
-                         onClick={() => handleUpgrade("pro")}
-                         disabled={saving || quotas?.plan === "pro"}
-                         className={`w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                            quotas?.plan === "pro" 
-                              ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700" 
-                              : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-100"
-                         }`}
-                      >
-                         {quotas?.plan === "pro" ? "Plan Actif" : "Choisir Pro"}
-                      </button>
-                   </div>
+                      return (
+                        <div
+                          key={plan.id}
+                          className={`relative rounded-[32px] p-6 space-y-5 flex flex-col transition-all duration-300 hover:scale-[1.02] ${
+                            isActive
+                              ? "bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 text-white border-2 border-indigo-500 shadow-2xl shadow-indigo-500/20 ring-1 ring-indigo-400/30"
+                              : isPopular
+                                ? "bg-white text-slate-900 border-2 border-indigo-500 shadow-2xl shadow-indigo-500/10"
+                                : "bg-white text-slate-900 border border-slate-100 shadow-xl"
+                          }`}
+                        >
+                          {/* Badge: Abonnement Actuel */}
+                          {isActive && (
+                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20">
+                              <div className="relative">
+                                <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full blur-md opacity-60" />
+                                <div className="relative bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[9px] font-black uppercase tracking-[0.2em] px-5 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 whitespace-nowrap">
+                                  <CheckCircle2 className="size-3" />
+                                  Abonnement actuel
+                                </div>
+                              </div>
+                            </div>
+                          )}
 
-                   {/* VISIONARY PLAN */}
-                   <div className={`border-2 rounded-[32px] p-6 space-y-6 flex flex-col relative z-10 transition-all duration-300 hover:scale-[1.04] shadow-2xl ${
-                      quotas?.plan === "visionary" 
-                        ? "bg-slate-900 text-white border-indigo-500 shadow-indigo-500/20" 
-                        : "bg-white text-slate-900 border-indigo-500 shadow-indigo-500/10"
-                   }`}>
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-lg shadow-indigo-500/40 whitespace-nowrap text-white">Populaire</div>
-                      <div className="space-y-3 pt-2">
-                         <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold">Visionary</h3>
-                            {quotas?.plan === "visionary" && (
-                               <span className="px-2 py-0.5 bg-indigo-500 text-white text-[9px] font-black uppercase tracking-widest rounded-full">Actif</span>
-                            )}
-                         </div>
-                         <p className={`text-[11px] leading-relaxed font-medium ${quotas?.plan === "visionary" ? "text-slate-400" : "text-slate-500"}`}>Levier maximal pour experts.</p>
-                         <div className="flex items-baseline gap-1">
-                            <span className="text-3xl font-black">$99</span>
-                            <span className={`font-bold text-xs ${quotas?.plan === "visionary" ? "text-slate-500" : "text-slate-400"}`}>/mois</span>
-                         </div>
-                      </div>
-                      <div className={`h-px w-full ${quotas?.plan === "visionary" ? "bg-slate-800" : "bg-slate-100"}`} />
-                      <ul className="space-y-3 flex-1">
-                         <li className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Tout de Pro, plus :</li>
-                         {[
-                            "250 analyses profondes / mois",
-                            "100 scripts IA / jour",
-                            "Support prioritaire ultra-rapide 24/7",
-                            "Accès anticipé aux nouveaux modèles",
-                            "Audit de concurrents approfondi illimité",
-                         ].map((item, i) => (
-                            <li key={i} className={`flex items-start gap-2.5 text-[11px] font-medium ${quotas?.plan === "visionary" ? "text-slate-300" : "text-slate-600"}`}>
-                               <CheckCircle2 className="size-3.5 text-indigo-500 shrink-0 mt-0.5" /> {item}
-                            </li>
-                         ))}
-                      </ul>
-                      <button 
-                         onClick={() => handleUpgrade("visionary")}
-                         disabled={saving || quotas?.plan === "visionary"}
-                         className={`w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                            quotas?.plan === "visionary" 
-                              ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700" 
-                              : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30"
-                         }`}
-                      >
-                         {quotas?.plan === "visionary" ? "Plan Actif" : "Devenir Visionary"}
-                      </button>
-                   </div>
+                          {/* Badge: Populaire (only if NOT active) */}
+                          {isPopular && !isActive && (
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-lg shadow-indigo-500/40 whitespace-nowrap text-white z-20">
+                              Populaire
+                            </div>
+                          )}
 
-                   {/* TITAN PLAN */}
-                   <div className={`border rounded-[32px] p-6 space-y-6 flex flex-col transition-all duration-300 hover:scale-[1.02] shadow-xl ${
-                      quotas?.plan === "titan" 
-                        ? "bg-slate-900 text-white border-slate-800" 
-                        : "bg-white text-slate-900 border-slate-100"
-                   }`}>
-                      <div className="space-y-3">
-                         <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold">Titan</h3>
-                            {quotas?.plan === "titan" && (
-                               <span className="px-2 py-0.5 bg-indigo-500 text-white text-[9px] font-black uppercase tracking-widest rounded-full">Actif</span>
+                          <div className={`space-y-3 ${isActive || isPopular ? "pt-3" : ""}`}>
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-xl font-bold">{plan.name}</h3>
+                            </div>
+                            <p className={`text-[11px] leading-relaxed font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>{plan.desc}</p>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-3xl font-black">{plan.price}</span>
+                              <span className={`font-bold text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}>{plan.period}</span>
+                            </div>
+                          </div>
+
+                          <div className={`h-px w-full ${isDark ? "bg-slate-700" : "bg-slate-100"}`} />
+
+                          {/* Quota usage bars — only on active plan card */}
+                          {isActive && quotas && (
+                            <div className="space-y-4 p-4 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10">
+                              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Consommation en cours</p>
+                              {/* Scripts */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-semibold text-slate-300">Scripts IA / jour</span>
+                                  <span className="text-[11px] font-bold text-white">
+                                    {quotas.daily_script_count} / {quotas.limits.dailyScripts === 9999 ? "∞" : quotas.limits.dailyScripts}
+                                  </span>
+                                </div>
+                                <div className="h-2 w-full bg-slate-700/60 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-700 ease-out rounded-full"
+                                    style={{ width: `${quotas.limits.dailyScripts === 9999 ? 5 : Math.min(100, (quotas.daily_script_count / (quotas.limits.dailyScripts || 1)) * 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+                              {/* Analyses */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-semibold text-slate-300">Analyses / mois</span>
+                                  <span className="text-[11px] font-bold text-white">
+                                    {quotas.monthly_analysis_count} / {quotas.limits.monthlyAnalysis}
+                                  </span>
+                                </div>
+                                <div className="h-2 w-full bg-slate-700/60 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-700 ease-out rounded-full"
+                                    style={{ width: `${Math.min(100, (quotas.monthly_analysis_count / (quotas.limits.monthlyAnalysis || 1)) * 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          <ul className="space-y-3 flex-1">
+                            {plan.prefix && (
+                              <li className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{plan.prefix}</li>
                             )}
-                         </div>
-                         <p className={`text-[11px] leading-relaxed font-medium ${quotas?.plan === "titan" ? "text-slate-400" : "text-slate-500"}`}>Stratégies industrielles.</p>
-                         <div className="flex items-baseline gap-1">
-                            <span className="text-3xl font-black">$499</span>
-                            <span className={`font-bold text-xs ${quotas?.plan === "titan" ? "text-slate-500" : "text-slate-400"}`}>/mois</span>
-                         </div>
-                      </div>
-                      <div className={`h-px w-full ${quotas?.plan === "titan" ? "bg-slate-800" : "bg-slate-100"}`} />
-                      <ul className="space-y-3 flex-1">
-                         <li className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Tout de Visionary, plus :</li>
-                         {[
-                            "1500 analyses profondes / mois",
-                            "Génération de scripts ILLIMITÉE",
-                            "Gestion d'équipe complète (5 invités)",
-                            "Accès à l'API de scraping brute",
-                            "Liaison Webhooks & Automations",
-                         ].map((item, i) => (
-                            <li key={i} className={`flex items-start gap-2.5 text-[11px] font-medium ${quotas?.plan === "titan" ? "text-slate-300" : "text-slate-600"}`}>
-                               <CheckCircle2 className="size-3.5 text-indigo-500 shrink-0 mt-0.5" /> {item}
-                            </li>
-                         ))}
-                      </ul>
-                      <button 
-                         onClick={() => handleUpgrade("titan")}
-                         disabled={saving || quotas?.plan === "titan"}
-                         className={`w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                            quotas?.plan === "titan" 
-                              ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700" 
-                              : "bg-slate-900 text-white hover:bg-slate-800 shadow-md"
-                         }`}
-                      >
-                         {quotas?.plan === "titan" ? "Plan Actif" : "Choisir Titan"}
-                      </button>
-                   </div>
+                            {plan.features.map((item, i) => (
+                              <li key={i} className={`flex items-start gap-2.5 text-[11px] font-medium ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                                <CheckCircle2 className="size-3.5 text-indigo-500 shrink-0 mt-0.5" /> {item}
+                              </li>
+                            ))}
+                          </ul>
+
+                          <button
+                            onClick={() => handleUpgrade(plan.id)}
+                            disabled={saving || isActive}
+                            className={`w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                              isActive
+                                ? "bg-white/10 text-slate-400 cursor-not-allowed border border-white/10 backdrop-blur-sm"
+                                : isPopular
+                                  ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30"
+                                  : "bg-slate-900 text-white hover:bg-slate-800 shadow-md"
+                            }`}
+                          >
+                            {isActive ? "✓ Abonnement actuel" : plan.upgradeLabel}
+                          </button>
+                        </div>
+                      )
+                   })}
 
                 </div>
              </div>
