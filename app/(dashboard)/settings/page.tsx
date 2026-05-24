@@ -111,7 +111,7 @@ export default function SettingsPage() {
       if (data.error) throw new Error(data.error)
       
       toast.success(data.message || `Félicitations ! Vous êtes passé au plan ${planName.toUpperCase()} !`, {
-        icon: "🎉",
+        icon: <Sparkles className="size-5 text-emerald-500 shrink-0 animate-pulse" />,
         duration: 4000
       })
       
