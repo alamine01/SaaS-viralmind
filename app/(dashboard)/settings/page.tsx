@@ -221,42 +221,22 @@ export default function SettingsPage() {
 
          {activeTab === "Mon compte" && (
             <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               {/* Account Avatar Section */}
-               <section className="flex items-center gap-6 p-6 bg-white border border-slate-100 rounded-3xl shadow-sm">
-                  <div className="size-20 rounded-full bg-slate-900 flex items-center justify-center border-4 border-white shadow-xl">
-                     <Video className="size-8 text-indigo-400" />
+               {/* Account Info Form */}
+               <section className="p-6 md:p-8 bg-white border border-slate-100 rounded-3xl shadow-sm space-y-6">
+                  <div className="space-y-1.5">
+                     <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Adresse email</p>
+                     <p className="text-sm font-bold text-slate-900 bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl max-w-xs cursor-not-allowed">
+                       {user?.email}
+                     </p>
                   </div>
-                   <div className="space-y-4 flex-1">
-                      <div className="space-y-1">
-                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Adresse email</p>
-                         <p className="text-sm font-bold text-slate-900">{user?.email}</p>
-                      </div>
-                      <div className="flex flex-col gap-2.5">
-                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Nom complet</label>
-                         <input 
-                           value={profile.username}
-                           onChange={(e) => setProfile({...profile, username: e.target.value})}
-                           placeholder="Votre nom ou pseudo..." 
-                           className="w-full max-w-xs bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-bold text-slate-900 focus:border-indigo-500 outline-hidden transition-all shadow-xs"
-                         />
-                      </div>
-                      <button className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors">
-                         Changer l'image
-                      </button>
-                   </div>
-               </section>
-
-               {/* Smart Sync Section (Toggle) */}
-               <section className="pt-8 border-t border-slate-100 flex items-center justify-between">
-                  <div className="space-y-1">
-                     <h3 className="text-lg font-bold text-slate-900">Analyse automatique des tendances</h3>
-                     <p className="text-[13px] text-slate-400 font-medium leading-relaxed">Recevez des notifications dès qu'un pattern viral est détecté dans votre niche.</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                     <span className="text-[11px] font-bold text-slate-400 uppercase">Actif</span>
-                     <div className="w-11 h-6 bg-indigo-500 rounded-full relative cursor-pointer">
-                        <div className="absolute right-1 top-1 size-4 bg-white rounded-full shadow-sm"></div>
-                     </div>
+                  <div className="flex flex-col gap-2">
+                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nom complet</label>
+                     <input 
+                       value={profile.username}
+                       onChange={(e) => setProfile({...profile, username: e.target.value})}
+                       placeholder="Votre nom ou pseudo..." 
+                       className="w-full max-w-xs bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 focus:border-indigo-500 outline-hidden transition-all shadow-xs"
+                     />
                   </div>
                </section>
             </div>
