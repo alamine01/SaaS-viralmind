@@ -314,7 +314,7 @@ export default function ScriptsPage() {
                           ? `Il vous reste ${quotas.limits.dailyScripts - quotas.daily_script_count} génération(s) aujourd'hui.`
                           : "⚠️ Limite journalière atteinte !"}
                       {quotas.limits.dailyScripts !== 9999 && quotas.limits.dailyScripts - quotas.daily_script_count === 0 && (
-                        <a href="/settings" className="underline text-indigo-600 hover:text-indigo-700 font-bold ml-1">
+                        <a href="/settings?tab=Abonnement" className="underline text-indigo-600 hover:text-indigo-700 font-bold ml-1">
                           Mettre à niveau mon plan
                         </a>
                       )}

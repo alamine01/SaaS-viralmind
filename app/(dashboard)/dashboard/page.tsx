@@ -217,7 +217,7 @@ export default function DashboardPage() {
                      <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
                         <BarChart3 className="size-4" /> Suivi de vos Quotas
                      </h4>
-                     <Link href="/settings" className="text-[9px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-colors underline">
+                     <Link href="/settings?tab=Abonnement" className="text-[9px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-colors underline">
                         Détails
                      </Link>
                   </div>

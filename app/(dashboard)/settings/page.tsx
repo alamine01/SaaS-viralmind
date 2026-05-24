@@ -20,10 +20,14 @@ import {
   CheckCircle2,
   X,
   FileText,
-  Target
+  Target,
+  BarChart3
 } from "lucide-react"
 
+import { useSearchParams } from "next/navigation"
+
 export default function SettingsPage() {
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [user, setUser] = useState<any>(null)
@@ -43,6 +47,14 @@ export default function SettingsPage() {
     fetchProfile()
     fetchQuotas()
   }, [])
+
+  // Synchroniser l'onglet actif avec les query params (ex: ?tab=Abonnement)
+  useEffect(() => {
+    const tabParam = searchParams.get("tab")
+    if (tabParam && (tabParam === "Mon compte" || tabParam === "Notifications" || tabParam === "Abonnement")) {
+      setActiveTab(tabParam)
+    }
+  }, [searchParams])
 
   const fetchProfile = async () => {
     try {
@@ -297,12 +309,12 @@ export default function SettingsPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                          {/* Quota Scripts */}
                          <div className="space-y-4 p-5 bg-slate-50/50 rounded-2xl border border-slate-100/50 shadow-inner">
-                            <div className="flex items-center justify-between">
-                               <div className="space-y-1">
+                            <div className="flex justify-between items-start gap-4">
+                               <div className="space-y-1 min-w-0">
                                   <h4 className="text-sm font-black text-slate-800">Scripts du jour (Freemium)</h4>
                                   <p className="text-xs text-slate-400 font-medium">Réinitialisation automatique chaque jour</p>
                                </div>
-                               <span className="text-sm font-bold text-slate-900 bg-white border border-slate-100 px-3 py-1 rounded-xl shadow-xs">
+                               <span className="text-sm font-bold text-slate-900 bg-white border border-slate-100 px-3 py-1 rounded-xl shadow-xs shrink-0 whitespace-nowrap">
                                   {quotas.daily_script_count} / {quotas.limits.dailyScripts === 9999 ? "∞" : quotas.limits.dailyScripts}
                                </span>
                             </div>
@@ -323,12 +335,12 @@ export default function SettingsPage() {
 
                          {/* Quota Analyses */}
                          <div className="space-y-4 p-5 bg-slate-50/50 rounded-2xl border border-slate-100/50 shadow-inner">
-                            <div className="flex items-center justify-between">
-                               <div className="space-y-1">
+                            <div className="flex justify-between items-start gap-4">
+                               <div className="space-y-1 min-w-0">
                                   <h4 className="text-sm font-black text-slate-800">Analyses de concurrents mensuelles</h4>
                                   <p className="text-xs text-slate-400 font-medium">Zero-Quota Cache : l'analyse du cache n'impacte pas votre quota !</p>
                                </div>
-                               <span className="text-sm font-bold text-slate-900 bg-white border border-slate-100 px-3 py-1 rounded-xl shadow-xs">
+                               <span className="text-sm font-bold text-slate-900 bg-white border border-slate-100 px-3 py-1 rounded-xl shadow-xs shrink-0 whitespace-nowrap">
                                   {quotas.monthly_analysis_count} / {quotas.limits.monthlyAnalysis}
                                </span>
                             </div>
@@ -473,43 +485,6 @@ export default function SettingsPage() {
 
                           <div className={`h-px w-full ${isDark ? "bg-slate-700" : "bg-slate-100"}`} />
 
-                          {/* Quota usage bars — only on active plan card */}
-                          {isActive && quotas && (
-                            <div className="space-y-4 p-4 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10">
-                              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Consommation en cours</p>
-                              {/* Scripts */}
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[11px] font-semibold text-slate-300">Scripts IA / jour</span>
-                                  <span className="text-[11px] font-bold text-white">
-                                    {quotas.daily_script_count} / {quotas.limits.dailyScripts === 9999 ? "∞" : quotas.limits.dailyScripts}
-                                  </span>
-                                </div>
-                                <div className="h-2 w-full bg-slate-700/60 rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-700 ease-out rounded-full"
-                                    style={{ width: `${quotas.limits.dailyScripts === 9999 ? 5 : Math.min(100, (quotas.daily_script_count / (quotas.limits.dailyScripts || 1)) * 100)}%` }}
-                                  />
-                                </div>
-                              </div>
-                              {/* Analyses */}
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[11px] font-semibold text-slate-300">Analyses / mois</span>
-                                  <span className="text-[11px] font-bold text-white">
-                                    {quotas.monthly_analysis_count} / {quotas.limits.monthlyAnalysis}
-                                  </span>
-                                </div>
-                                <div className="h-2 w-full bg-slate-700/60 rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-700 ease-out rounded-full"
-                                    style={{ width: `${Math.min(100, (quotas.monthly_analysis_count / (quotas.limits.monthlyAnalysis || 1)) * 100)}%` }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
                           <ul className="space-y-3 flex-1">
                             {plan.prefix && (
                               <li className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{plan.prefix}</li>
@@ -533,7 +508,8 @@ export default function SettingsPage() {
                                 onClick={() => setShowQuotaModal(true)}
                                 className="w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
                               >
-                                📊 Utilisation des crédits
+                                <BarChart3 className="size-4 shrink-0" />
+                                <span>Utilisation des crédits</span>
                               </button>
                             </div>
                           ) : (
