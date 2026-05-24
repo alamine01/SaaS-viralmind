@@ -17,7 +17,10 @@ import {
   Video,
   Sparkles,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  X,
+  FileText,
+  Target
 } from "lucide-react"
 
 export default function SettingsPage() {
@@ -34,6 +37,7 @@ export default function SettingsPage() {
   // QUOTA & SUBSCRIPTION STATE
   const [quotas, setQuotas] = useState<any>(null)
   const [loadingQuotas, setLoadingQuotas] = useState(true)
+  const [showQuotaModal, setShowQuotaModal] = useState(false)
 
   useEffect(() => {
     fetchProfile()
@@ -517,19 +521,34 @@ export default function SettingsPage() {
                             ))}
                           </ul>
 
-                          <button
-                            onClick={() => handleUpgrade(plan.id)}
-                            disabled={saving || isActive}
-                            className={`w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                              isActive
-                                ? "bg-white/10 text-slate-400 cursor-not-allowed border border-white/10 backdrop-blur-sm"
-                                : isPopular
+                          {isActive ? (
+                            <div className="flex flex-col gap-2 w-full mt-auto">
+                              <button
+                                disabled
+                                className="w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-white/10 text-slate-400 border border-white/10 backdrop-blur-sm cursor-not-allowed"
+                              >
+                                ✓ Abonnement actuel
+                              </button>
+                              <button
+                                onClick={() => setShowQuotaModal(true)}
+                                className="w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
+                              >
+                                📊 Utilisation des crédits
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleUpgrade(plan.id)}
+                              disabled={saving}
+                              className={`w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                isPopular
                                   ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30"
                                   : "bg-slate-900 text-white hover:bg-slate-800 shadow-md"
-                            }`}
-                          >
-                            {isActive ? "✓ Abonnement actuel" : plan.upgradeLabel}
-                          </button>
+                              }`}
+                            >
+                              {plan.upgradeLabel}
+                            </button>
+                          )}
                         </div>
                       )
                    })}
@@ -539,6 +558,136 @@ export default function SettingsPage() {
           )}
       </main>
 
+      {/* Credit details modal */}
+      {showQuotaModal && quotas && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop with overlay blur */}
+          <div 
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-300"
+            onClick={() => setShowQuotaModal(false)}
+          />
+          
+          {/* Modal Container */}
+          <div className="relative bg-white w-full max-w-md rounded-[32px] p-6 md:p-8 shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-bottom-8 duration-300 max-h-[90vh] flex flex-col z-10">
+            {/* Top ambient glowing background */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl -z-10" />
+
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6 shrink-0">
+              <div>
+                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Consommation en direct</span>
+                <h3 className="text-xl font-black text-slate-900 flex items-center gap-2 mt-0.5">
+                  Détails de vos crédits
+                </h3>
+              </div>
+              <button 
+                onClick={() => setShowQuotaModal(false)}
+                className="size-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all border border-slate-100"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Modal Body Content */}
+            <div className="space-y-6 overflow-y-auto pr-1 py-1 flex-1">
+              {/* Active Plan Card Header */}
+              <div className="p-4 bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-950 rounded-2xl border border-indigo-950 text-white relative overflow-hidden">
+                <div className="absolute right-0 bottom-0 translate-y-4 translate-x-4 size-24 bg-indigo-500/15 rounded-full blur-xl" />
+                <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Forfait Actuel</p>
+                <h4 className="text-lg font-black capitalize mt-0.5">Plan {quotas.plan}</h4>
+                <p className="text-[11px] text-slate-300 mt-1 font-medium leading-relaxed">
+                  Vos quotas d'utilisation se réinitialisent automatiquement à la fin de chaque période d'abonnement.
+                </p>
+              </div>
+
+              {/* Quota 1: Scripts */}
+              <div className="space-y-3 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl shadow-inner">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="size-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                      <FileText className="size-4" />
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-bold text-slate-900">Scripts IA (Journalier)</h5>
+                      <p className="text-[10px] text-slate-400 font-medium">Réinitialisation toutes les 24h</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold bg-white border border-slate-100 px-2.5 py-1 rounded-lg text-slate-800 shadow-xs">
+                    {quotas.daily_script_count} / {quotas.limits.dailyScripts === 9999 ? "∞" : quotas.limits.dailyScripts}
+                  </span>
+                </div>
+
+                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-700 ease-out rounded-full"
+                    style={{ width: `${quotas.limits.dailyScripts === 9999 ? 5 : Math.min(100, (quotas.daily_script_count / (quotas.limits.dailyScripts || 1)) * 100)}%` }}
+                  />
+                </div>
+
+                <div className="flex justify-between text-[9px] text-slate-400 font-semibold italic">
+                  <span>
+                    {quotas.limits.dailyScripts === 9999 
+                      ? "Utilisation illimitée" 
+                      : `${quotas.limits.dailyScripts - quotas.daily_script_count} génération(s) restante(s)`}
+                  </span>
+                  <span>Reset automatique quotidien</span>
+                </div>
+              </div>
+
+              {/* Quota 2: Analyses */}
+              <div className="space-y-3 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl shadow-inner">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="size-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                      <Target className="size-4" />
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-bold text-slate-900">Analyses de Concurrents</h5>
+                      <p className="text-[10px] text-slate-400 font-medium">Recharge mensuelle (30j)</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold bg-white border border-slate-100 px-2.5 py-1 rounded-lg text-slate-800 shadow-xs">
+                    {quotas.monthly_analysis_count} / {quotas.limits.monthlyAnalysis}
+                  </span>
+                </div>
+
+                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-700 ease-out rounded-full"
+                    style={{ width: `${Math.min(100, (quotas.monthly_analysis_count / (quotas.limits.monthlyAnalysis || 1)) * 100)}%` }}
+                  />
+                </div>
+
+                <div className="flex justify-between text-[9px] text-slate-400 font-semibold italic">
+                  <span>{quotas.limits.monthlyAnalysis - quotas.monthly_analysis_count} analyse(s) restante(s) ce mois-ci</span>
+                  <span>Date de reset : {quotas.last_analysis_reset ? new Date(new Date(quotas.last_analysis_reset).getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString() : "Dans 30 jours"}</span>
+                </div>
+              </div>
+
+              {/* Premium Hint */}
+              <div className="p-3.5 bg-indigo-50/40 rounded-2xl border border-indigo-100/50 text-[11px] font-semibold text-indigo-900 flex items-start gap-2.5">
+                <Sparkles className="size-4 text-indigo-500 shrink-0 mt-0.5 animate-pulse" />
+                <div className="space-y-0.5">
+                  <p className="font-bold text-slate-800">Astuce : Cache Zéro-Quota actif</p>
+                  <p className="text-slate-500 leading-normal font-medium">
+                    Consulter ou charger une analyse de vidéo déjà présente dans le cache de la communauté n'impacte pas vos crédits mensuels !
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-4 border-t border-slate-100 mt-6 flex gap-3 shrink-0">
+              <button 
+                onClick={() => setShowQuotaModal(false)}
+                className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-md text-center"
+              >
+                Fermer la vue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
