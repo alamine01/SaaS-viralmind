@@ -47,6 +47,27 @@ export default function ScriptsPage() {
   const [historyItems, setHistoryItems] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
 
+  // SCRIPT GENERATION QUOTA STATE
+  const [quotas, setQuotas] = useState<any>(null)
+
+  const fetchQuotas = async () => {
+    try {
+      const res = await fetch("/api/user/quotas")
+      const data = await res.json()
+      if (!data.error) {
+        setQuotas(data)
+      }
+    } catch (e) {
+      console.error("Failed to fetch quotas:", e)
+    }
+  }
+
+  useEffect(() => {
+    if (user) {
+      fetchQuotas()
+    }
+  }, [user])
+
   useEffect(() => {
     // Get initial user
     supabase.auth.getUser().then(({ data }) => {
@@ -132,6 +153,7 @@ export default function ScriptsPage() {
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setScriptData(data)
+      fetchQuotas()
       
       // Save to history on client side (using user session)
       if (user) {
@@ -269,6 +291,35 @@ export default function ScriptsPage() {
                     </select>
                   </div>
                 </div>
+
+                {quotas && (
+                  <div className="space-y-2.5 p-4 bg-slate-50/50 rounded-2xl border border-slate-100/50 shadow-inner">
+                    <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-slate-500">
+                      <span>Quota de Scripts ({quotas.plan})</span>
+                      <span>
+                        {quotas.daily_script_count} / {quotas.limits.dailyScripts === 9999 ? "∞" : quotas.limits.dailyScripts}
+                      </span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500 rounded-full"
+                        style={{ width: `${Math.min(100, (quotas.daily_script_count / (quotas.limits.dailyScripts || 1)) * 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-[9px] text-slate-400 font-semibold italic flex items-center justify-between">
+                      {quotas.limits.dailyScripts === 9999
+                        ? "🎉 Générations illimitées actives !"
+                        : quotas.limits.dailyScripts - quotas.daily_script_count > 0 
+                          ? `Il vous reste ${quotas.limits.dailyScripts - quotas.daily_script_count} génération(s) aujourd'hui.`
+                          : "⚠️ Limite journalière atteinte !"}
+                      {quotas.limits.dailyScripts !== 9999 && quotas.limits.dailyScripts - quotas.daily_script_count === 0 && (
+                        <a href="/settings" className="underline text-indigo-600 hover:text-indigo-700 font-bold ml-1">
+                          Mettre à niveau mon plan
+                        </a>
+                      )}
+                    </p>
+                  </div>
+                )}
 
                 <button 
                   onClick={handleGenerate}

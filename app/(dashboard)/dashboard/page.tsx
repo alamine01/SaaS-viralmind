@@ -32,6 +32,9 @@ export default function DashboardPage() {
   })
   const [loading, setLoading] = useState(true)
 
+  // QUOTAS STATE
+  const [quotas, setQuotas] = useState<any>(null)
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -52,6 +55,17 @@ export default function DashboardPage() {
             avgScore: avg,
             recentActivity: recentVideos || []
           })
+
+          // Charger les quotas en temps réel
+          try {
+            const res = await fetch("/api/user/quotas")
+            const quotaData = await res.json()
+            if (!quotaData.error) {
+              setQuotas(quotaData)
+            }
+          } catch (e) {
+            console.error("Failed to load quotas on dashboard:", e)
+          }
         }
       } catch (error) {
         console.error("Dashboard error:", error)
@@ -96,7 +110,7 @@ export default function DashboardPage() {
               <img src={`https://ui-avatars.com/api/?name=${user?.email}&background=0f172a&color=818cf8&bold=true`} alt="" className="size-full object-cover" />
            </div>
            <div className="flex flex-col">
-              <p className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.15em] leading-none mb-1">Utilisateur Pro</p>
+              <p className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.15em] leading-none mb-1">Plan {quotas?.plan || "Free"}</p>
               <p className="text-sm font-medium text-slate-900 leading-none">{user?.email?.split('@')[0]}</p>
            </div>
         </div>
@@ -196,6 +210,48 @@ export default function DashboardPage() {
                    Gérer les projets
                 </button>
             </div>
+
+            {quotas && (
+               <div className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-md shadow-slate-100/50 space-y-4">
+                  <div className="flex items-center justify-between">
+                     <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                        <BarChart3 className="size-4" /> Suivi de vos Quotas
+                     </h4>
+                     <Link href="/settings" className="text-[9px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-colors underline">
+                        Détails
+                     </Link>
+                  </div>
+                  <div className="space-y-3.5">
+                     {/* Daily Scripts */}
+                     <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                           <span>Scripts du jour</span>
+                           <span className="font-bold">{quotas.daily_script_count} / {quotas.limits.dailyScripts === 9999 ? "∞" : quotas.limits.dailyScripts}</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                           <div 
+                              className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500"
+                              style={{ width: `${Math.min(100, (quotas.daily_script_count / (quotas.limits.dailyScripts || 1)) * 100)}%` }}
+                           />
+                        </div>
+                     </div>
+
+                     {/* Monthly Analysis */}
+                     <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                           <span>Analyses de concurrents</span>
+                           <span className="font-bold">{quotas.monthly_analysis_count} / {quotas.limits.monthlyAnalysis}</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                           <div 
+                              className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500"
+                              style={{ width: `${Math.min(100, (quotas.monthly_analysis_count / (quotas.limits.monthlyAnalysis || 1)) * 100)}%` }}
+                           />
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            )}
 
             <Card className="border-none shadow-sm rounded-[32px] bg-indigo-50/50 p-8 border border-indigo-100/50">
                <div className="flex items-center gap-3 mb-6">

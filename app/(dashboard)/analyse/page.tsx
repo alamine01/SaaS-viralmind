@@ -36,6 +36,25 @@ export default function AnalysePage() {
   const [showRetentionModal, setShowRetentionModal] = useState(false)
   const [copied, setCopied] = useState(false)
 
+  // ANALYSIS QUOTAS STATE
+  const [quotas, setQuotas] = useState<any>(null)
+
+  const fetchQuotas = async () => {
+    try {
+      const res = await fetch("/api/user/quotas")
+      const data = await res.json()
+      if (!data.error) {
+        setQuotas(data)
+      }
+    } catch (e) {
+      console.error("Failed to fetch quotas:", e)
+    }
+  }
+
+  useEffect(() => {
+    fetchQuotas()
+  }, [])
+
   const formatNumber = (num: number) => {
     if (!num) return "0";
     if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
@@ -72,6 +91,7 @@ export default function AnalysePage() {
       if (data.error) throw new Error(data.error)
       
       setSelectedAnalysis(data)
+      fetchQuotas()
       // On met à jour le champ abonnés avec le format compact
       if (data.followers !== undefined && data.followers !== null) {
         setFollowers(formatNumber(data.followers))
@@ -246,6 +266,34 @@ export default function AnalysePage() {
                      />
                   </div>
                </div>
+
+               {quotas && (
+                  <div className="space-y-2.5 p-4 bg-white/5 rounded-2xl border border-white/10 shadow-inner text-white">
+                     <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <span>Quota d'Analyses ({quotas.plan})</span>
+                        <span className="text-white font-bold">
+                           {quotas.monthly_analysis_count} / {quotas.limits.monthlyAnalysis}
+                        </span>
+                     </div>
+                     <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                        <div 
+                           className="h-full bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-500 rounded-full"
+                           style={{ width: `${Math.min(100, (quotas.monthly_analysis_count / (quotas.limits.monthlyAnalysis || 1)) * 100)}%` }}
+                        />
+                     </div>
+                     <p className="text-[9px] text-slate-400 font-semibold italic flex items-center justify-between">
+                        {quotas.limits.monthlyAnalysis - quotas.monthly_analysis_count > 0 
+                          ? `Il vous reste ${quotas.limits.monthlyAnalysis - quotas.monthly_analysis_count} scan(s) ce mois-ci.`
+                          : "⚠️ Limite d'analyses atteinte !"}
+                        {quotas.limits.monthlyAnalysis - quotas.monthly_analysis_count === 0 && (
+                          <a href="/settings" className="underline text-indigo-400 hover:text-indigo-300 font-bold ml-1">
+                            Mettre à niveau mon plan
+                          </a>
+                        )}
+                     </p>
+                  </div>
+               )}
+
                <button 
                  onClick={handleAnalyse}
                  disabled={loading || !url}

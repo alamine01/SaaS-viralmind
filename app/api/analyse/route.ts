@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { analyzeVideo } from "@/lib/ai-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { scrapeVideoData, getUniqueVideoId } from "@/lib/scraper";
+import { checkAndIncrementAnalysisQuota } from "@/lib/quota-service";
 
 export async function POST(req: Request) {
   try {
@@ -23,12 +24,13 @@ export async function POST(req: Request) {
 
     if (existingVideo) {
       // Associer automatiquement la vidéo existante à l'historique de l'utilisateur si nécessaire
-      if (userId) {
+      const targetUserId = userId || (await supabase.auth.getUser()).data.user?.id;
+      if (targetUserId) {
         try {
           const { data: existingSave } = await supabase
             .from("saved_items")
             .select("id")
-            .eq("user_id", userId)
+            .eq("user_id", targetUserId)
             .eq("video_id", existingVideo.id)
             .eq("type", "video")
             .maybeSingle();
@@ -37,7 +39,7 @@ export async function POST(req: Request) {
             await supabase
               .from("saved_items")
               .insert({
-                user_id: userId,
+                user_id: targetUserId,
                 video_id: existingVideo.id,
                 type: "video",
                 collection_name: "General"
@@ -53,6 +55,25 @@ export async function POST(req: Request) {
         video_id: existingVideo.video_id || getUniqueVideoId(cleanUrl),
         cached: true
       });
+    }
+
+    // OBTENIR L'UTILISATEUR SÉCURISÉ POUR COMPTABILISER LE QUOTA
+    const { data: { user } } = await supabase.auth.getUser();
+    const effectiveUserId = user?.id || userId;
+
+    if (!effectiveUserId) {
+      return NextResponse.json({ error: "Vous devez être connecté pour analyser une vidéo." }, { status: 401 });
+    }
+
+    // VÉRIFICATION ET DÉBIT DU QUOTA (Uniquement si nouvelle vidéo à analyser)
+    const quotaCheck = await checkAndIncrementAnalysisQuota(supabase, effectiveUserId);
+    if (!quotaCheck.allowed) {
+      return NextResponse.json(
+        { 
+          error: `Quota d'analyse mensuel dépassé (${quotaCheck.limit}/${quotaCheck.limit} analyses). Veuillez mettre à niveau votre abonnement dans vos Paramètres pour continuer.` 
+        },
+        { status: 403 }
+      );
     }
 
     // 1. SCRAPING : Récupérer les vraies données de la vidéo
