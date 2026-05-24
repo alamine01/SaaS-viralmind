@@ -92,6 +92,7 @@ export default function AnalysePage() {
       
       setSelectedAnalysis(data)
       fetchQuotas()
+      window.dispatchEvent(new Event("quota-updated"))
       // On met à jour le champ abonnés avec le format compact
       if (data.followers !== undefined && data.followers !== null) {
         setFollowers(formatNumber(data.followers))

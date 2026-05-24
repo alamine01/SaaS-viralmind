@@ -86,6 +86,19 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const searchParams = useSearchParams()
   const [userName, setUserName] = useState<string>("User")
   const { activeCollection, workspaces, setCreateModalOpen } = useWorkspace()
+  const [quotas, setQuotas] = useState<any>(null)
+
+  const fetchQuotas = async () => {
+    try {
+      const res = await fetch("/api/user/quotas")
+      const data = await res.json()
+      if (!data.error) {
+        setQuotas(data)
+      }
+    } catch (e) {
+      console.error("Error fetching quotas in sidebar:", e)
+    }
+  }
 
   useEffect(() => {
     const getUser = async () => {
@@ -95,7 +108,19 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       }
     }
     getUser()
+    fetchQuotas()
+
+    // Listen for real-time quota changes (e.g. after upgrade on the settings page)
+    window.addEventListener("quota-updated", fetchQuotas)
+    return () => {
+      window.removeEventListener("quota-updated", fetchQuotas)
+    }
   }, [])
+
+  // Re-fetch quotas when pathname changes to ensure sidebar matches operations
+  useEffect(() => {
+    fetchQuotas()
+  }, [pathname])
 
   return (
     <div className="flex flex-col h-full bg-white border-r border-slate-100 font-sans">
@@ -117,7 +142,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                </svg>
-             </button>
+               </button>
            )}
         </div>
         
@@ -182,18 +207,53 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
       {/* Sidebar Footer */}
       <div className="p-4 mt-auto border-t border-slate-50">
-        <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-100">
-          <div className="flex items-center gap-3 mb-4">
+        <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-100 space-y-4">
+          <div className="flex items-center gap-3">
              <div className="size-10 rounded-xl bg-slate-900 flex items-center justify-center border-2 border-white shadow-sm overflow-hidden">
                 <img src={`https://ui-avatars.com/api/?name=${userName}&background=0f172a&color=818cf8&bold=true`} alt="" />
              </div>
              <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-semibold text-slate-900 truncate uppercase">{userName}</p>
-                <p className="text-[11px] text-indigo-500 font-semibold uppercase tracking-tighter">Plan Agency</p>
+                <p className="text-[11px] text-indigo-500 font-extrabold uppercase tracking-tighter capitalize">
+                  Plan {quotas ? quotas.plan : "Gratuit"}
+                </p>
              </div>
           </div>
+
+          {/* Real-time Quota Bars */}
+          {quotas && (
+            <div className="space-y-2.5 pt-2.5 border-t border-slate-200/50">
+              {/* Scripts IA Progress */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-[9px] font-bold text-slate-500">
+                  <span>Scripts IA (jour)</span>
+                  <span>{quotas.daily_script_count} / {quotas.limits.dailyScripts === 9999 ? "∞" : quotas.limits.dailyScripts}</span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-200/50 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500 rounded-full"
+                    style={{ width: `${quotas.limits.dailyScripts === 9999 ? 5 : Math.min(100, (quotas.daily_script_count / (quotas.limits.dailyScripts || 1)) * 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Analyses Progress */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-[9px] font-bold text-slate-500">
+                  <span>Analyses (mois)</span>
+                  <span>{quotas.monthly_analysis_count} / {quotas.limits.monthlyAnalysis}</span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-200/50 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500 rounded-full"
+                    style={{ width: `${Math.min(100, (quotas.monthly_analysis_count / (quotas.limits.monthlyAnalysis || 1)) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
           
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 pt-1">
             <Link 
               href="/settings"
               onClick={() => onClose?.()}

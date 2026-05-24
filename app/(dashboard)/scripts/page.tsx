@@ -154,6 +154,7 @@ export default function ScriptsPage() {
       if (data.error) throw new Error(data.error)
       setScriptData(data)
       fetchQuotas()
+      window.dispatchEvent(new Event("quota-updated"))
       
       // Save to history on client side (using user session)
       if (user) {

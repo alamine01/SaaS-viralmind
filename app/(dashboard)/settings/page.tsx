@@ -102,6 +102,9 @@ export default function SettingsPage() {
       // Re-fetch quotas and profile to update dashboard and state
       await fetchQuotas()
       await fetchProfile()
+      
+      // Notify other components (like sidebar) to update real-time quotas
+      window.dispatchEvent(new Event("quota-updated"))
     } catch (error: any) {
       toast.error("Erreur de transaction : " + error.message)
     } finally {
