@@ -316,6 +316,7 @@ export async function POST(req: Request) {
       if (outlierScore >= 2.0 && post.views > 1000) {
         outliersList.push({
           ...post,
+          outlier_score: outlierScore,
           outlierScore
         });
       }

@@ -505,7 +505,7 @@ export default function MonitoringPage() {
                                           <div className="absolute top-4 left-4 flex items-center gap-2">
                                              <div className="bg-indigo-600 text-white px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10 flex items-center gap-1.5 shadow-lg">
                                                 <Zap className="size-3 fill-current" />
-                                                x{out.outlier_score} OUTLIER
+                                                x{out.outlier_score || out.outlierScore || 0} OUTLIER
                                              </div>
                                           </div>
                                        </div>
@@ -521,7 +521,7 @@ export default function MonitoringPage() {
                                              </div>
                                              <div className="bg-slate-50 rounded-xl p-3">
                                                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mb-0.5">VS Moyenne</p>
-                                                <p className="text-sm font-black text-indigo-600">+{Math.round((out.outlier_score - 1) * 100)}%</p>
+                                                <p className="text-sm font-black text-indigo-600">+{Math.round(((out.outlier_score || out.outlierScore || 1) - 1) * 100)}%</p>
                                              </div>
                                           </div>
 
