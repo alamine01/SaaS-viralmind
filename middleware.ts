@@ -19,7 +19,7 @@ export async function middleware(request: NextRequest) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
             const opt = { ...options }
-            if (opt.sameSite === 'none' || opt.sameSite === 'None') {
+            if (opt.sameSite === 'none') {
               opt.secure = true
             }
             ;(request.cookies as any).set(name, value, opt)
@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
           })
           cookiesToSet.forEach(({ name, value, options }) => {
             const opt = { ...options }
-            if (opt.sameSite === 'none' || opt.sameSite === 'None') {
+            if (opt.sameSite === 'none') {
               opt.secure = true
             }
             ;(response.cookies as any).set(name, value, opt)
