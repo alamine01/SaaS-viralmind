@@ -28,35 +28,13 @@ export default function AnalysePage() {
   const { activeCollection, workspaces } = useWorkspace()
   const [targetCollection, setTargetCollection] = useState(activeCollection)
   const [url, setUrl] = useState("")
-
-  useEffect(() => {
-    setTargetCollection(activeCollection)
-    
-    // Charger une analyse spécifique si l'ID est présent dans l'URL
-    const loadAnalysis = async () => {
-      const id = searchParams.get("id")
-      if (id) {
-        setLoading(true)
-        try {
-          const { data, error } = await supabase
-            .from("videos")
-            .select("*")
-            .eq("id", id)
-            .single()
-          
-          if (data) setSelectedAnalysis(data)
-          if (error) throw error
-        } catch (err: any) {
-          toast.error("Analyse non trouvée")
-        } finally {
-          setLoading(false)
-        }
-      }
-    }
-    loadAnalysis()
-  }, [activeCollection, searchParams])
   const [followers, setFollowers] = useState("")
   const [loading, setLoading] = useState(false)
+  const [selectedAnalysis, setSelectedAnalysis] = useState<any | null>(null)
+  const [showTranscript, setShowTranscript] = useState(false)
+  const [showPsychologyModal, setShowPsychologyModal] = useState(false)
+  const [showRetentionModal, setShowRetentionModal] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   const formatNumber = (num: number) => {
     if (!num) return "0";
@@ -72,14 +50,10 @@ export default function AnalysePage() {
     if (clean.endsWith("m")) return parseFloat(clean) * 1000000;
     return parseInt(clean) || 0;
   };
-  const [selectedAnalysis, setSelectedAnalysis] = useState<any | null>(null)
-  const [showTranscript, setShowTranscript] = useState(false)
-  const [showPsychologyModal, setShowPsychologyModal] = useState(false)
-  const [showRetentionModal, setShowRetentionModal] = useState(false)
-  const [copied, setCopied] = useState(false)
 
-  const handleAnalyse = async () => {
-    if (!url) return
+  const handleAnalyse = async (targetUrl?: string | React.MouseEvent) => {
+    const activeUrl = typeof targetUrl === 'string' ? targetUrl : url;
+    if (!activeUrl) return
     setLoading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -87,9 +61,9 @@ export default function AnalysePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-           url, 
+           url: activeUrl, 
            followers: parseCompactNumber(followers),
-           title: url.includes("tiktok") ? "Radar TikTok Outlier" : url.includes("instagram") ? "Radar Instagram Outlier" : "Radar YouTube Outlier",
+           title: activeUrl.includes("tiktok") ? "Radar TikTok Outlier" : activeUrl.includes("instagram") ? "Radar Instagram Outlier" : "Radar YouTube Outlier",
            niche: "Niche Détectée",
            userId: user?.id
         })
@@ -109,6 +83,40 @@ export default function AnalysePage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    setTargetCollection(activeCollection)
+    
+    // Charger une analyse par ID ou lancer automatiquement par URL
+    const loadOrTriggerAnalysis = async () => {
+      const id = searchParams.get("id")
+      const paramUrl = searchParams.get("url")
+      
+      if (id) {
+        setLoading(true)
+        try {
+          const { data, error } = await supabase
+            .from("videos")
+            .select("*")
+            .eq("id", id)
+            .single()
+          
+          if (data) setSelectedAnalysis(data)
+          if (error) throw error
+        } catch (err: any) {
+          toast.error("Analyse non trouvée")
+        } finally {
+          setLoading(false)
+        }
+      } else if (paramUrl) {
+        const decodedUrl = decodeURIComponent(paramUrl)
+        setUrl(decodedUrl)
+        // Lancer automatiquement l'analyse pour cette URL
+        handleAnalyse(decodedUrl)
+      }
+    }
+    loadOrTriggerAnalysis()
+  }, [activeCollection, searchParams])
 
   const handleSaveVideo = async () => {
     if (!selectedAnalysis) return
