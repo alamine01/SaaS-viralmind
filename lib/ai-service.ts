@@ -149,3 +149,66 @@ export const generateScripts = async (concept: string, niche: string, tone: stri
      throw new Error("Erreur lors de la génération du script.");
   }
 };
+
+export const analyzeCompetitorProfile = async (
+  handle: string,
+  platform: string,
+  followers: number,
+  medianViews: number,
+  recentPosts: any[],
+  outliers: any[]
+) => {
+  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+
+  const postsListText = recentPosts.map((p, i) => 
+    `- Post ${i+1}: "${p.title}" (${p.views} vues) ${outliers.some(o => o.id === p.id) ? "[OUTLIER]" : ""}`
+  ).join("\n");
+
+  const prompt = `
+    Agis en tant qu'expert en stratégie de contenu sur les réseaux sociaux, consultant d'élite et analyste de croissance.
+    Ton rôle est de faire un audit complet de la stratégie de contenu du concurrent suivant :
+    - Pseudo : @${handle}
+    - Plateforme : ${platform}
+    - Abonnés : ${followers}
+    - Vues médianes (habituelles) : ${medianViews}
+
+    Voici les titres et statistiques de ses posts récents :
+    ${postsListText}
+
+    Voici ses vidéos Outliers détectées (qui ont percé organiquement au-delà de ses statistiques habituelles) :
+    ${outliers.map(o => `- "${o.title}" (${o.views} vues, score d'outlier de x${o.outlierScore || (o.views / medianViews).toFixed(1)})`).join("\n")}
+
+    Fais une analyse approfondie et synthétique en français. Remplis les champs JSON suivants :
+    1. "strategy_summary" : Un résumé accrocheur (3-4 phrases) du positionnement de ce concurrent et de sa niche de contenu.
+    2. "hook_patterns" : Une liste de 3-4 stratégies/patterns d'accroches (hooks) qu'il utilise le plus et qui captent l'attention.
+    3. "retention_secrets" : Pourquoi ses vidéos outliers ont si bien fonctionné (les secrets de rétention et de structure).
+    4. "action_plan" : Un plan d'action concret en 3 étapes pour que l'utilisateur puisse créer des vidéos similaires mais encore plus virales et le dépasser dans sa niche.
+
+    Donne-moi UNIQUEMENT le résultat au format JSON propre et valide :
+    {
+      "strategy_summary": "...",
+      "hook_patterns": [
+        "...",
+        "..."
+      ],
+      "retention_secrets": "...",
+      "action_plan": [
+        "...",
+        "..."
+      ]
+    }
+    Réponds EXCLUSIVEMENT avec le JSON, sans aucun texte ou markdown autour.
+  `;
+
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  const text = response.text();
+
+  try {
+    const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
+    return JSON.parse(jsonStr);
+  } catch (e) {
+    console.error("Failed to parse Gemini competitor audit response", text);
+    throw new Error("L'IA a renvoyé un format d'audit invalide.");
+  }
+};
