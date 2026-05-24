@@ -526,13 +526,13 @@ export default function MonitoringPage() {
                                           </div>
 
                                           <div className="pt-4 border-t border-slate-50 flex items-center justify-between mt-auto">
-                                             <a href={out.video_url} target="_blank" rel="noreferrer" className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1.5 hover:text-slate-600 transition-colors">
+                                             <a href={out.video_url || out.url} target="_blank" rel="noreferrer" className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1.5 hover:text-slate-600 transition-colors">
                                                 <Clock className="size-3" />
                                                 Voir la vidéo <ExternalLink className="size-3" />
                                              </a>
                                              
                                              <button 
-                                               onClick={() => router.push(`/analyse?url=${encodeURIComponent(out.video_url)}`)}
+                                               onClick={() => router.push(`/analyse?url=${encodeURIComponent(out.video_url || out.url)}`)}
                                                className="text-indigo-600 hover:text-indigo-700 text-[11px] font-black uppercase tracking-widest flex items-center gap-1 transition-all hover:gap-1.5"
                                              >
                                                 Disséquer le script <ArrowRight className="size-3.5" />
