@@ -5,9 +5,9 @@ export interface PlanLimits {
 
 export const PLAN_LIMITS: Record<string, PlanLimits> = {
   free: { monthlyAnalysis: 5, dailyScripts: 3 },
-  pro: { monthlyAnalysis: 50, dailyScripts: 20 },
-  visionary: { monthlyAnalysis: 250, dailyScripts: 100 },
-  titan: { monthlyAnalysis: 1500, dailyScripts: 9999 } // 9999 signifie illimité en pratique
+  pro: { monthlyAnalysis: 25, dailyScripts: 10 },
+  visionary: { monthlyAnalysis: 80, dailyScripts: 30 },
+  titan: { monthlyAnalysis: 300, dailyScripts: 9999 } // 9999 signifie illimité en pratique
 };
 
 export async function getUserQuotas(supabase: any, userId: string) {

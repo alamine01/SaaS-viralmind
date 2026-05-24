@@ -153,7 +153,6 @@ export default function SettingsPage() {
 
   const sections = [
     { name: "Mon compte", icon: User },
-    { name: "Notifications", icon: Bell },
     { name: "Abonnement", icon: CreditCard },
   ]
 
@@ -263,28 +262,6 @@ export default function SettingsPage() {
             </div>
          )}
 
-         {activeTab === "Notifications" && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className="bg-white border border-slate-100 rounded-[32px] overflow-hidden">
-                  <div className="p-8 space-y-6">
-                     {[
-                        { title: "Alertes Radar", desc: "Soyez prévenu par email dès qu'une opportunité virale est détectée.", active: true },
-                        { title: "Rapport Hebdomadaire", desc: "Un résumé de vos performances et des tendances de la semaine.", active: false },
-                        { title: "Conseils Stratégiques", desc: "Recevez des hooks et des idées de scripts personnalisés.", active: true },
-                     ].map((notif, i) => (
-                        <div key={i} className={`flex items-center justify-between ${i !== 0 ? 'pt-6 border-t border-slate-50' : ''}`}>
-                           <div className="space-y-1">
-                              <p className="text-sm font-bold text-slate-900">{notif.title}</p>
-                              <p className="text-xs text-slate-400 font-medium">{notif.desc}</p>
-                           </div>
-                           <div className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${notif.active ? 'bg-indigo-500' : 'bg-slate-200'}`}>
-                              <div className={`absolute top-1 size-3 bg-white rounded-full transition-all ${notif.active ? 'right-1' : 'left-1'}`}></div>
-                           </div>
-                        </div>
-                     ))}
-                  </div>
-               </div>
-            </div>
          )}
 
          {activeTab === "Abonnement" && (
@@ -373,7 +350,7 @@ export default function SettingsPage() {
                         id: "free",
                         name: "Gratuit",
                         desc: "Pour tester l'outil de base.",
-                        price: "$0",
+                        price: "0 FCFA",
                         period: "/toujours",
                         popular: false,
                         upgradeLabel: "Rétrograder",
@@ -389,13 +366,13 @@ export default function SettingsPage() {
                         id: "pro",
                         name: "Pro",
                         desc: "Croissance rapide des réseaux.",
-                        price: "$49",
+                        price: "4 900 FCFA",
                         period: "/mois",
                         popular: false,
                         upgradeLabel: "Choisir Pro",
                         features: [
-                          "50 analyses profondes / mois",
-                          "20 scripts IA / jour",
+                          "25 analyses profondes / mois",
+                          "10 scripts IA / jour",
                           "Zéro-Quota Cache illimité",
                           "Playbooks d'analyse IA concurrents",
                           "Espaces par niche configurables",
@@ -406,13 +383,13 @@ export default function SettingsPage() {
                         id: "visionary",
                         name: "Visionary",
                         desc: "Levier maximal pour experts.",
-                        price: "$99",
+                        price: "9 900 FCFA",
                         period: "/mois",
                         popular: true,
                         upgradeLabel: "Devenir Visionary",
                         features: [
-                          "250 analyses profondes / mois",
-                          "100 scripts IA / jour",
+                          "80 analyses profondes / mois",
+                          "30 scripts IA / jour",
                           "Support prioritaire ultra-rapide 24/7",
                           "Accès anticipé aux nouveaux modèles",
                           "Audit de concurrents approfondi illimité",
@@ -423,12 +400,12 @@ export default function SettingsPage() {
                         id: "titan",
                         name: "Titan",
                         desc: "Stratégies industrielles.",
-                        price: "$499",
+                        price: "29 900 FCFA",
                         period: "/mois",
                         popular: false,
                         upgradeLabel: "Choisir Titan",
                         features: [
-                          "1500 analyses profondes / mois",
+                          "300 analyses profondes / mois",
                           "Génération de scripts ILLIMITÉE",
                           "Gestion d'équipe complète (5 invités)",
                           "Accès à l'API de scraping brute",
