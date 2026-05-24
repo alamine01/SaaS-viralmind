@@ -82,6 +82,7 @@ export default function AnalysePage() {
     if (!url) return
     setLoading(true)
     try {
+      const { data: { user } } = await supabase.auth.getUser()
       const res = await fetch("/api/analyse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -89,7 +90,8 @@ export default function AnalysePage() {
            url, 
            followers: parseCompactNumber(followers),
            title: url.includes("tiktok") ? "Radar TikTok Outlier" : url.includes("instagram") ? "Radar Instagram Outlier" : "Radar YouTube Outlier",
-           niche: "Niche Détectée" 
+           niche: "Niche Détectée",
+           userId: user?.id
         })
       })
       const data = await res.json()

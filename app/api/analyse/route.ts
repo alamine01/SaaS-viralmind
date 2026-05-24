@@ -5,7 +5,7 @@ import { scrapeVideoData, getUniqueVideoId } from "@/lib/scraper";
 
 export async function POST(req: Request) {
   try {
-    const { url, followers } = await req.json();
+    const { url, followers, userId } = await req.json();
 
     if (!url) {
       return NextResponse.json({ error: "URL manquante" }, { status: 400 });
@@ -69,6 +69,32 @@ export async function POST(req: Request) {
     if (error) {
       console.error("Supabase Save Error:", error);
       return NextResponse.json({ error: "Erreur lors de la sauvegarde : " + error.message }, { status: 500 });
+    }
+
+    // Sauvegarder automatiquement dans saved_items pour l'utilisateur
+    if (userId && data) {
+      try {
+        const { data: existingSave } = await supabase
+          .from("saved_items")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("video_id", data.id)
+          .eq("type", "video")
+          .maybeSingle();
+
+        if (!existingSave) {
+          await supabase
+            .from("saved_items")
+            .insert({
+              user_id: userId,
+              video_id: data.id,
+              type: "video",
+              collection_name: "General"
+            });
+        }
+      } catch (saveError) {
+        console.error("Failed to automatically associate video with user in saved_items:", saveError);
+      }
     }
 
     // On ajoute l'ID réel et le score outlier à la réponse pour l'interface

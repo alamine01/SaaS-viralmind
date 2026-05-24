@@ -25,13 +25,30 @@ export default function VideosPage() {
 
   const fetchVideos = async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from("videos")
-      .select("*")
-      .order("created_at", { ascending: false })
+    const { data: { user } } = await supabase.auth.getUser()
 
-    if (!error) {
-      setVideos(data || [])
+    if (user) {
+      const { data, error } = await supabase
+        .from("saved_items")
+        .select("*, video:video_id(*)")
+        .eq("user_id", user.id)
+        .eq("type", "video")
+        .order("created_at", { ascending: false })
+
+      if (!error && data) {
+        const userVideos = data
+          .map((item: any) => {
+            if (item.video) {
+              return {
+                ...item.video,
+                saved_item_id: item.id
+              }
+            }
+            return null
+          })
+          .filter((vid: any) => vid !== null)
+        setVideos(userVideos)
+      }
     }
     setLoading(false)
   }
@@ -165,7 +182,7 @@ export default function VideosPage() {
                          {new Date(vid.created_at).toLocaleDateString()}
                       </div>
                       <Link 
-                        href={`/analyse?url=${encodeURIComponent(vid.url)}`}
+                        href={`/analyse?id=${vid.id}`}
                         className="text-indigo-600 hover:text-indigo-700 text-[11px] font-black uppercase tracking-widest flex items-center gap-1"
                       >
                          Détails <ExternalLink className="size-3" />
