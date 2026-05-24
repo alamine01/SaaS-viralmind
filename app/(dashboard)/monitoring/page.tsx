@@ -39,6 +39,7 @@ export default function MonitoringPage() {
   // Form states
   const [handle, setHandle] = useState("")
   const [platform, setPlatform] = useState("instagram")
+  const [isPlatformDropdownOpen, setIsPlatformDropdownOpen] = useState(false)
 
   useEffect(() => {
     fetchAccounts()
@@ -207,19 +208,50 @@ export default function MonitoringPage() {
 
             <div className="w-full lg:w-[500px] space-y-4">
                <div className="flex flex-col sm:flex-row gap-3 bg-white/5 p-2 rounded-2xl border border-white/10 backdrop-blur-md">
-                  <div className="relative flex items-center bg-white/5 border border-white/5 rounded-xl p-1 shrink-0">
-                     <select 
-                       value={platform}
-                       onChange={(e) => setPlatform(e.target.value)}
-                       className="bg-transparent border-0 rounded-xl pl-4 pr-8 py-3 text-xs font-bold text-white focus:ring-0 outline-hidden cursor-pointer appearance-none min-w-[120px]"
+                  {/* Custom Platform Selector Dropdown */}
+                  <div className="relative shrink-0 select-none">
+                     <button
+                       type="button"
+                       onClick={() => setIsPlatformDropdownOpen(!isPlatformDropdownOpen)}
+                       className="flex items-center justify-between bg-white/5 border border-white/5 rounded-xl px-4 py-3.5 text-xs font-bold text-white min-w-[130px] cursor-pointer hover:bg-white/10 transition-all active:scale-[0.98]"
                      >
-                        <option value="instagram" className="bg-slate-900 text-white">Instagram</option>
-                        <option value="tiktok" className="bg-slate-900 text-white">TikTok</option>
-                        <option value="youtube" className="bg-slate-900 text-white">YouTube</option>
-                     </select>
-                     <div className="absolute right-3 text-slate-400 pointer-events-none">
-                        <ChevronDown className="size-3.5" />
-                     </div>
+                       <span className="capitalize">{platform}</span>
+                       <ChevronDown className={`size-3.5 text-slate-400 transition-transform duration-200 ${isPlatformDropdownOpen ? 'rotate-180' : ''}`} />
+                     </button>
+
+                     {isPlatformDropdownOpen && (
+                       <>
+                         {/* Backdrop to close dropdown on click outside */}
+                         <div 
+                           className="fixed inset-0 z-40" 
+                           onClick={() => setIsPlatformDropdownOpen(false)}
+                         />
+                         {/* Dropdown Options List */}
+                         <div className="absolute left-0 right-0 mt-2 bg-slate-900 border border-white/10 rounded-xl py-1.5 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
+                           {[
+                             { id: "instagram", name: "Instagram" },
+                             { id: "tiktok", name: "TikTok" },
+                             { id: "youtube", name: "YouTube" }
+                           ].map((opt) => (
+                             <button
+                               key={opt.id}
+                               type="button"
+                               onClick={() => {
+                                 setPlatform(opt.id)
+                                 setIsPlatformDropdownOpen(false)
+                               }}
+                               className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors flex items-center justify-between ${
+                                 platform === opt.id 
+                                   ? 'bg-indigo-600 text-white' 
+                                   : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                               }`}
+                             >
+                               {opt.name}
+                             </button>
+                           ))}
+                         </div>
+                       </>
+                     )}
                   </div>
 
                   <div className="flex-1 flex items-center gap-2 px-2">
