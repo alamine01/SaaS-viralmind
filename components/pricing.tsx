@@ -8,15 +8,15 @@ export default function Pricing() {
 
   const plans = [
     {
-      name: "Starter",
+      name: "Gratuit",
       description: "Idéal pour tester la puissance de ViralMind.",
-      price: "0",
+      price: "0 FCFA",
+      period: "/toujours",
       features: [
-        "20 Crédits IA / mois",
-        "3 Comptes Radar surveillés",
-        "Scan Radar : 1 fois / jour",
-        "1 Profil de Style (Voix)",
-        "Accès à la communauté",
+        "5 analyses profondes / mois",
+        "3 scripts IA / jour (Freemium)",
+        "Historique des analyses en cache",
+        "Profils de voix limités",
       ],
       cta: "Commencer gratuitement",
       highlight: false
@@ -24,13 +24,14 @@ export default function Pricing() {
     {
       name: "Pro",
       description: "Le choix des créateurs qui veulent exploser.",
-      price: isAnnual ? "39" : "49",
+      price: isAnnual ? "3 900 FCFA" : "4 900 FCFA",
+      period: "/mois",
       features: [
-        "Scripts & Hooks ILLIMITÉS",
-        "20 Comptes Radar surveillés",
-        "Scan Radar : Toutes les 4h",
-        "5 Profils de Style (Voix)",
-        "Playbooks de succès personnalisés",
+        "25 analyses profondes / mois",
+        "10 scripts IA / jour",
+        "Zéro-Quota Cache illimité",
+        "Playbooks d'analyse IA concurrents",
+        "Espaces par niche configurables",
       ],
       cta: "Passer Pro",
       highlight: true,
@@ -39,15 +40,31 @@ export default function Pricing() {
     {
       name: "Visionary",
       description: "Levier maximum pour dominer votre niche.",
-      price: isAnnual ? "79" : "99",
+      price: isAnnual ? "7 900 FCFA" : "9 900 FCFA",
+      period: "/mois",
       features: [
-        "Tout ce qu'il y a dans Pro, plus :",
-        "250 crédits d'analyse profonde / mois",
-        "Scan Radar : Toutes les heures",
-        "Support WhatsApp prioritaire 24/7",
-        "Accès anticipé aux nouveaux patterns",
+        "80 analyses profondes / mois",
+        "30 scripts IA / jour",
+        "Support prioritaire 24/7",
+        "Accès anticipé aux nouveaux modèles",
+        "Audit de concurrents approfondi",
       ],
       cta: "Devenir Visionary",
+      highlight: false
+    },
+    {
+      name: "Titan",
+      description: "Stratégies et volumes industriels.",
+      price: isAnnual ? "24 900 FCFA" : "29 900 FCFA",
+      period: "/mois",
+      features: [
+        "300 analyses profondes / mois",
+        "Génération de scripts ILLIMITÉE",
+        "Gestion d'équipe (5 invités)",
+        "Accès à l'API de scraping brute",
+        "Liaison Webhooks & Automations",
+      ],
+      cta: "Choisir Titan",
       highlight: false
     }
   ]
@@ -79,14 +96,14 @@ export default function Pricing() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
           {plans.map((plan) => (
             <div 
               key={plan.name} 
               className={`
-                relative p-10 rounded-[40px] border transition-all duration-500 flex flex-col h-full
+                relative p-6 md:p-8 rounded-[40px] border transition-all duration-500 flex flex-col h-full
                 ${plan.highlight 
-                  ? 'bg-[#0f111a] border-indigo-500 scale-105 z-10 shadow-2xl shadow-indigo-500/10' 
+                  ? 'bg-[#0f111a] border-indigo-500 scale-[1.02] lg:scale-105 z-10 shadow-2xl shadow-indigo-500/10' 
                   : 'bg-[#0f111a] border-slate-800 hover:border-slate-700 shadow-xl'}
               `}
             >
@@ -99,12 +116,12 @@ export default function Pricing() {
               <div className="space-y-8 flex-1">
                 <div className="space-y-4">
                   <h3 className="text-3xl font-bold text-white">{plan.name}</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed font-medium">{plan.description}</p>
+                  <p className="text-slate-400 text-xs leading-relaxed font-medium">{plan.description}</p>
                 </div>
                 
                 <div className="flex items-baseline gap-1">
-                  <span className="text-5xl font-black text-white tracking-tighter">${plan.price}</span>
-                  <span className="text-slate-500 font-bold">/mois</span>
+                  <span className="text-3xl md:text-4xl font-black text-white tracking-tighter">{plan.price}</span>
+                  <span className="text-slate-500 font-bold text-xs">{plan.period}</span>
                 </div>
                 
                 <div className="h-px bg-slate-800 w-full" />
