@@ -13,6 +13,48 @@ export async function POST(req: Request) {
 
     const supabase = await createSupabaseServerClient();
 
+    // 0. VÉRIFICATION DU CACHE : charger l'analyse si déjà existante pour économiser les quotas
+    const cleanUrl = url.trim();
+    const { data: existingVideo } = await supabase
+      .from("videos")
+      .select("*")
+      .eq("url", cleanUrl)
+      .maybeSingle();
+
+    if (existingVideo) {
+      // Associer automatiquement la vidéo existante à l'historique de l'utilisateur si nécessaire
+      if (userId) {
+        try {
+          const { data: existingSave } = await supabase
+            .from("saved_items")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("video_id", existingVideo.id)
+            .eq("type", "video")
+            .maybeSingle();
+
+          if (!existingSave) {
+            await supabase
+              .from("saved_items")
+              .insert({
+                user_id: userId,
+                video_id: existingVideo.id,
+                type: "video",
+                collection_name: "General"
+              });
+          }
+        } catch (saveError) {
+          console.error("Failed to automatically associate cached video with user in saved_items:", saveError);
+        }
+      }
+
+      return NextResponse.json({
+        ...existingVideo,
+        video_id: existingVideo.video_id || getUniqueVideoId(cleanUrl),
+        cached: true
+      });
+    }
+
     // 1. SCRAPING : Récupérer les vraies données de la vidéo
     const scrapedData = await scrapeVideoData(url);
     const views = (scrapedData as any).views || 0;
