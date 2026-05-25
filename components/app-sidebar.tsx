@@ -146,31 +146,39 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
            )}
         </div>
         
-        {menuItems.map((item) => {
-          const isActive = pathname === item.url
-          
-          return (
-            <Link 
-              key={item.title}
-              href={item.url}
-              onClick={() => onClose?.()}
-              className={`
-                flex items-center px-4 py-2.5 rounded-xl transition-all duration-200 group
-                ${isActive 
-                  ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' 
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}
-              `}
-            >
-              <item.icon className={`
-                size-5 shrink-0
-                ${isActive ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-600'}
-              `} />
-              <span className={`text-[14px] ml-3.5 tracking-tight ${isActive ? 'font-semibold' : 'font-medium'}`}>
-                {item.title}
-              </span>
-            </Link>
-          )
-        })}
+        {menuItems
+          .filter((item) => {
+            const plan = quotas?.plan?.toLowerCase() || "free"
+            if (item.url === "/voice" || item.url === "/monitoring") {
+              return plan === "visionary" || plan === "titan"
+            }
+            return true
+          })
+          .map((item) => {
+           const isActive = pathname === item.url
+           
+           return (
+             <Link 
+               key={item.title}
+               href={item.url}
+               onClick={() => onClose?.()}
+               className={`
+                 flex items-center px-4 py-2.5 rounded-xl transition-all duration-200 group
+                 ${isActive 
+                   ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' 
+                   : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}
+               `}
+             >
+               <item.icon className={`
+                 size-5 shrink-0
+                 ${isActive ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-600'}
+               `} />
+               <span className={`text-[14px] ml-3.5 tracking-tight ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                 {item.title}
+               </span>
+             </Link>
+           )
+         })}
 
         <div className="pt-8 pb-4">
            <div className="flex items-center justify-between px-3 mb-4">

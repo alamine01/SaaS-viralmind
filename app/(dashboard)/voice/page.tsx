@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
+import Link from "next/link"
 import { 
   UserRound, 
   Plus, 
@@ -19,6 +20,8 @@ export default function VoiceProfilePage() {
   const [loading, setLoading] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [checkingPlan, setCheckingPlan] = useState(true)
+  const [isLocked, setIsLocked] = useState(false)
   
   const [saving, setSaving] = useState(false)
   
@@ -30,6 +33,23 @@ export default function VoiceProfilePage() {
   })
 
   useEffect(() => {
+    const verifyPlan = async () => {
+      try {
+        const res = await fetch("/api/user/quotas")
+        const data = await res.json()
+        if (!data.error) {
+          const plan = data.plan?.toLowerCase() || "free"
+          if (plan === "free" || plan === "pro") {
+            setIsLocked(true)
+          }
+        }
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setCheckingPlan(false)
+      }
+    }
+    verifyPlan()
     fetchProfiles()
   }, [])
 
@@ -118,6 +138,54 @@ export default function VoiceProfilePage() {
       toast.success("Profil supprimé")
       fetchProfiles()
     }
+  if (checkingPlan) {
+    return (
+      <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="size-8 text-indigo-600 animate-spin" />
+        <p className="text-slate-400 font-medium">Chargement de la page...</p>
+      </div>
+    )
+  }
+
+  if (isLocked) {
+    return (
+      <div className="max-w-md mx-auto my-20 p-8 bg-white border border-slate-100 rounded-[32px] shadow-2xl text-center space-y-6 relative overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl -z-10" />
+        
+        <div className="size-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto shadow-sm">
+          <Sparkles className="size-8 animate-pulse text-indigo-500" />
+        </div>
+        
+        <div className="space-y-2">
+          <h2 className="text-2xl font-black text-slate-900">Fonctionnalité Premium</h2>
+          <p className="text-slate-500 font-medium text-xs leading-relaxed">
+            Cette fonctionnalité exclusive nécessite un plan <strong>Visionary</strong> ou <strong>Titan</strong> pour être débloquée.
+          </p>
+        </div>
+
+        <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50 text-[11px] font-semibold text-slate-600 leading-normal text-left space-y-2">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="size-3.5 text-indigo-500 shrink-0" />
+            <span>Profil de voix IA ultra-réaliste</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="size-3.5 text-indigo-500 shrink-0" />
+            <span>Copie automatique du ton et de l'énergie</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="size-3.5 text-indigo-500 shrink-0" />
+            <span>Générations de scripts de marque</span>
+          </div>
+        </div>
+
+        <Link 
+          href="/settings?tab=Abonnement"
+          className="block w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-100"
+        >
+          Débloquer maintenant
+        </Link>
+      </div>
+    )
   }
 
   return (
