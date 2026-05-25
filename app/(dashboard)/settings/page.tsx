@@ -56,6 +56,30 @@ export default function SettingsPage() {
     }
   }, [searchParams])
 
+  // Écouteur de statut de paiement PayTech (success / cancel)
+  useEffect(() => {
+    const paymentStatus = searchParams.get("payment")
+    if (paymentStatus === "success") {
+      toast.success("Félicitations ! Votre paiement a été validé avec succès !", {
+        description: "Votre forfait et vos quotas ont été mis à jour instantanément. Profitez des outils pro !",
+        icon: <Sparkles className="size-5 text-emerald-500 shrink-0 animate-pulse" />,
+        duration: 8000
+      })
+      // Nettoyer les paramètres d'URL de manière transparente
+      window.history.replaceState({}, document.title, window.location.pathname + "?tab=Abonnement")
+      // Re-fetch quotas & profil
+      fetchQuotas()
+      fetchProfile()
+      window.dispatchEvent(new Event("quota-updated"))
+    } else if (paymentStatus === "cancel") {
+      toast.error("Paiement annulé", {
+        description: "La transaction a été annulée. Aucun montant n'a été débité de votre compte.",
+        duration: 5000
+      })
+      window.history.replaceState({}, document.title, window.location.pathname + "?tab=Abonnement")
+    }
+  }, [searchParams])
+
   const fetchProfile = async () => {
     try {
       setLoading(true)
@@ -102,25 +126,47 @@ export default function SettingsPage() {
   const handleUpgrade = async (planName: string) => {
     try {
       setSaving(true)
-      const res = await fetch("/api/user/plan", {
+      const targetPlan = planName.toLowerCase()
+
+      // Si c'est le plan gratuit, on procède directement à la modification gratuite
+      if (targetPlan === "free") {
+        const res = await fetch("/api/user/plan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: targetPlan })
+        })
+        const data = await res.json()
+        if (data.error) throw new Error(data.error)
+        
+        toast.success("Vous êtes repassé au plan Gratuit avec succès.")
+        await fetchQuotas()
+        await fetchProfile()
+        window.dispatchEvent(new Event("quota-updated"))
+        return
+      }
+
+      // Pour les plans payants, on initie la passerelle de paiement PayTech !
+      toast.info("Génération du lien de paiement mobile sécurisé...", {
+        icon: <Loader2 className="size-4 animate-spin text-indigo-500" />,
+        duration: 3000
+      })
+
+      const res = await fetch("/api/user/paytech/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planName })
+        body: JSON.stringify({ plan: targetPlan, isAnnual: false }) // En settings, on prend le mensuel par défaut
       })
+      
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      
-      toast.success(data.message || `Félicitations ! Vous êtes passé au plan ${planName.toUpperCase()} !`, {
-        icon: <Sparkles className="size-5 text-emerald-500 shrink-0 animate-pulse" />,
-        duration: 4000
-      })
-      
-      // Re-fetch quotas and profile to update dashboard and state
-      await fetchQuotas()
-      await fetchProfile()
-      
-      // Notify other components (like sidebar) to update real-time quotas
-      window.dispatchEvent(new Event("quota-updated"))
+
+      if (data.redirectUrl) {
+        toast.success("Redirection vers PayTech (Orange Money, Wave, Cartes)...")
+        // Redirection vers le checkout PayTech
+        window.location.href = data.redirectUrl
+      } else {
+        throw new Error("Lien de redirection PayTech manquant")
+      }
     } catch (error: any) {
       toast.error("Erreur de transaction : " + error.message)
     } finally {
