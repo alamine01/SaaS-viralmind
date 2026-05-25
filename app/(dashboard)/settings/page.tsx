@@ -333,10 +333,13 @@ export default function SettingsPage() {
                         popular: false,
                         upgradeLabel: "Rétrograder",
                         features: [
-                          "5 analyses profondes / mois",
-                          "3 scripts IA / jour (Freemium)",
-                          "Historique des analyses en cache",
-                          "Profils de voix limités",
+                          "5 analyses de concurrents / mois",
+                          "3 scripts IA / jour (Basique)",
+                          "2 transcriptions de vidéos / mois",
+                          "Générateur de Hooks (Basique)",
+                          "❌ Prompteur intelligent",
+                          "❌ Storyboard de scénario",
+                          "❌ Voix IA & Surveillance Radar",
                         ],
                         prefix: null,
                       },
@@ -350,10 +353,12 @@ export default function SettingsPage() {
                         upgradeLabel: "Choisir Pro",
                         features: [
                           "25 analyses profondes / mois",
-                          "10 scripts IA / jour",
-                          "Zéro-Quota Cache illimité",
-                          "Playbooks d'analyse IA concurrents",
-                          "Espaces par niche configurables",
+                          "10 scripts IA / jour (Pro)",
+                          "15 transcriptions de vidéos / mois",
+                          "Générateur de Hooks (Complet)",
+                          "Prompteur intelligent inclus",
+                          "Storyboard de scénario inclus",
+                          "❌ Voix IA & Surveillance Radar",
                         ],
                         prefix: null,
                       },
@@ -367,10 +372,12 @@ export default function SettingsPage() {
                         upgradeLabel: "Devenir Visionary",
                         features: [
                           "80 analyses profondes / mois",
-                          "30 scripts IA / jour",
-                          "Support prioritaire ultra-rapide 24/7",
-                          "Accès anticipé aux nouveaux modèles",
-                          "Audit de concurrents approfondi illimité",
+                          "30 scripts IA / jour (Visionary)",
+                          "50 transcriptions de vidéos / mois",
+                          "Générateur de Hooks (Illimité)",
+                          "Prompteur intelligent illimité",
+                          "Storyboard de scénario illimité",
+                          "Voix IA & Surveillance Radar",
                         ],
                         prefix: "Tout de Pro, plus :",
                       },
@@ -385,9 +392,11 @@ export default function SettingsPage() {
                         features: [
                           "300 analyses profondes / mois",
                           "Génération de scripts ILLIMITÉE",
-                          "Gestion d'équipe complète (5 invités)",
-                          "Accès à l'API de scraping brute",
-                          "Liaison Webhooks & Automations",
+                          "Transcription vidéo ILLIMITÉE",
+                          "Générateur de Hooks (Illimité)",
+                          "Prompteur intelligent illimité",
+                          "Storyboard de scénario illimité",
+                          "Voix IA & Radar illimités",
                         ],
                         prefix: "Tout de Visionary, plus :",
                       },
@@ -444,11 +453,22 @@ export default function SettingsPage() {
                             {plan.prefix && (
                               <li className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{plan.prefix}</li>
                             )}
-                            {plan.features.map((item, i) => (
-                              <li key={i} className={`flex items-start gap-2.5 text-[11px] font-medium ${isDark ? "text-slate-300" : "text-slate-600"}`}>
-                                <CheckCircle2 className="size-3.5 text-indigo-500 shrink-0 mt-0.5" /> {item}
-                              </li>
-                            ))}
+                            {plan.features.map((item, i) => {
+                              const isDisabled = item.startsWith("❌")
+                              const cleanItem = isDisabled ? item.replace("❌", "").trim() : item
+                              return (
+                                <li key={i} className={`flex items-start gap-2.5 text-[11px] font-medium ${isDisabled ? 'opacity-40' : ''} ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                                  {isDisabled ? (
+                                    <X className="size-3.5 text-slate-500 shrink-0 mt-0.5" />
+                                  ) : (
+                                    <CheckCircle2 className="size-3.5 text-indigo-500 shrink-0 mt-0.5" />
+                                  )}
+                                  <span className={isDisabled ? 'text-slate-500 line-through decoration-slate-300' : ''}>
+                                    {cleanItem}
+                                  </span>
+                                </li>
+                              )
+                            })}
                           </ul>
 
                           {isActive ? (

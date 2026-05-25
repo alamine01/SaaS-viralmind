@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { CheckCircle2 } from "lucide-react"
+import { CheckCircle2, X } from "lucide-react"
 
 export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false)
@@ -13,10 +13,13 @@ export default function Pricing() {
       price: "0 FCFA",
       period: "/toujours",
       features: [
-        "5 analyses profondes / mois",
-        "3 scripts IA / jour (Freemium)",
-        "Historique des analyses en cache",
-        "Profils de voix limités",
+        "5 analyses de concurrents / mois",
+        "3 scripts IA / jour (Basique)",
+        "2 transcriptions de vidéos / mois",
+        "Générateur de Hooks (Basique)",
+        "❌ Prompteur intelligent",
+        "❌ Storyboard de scénario",
+        "❌ Voix IA & Surveillance Radar",
       ],
       cta: "Commencer gratuitement",
       highlight: false
@@ -28,10 +31,12 @@ export default function Pricing() {
       period: "/mois",
       features: [
         "25 analyses profondes / mois",
-        "10 scripts IA / jour",
-        "Zéro-Quota Cache illimité",
-        "Playbooks d'analyse IA concurrents",
-        "Espaces par niche configurables",
+        "10 scripts IA / jour (Pro)",
+        "15 transcriptions de vidéos / mois",
+        "Générateur de Hooks (Complet)",
+        "Prompteur intelligent inclus",
+        "Storyboard de scénario inclus",
+        "❌ Voix IA & Surveillance Radar",
       ],
       cta: "Passer Pro",
       highlight: true,
@@ -44,10 +49,12 @@ export default function Pricing() {
       period: "/mois",
       features: [
         "80 analyses profondes / mois",
-        "30 scripts IA / jour",
-        "Support prioritaire 24/7",
-        "Accès anticipé aux nouveaux modèles",
-        "Audit de concurrents approfondi",
+        "30 scripts IA / jour (Visionary)",
+        "50 transcriptions de vidéos / mois",
+        "Générateur de Hooks (Illimité)",
+        "Prompteur intelligent illimité",
+        "Storyboard de scénario illimité",
+        "Voix IA & Surveillance Radar",
       ],
       cta: "Devenir Visionary",
       highlight: false
@@ -60,9 +67,11 @@ export default function Pricing() {
       features: [
         "300 analyses profondes / mois",
         "Génération de scripts ILLIMITÉE",
-        "Gestion d'équipe (5 invités)",
-        "Accès à l'API de scraping brute",
-        "Liaison Webhooks & Automations",
+        "Transcription vidéo ILLIMITÉE",
+        "Générateur de Hooks (Illimité)",
+        "Prompteur intelligent illimité",
+        "Storyboard de scénario illimité",
+        "Voix IA & Radar illimités",
       ],
       cta: "Choisir Titan",
       highlight: false
@@ -96,14 +105,14 @@ export default function Pricing() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-stretch">
           {plans.map((plan) => (
             <div 
               key={plan.name} 
               className={`
                 relative p-6 md:p-8 rounded-[40px] border transition-all duration-500 flex flex-col h-full
                 ${plan.highlight 
-                  ? 'bg-[#0f111a] border-indigo-500 scale-[1.02] lg:scale-105 z-10 shadow-2xl shadow-indigo-500/10' 
+                  ? 'bg-[#0f111a] border-indigo-500 scale-[1.02] xl:scale-105 z-10 shadow-2xl shadow-indigo-500/10' 
                   : 'bg-[#0f111a] border-slate-800 hover:border-slate-700 shadow-xl'}
               `}
             >
@@ -119,20 +128,39 @@ export default function Pricing() {
                   <p className="text-slate-400 text-xs leading-relaxed font-medium">{plan.description}</p>
                 </div>
                 
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl md:text-4xl font-black text-white tracking-tighter">{plan.price}</span>
-                  <span className="text-slate-500 font-bold text-xs">{plan.period}</span>
+                <div className="space-y-1">
+                  <div className="flex items-baseline gap-1 flex-wrap">
+                    <span className="text-2xl md:text-3xl font-black text-white tracking-tighter whitespace-nowrap">{plan.price}</span>
+                    <span className="text-slate-500 font-bold text-xs">{plan.period}</span>
+                  </div>
+                  {isAnnual && plan.price !== "0 FCFA" && (
+                    <p className="text-[10px] text-indigo-400 font-bold tracking-tight animate-in fade-in duration-300">
+                      {plan.name === "Pro" && "Facturé 46 800 FCFA / an"}
+                      {plan.name === "Visionary" && "Facturé 94 800 FCFA / an"}
+                      {plan.name === "Titan" && "Facturé 298 800 FCFA / an"}
+                    </p>
+                  )}
                 </div>
                 
                 <div className="h-px bg-slate-800 w-full" />
                 
                 <ul className="space-y-5">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-4">
-                      <CheckCircle2 className="size-5 text-indigo-500 shrink-0 mt-0.5" />
-                      <span className="text-sm text-slate-300 font-medium leading-relaxed">{feature}</span>
-                    </li>
-                  ))}
+                  {plan.features.map((feature, i) => {
+                    const isDisabled = feature.startsWith("❌")
+                    const cleanFeature = isDisabled ? feature.replace("❌", "").trim() : feature
+                    return (
+                      <li key={i} className={`flex items-start gap-4 ${isDisabled ? 'opacity-40' : ''}`}>
+                        {isDisabled ? (
+                          <X className="size-5 text-slate-500 shrink-0 mt-0.5" />
+                        ) : (
+                          <CheckCircle2 className="size-5 text-indigo-500 shrink-0 mt-0.5" />
+                        )}
+                        <span className={`text-sm font-medium leading-relaxed ${isDisabled ? 'text-slate-500 line-through decoration-slate-800' : 'text-slate-300'}`}>
+                          {cleanFeature}
+                        </span>
+                      </li>
+                    )
+                  })}
                 </ul>
               </div>
 
