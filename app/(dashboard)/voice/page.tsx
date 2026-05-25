@@ -138,6 +138,8 @@ export default function VoiceProfilePage() {
       toast.success("Profil supprimé")
       fetchProfiles()
     }
+  }
+
   if (checkingPlan) {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
