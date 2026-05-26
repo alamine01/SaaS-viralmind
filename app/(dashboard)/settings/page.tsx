@@ -128,6 +128,22 @@ export default function SettingsPage() {
       setSaving(true)
       const targetPlan = planName.toLowerCase()
 
+      // TEMPORAIRE : On procède directement à la modification gratuite pour tous les plans !
+      const res = await fetch("/api/user/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: targetPlan })
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      
+      toast.success(`Votre forfait a été mis à jour vers le plan ${planName} avec succès !`)
+      await fetchQuotas()
+      await fetchProfile()
+      window.dispatchEvent(new Event("quota-updated"))
+      return
+
+      /* // Désactivé temporairement pour le test gratuit
       // Si c'est le plan gratuit, on procède directement à la modification gratuite
       if (targetPlan === "free") {
         const res = await fetch("/api/user/plan", {
@@ -167,6 +183,7 @@ export default function SettingsPage() {
       } else {
         throw new Error("Lien de redirection PayTech manquant")
       }
+      */
     } catch (error: any) {
       toast.error("Erreur de transaction : " + error.message)
     } finally {
