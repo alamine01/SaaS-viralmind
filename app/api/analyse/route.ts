@@ -6,7 +6,7 @@ import { checkAndIncrementAnalysisQuota } from "@/lib/quota-service";
 
 export async function POST(req: Request) {
   try {
-    const { url, followers, userId } = await req.json();
+    const { url, followers, userId, collectionName, forceRefresh } = await req.json();
 
     if (!url) {
       return NextResponse.json({ error: "URL manquante" }, { status: 400 });
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       .eq("url", cleanUrl)
       .maybeSingle();
 
-    if (existingVideo) {
+    if (existingVideo && !forceRefresh) {
       // Associer automatiquement la vidéo existante à l'historique de l'utilisateur si nécessaire
       const targetUserId = userId || (await supabase.auth.getUser()).data.user?.id;
       if (targetUserId) {
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
                 user_id: targetUserId,
                 video_id: existingVideo.id,
                 type: "video",
-                collection_name: "General"
+                collection_name: collectionName || "General"
               });
           }
         } catch (saveError) {
@@ -115,7 +115,14 @@ export async function POST(req: Request) {
           url: (scrapedData as any).finalUrl || url, // Sauvegarder l'URL finale (longue)
           thumbnail: scrapedData.thumbnail || "",
           niche: scrapedData.niche || "Général",
-          transcript: analysis.full_transcript || scrapedData.transcript,
+          transcript: (() => {
+            const original = analysis.original_transcript || scrapedData.transcript;
+            const french = analysis.full_transcript;
+            if (original && french && original.trim().toLowerCase() !== french.trim().toLowerCase() && original.trim().toLowerCase() !== "analyse visuelle." && original.trim().toLowerCase() !== "transcription non disponible.") {
+              return JSON.stringify({ original: original.trim(), french: french.trim() });
+            }
+            return french || original || "";
+          })(),
           hook: analysis.hook,
           structure: structure,
           viral_score: analysis.viral_score,
@@ -154,7 +161,7 @@ export async function POST(req: Request) {
               user_id: userId,
               video_id: data.id,
               type: "video",
-              collection_name: "General"
+              collection_name: collectionName || "General"
             });
         }
       } catch (saveError) {

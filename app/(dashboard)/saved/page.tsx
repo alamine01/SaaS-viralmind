@@ -19,15 +19,92 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
+import { useWorkspace } from "@/lib/workspace-context"
 
 export default function LibraryPage() {
-  const searchParams = useSearchParams()
-  const activeCollection = searchParams.get("collection") || "General"
+  const router = useRouter()
+  const { activeCollection } = useWorkspace()
   const [activeTab, setActiveTab] = useState<'video' | 'script'>('video')
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [counts, setCounts] = useState({ video: 0, script: 0 })
+  const [resolvingScriptId, setResolvingScriptId] = useState<string | null>(null)
+
+  const handleOpenScript = async (item: any) => {
+    setResolvingScriptId(item.id)
+    try {
+      let explanation = ""
+      let firstAudio = ""
+      try {
+        const parsed = JSON.parse(item.content)
+        explanation = parsed.explanation || ""
+        const scriptArray = Array.isArray(parsed) ? parsed : parsed.script
+        if (Array.isArray(scriptArray) && scriptArray.length > 0) {
+          firstAudio = scriptArray[0].audio || ""
+        }
+      } catch (e) {
+        console.error("Parsing script content error:", e)
+      }
+
+      let discussionId = null
+      let messageId = null
+
+      if (explanation) {
+        // Try 1: Exact match on content (which contains explanation)
+        const { data: matches1 } = await supabase
+          .from("script_messages")
+          .select("discussion_id, id")
+          .eq("content", explanation)
+          .limit(1)
+
+        if (matches1 && matches1.length > 0) {
+          discussionId = matches1[0].discussion_id
+          messageId = matches1[0].id
+        } else {
+          // Try 2: JSONB match on explanation
+          const { data: matches2 } = await supabase
+            .from("script_messages")
+            .select("discussion_id, id")
+            .eq("script_data->>explanation", explanation)
+            .limit(1)
+
+          if (matches2 && matches2.length > 0) {
+            discussionId = matches2[0].discussion_id
+            messageId = matches2[0].id
+          }
+        }
+      }
+
+      // Try 3: Fallback match on first audio line inside the text
+      if (!discussionId && firstAudio) {
+        const { data: matches3 } = await supabase
+          .from("script_messages")
+          .select("discussion_id, id")
+          .like("script_data::text", `%${firstAudio.slice(0, 40)}%`)
+          .limit(1)
+
+        if (matches3 && matches3.length > 0) {
+          discussionId = matches3[0].discussion_id
+          messageId = matches3[0].id
+        }
+      }
+
+      if (discussionId) {
+        toast.success("Script trouvé, chargement du Studio...")
+        router.push(`/scripts?id=${discussionId}${messageId ? `&messageId=${messageId}` : ""}`)
+      } else {
+        toast.error("Impossible de retrouver la discussion d'origine. Ouverture du studio...")
+        router.push("/scripts")
+      }
+    } catch (err) {
+      console.error("Failed to resolve script discussion:", err)
+      toast.error("Une erreur est survenue lors de l'ouverture du script.")
+      router.push("/scripts")
+    } finally {
+      setResolvingScriptId(null)
+    }
+  }
 
   const fetchData = async () => {
     setLoading(true)
@@ -171,21 +248,23 @@ export default function LibraryPage() {
                           </span>
                        </div>
                        {item.type === 'video' ? (
-                          <a 
-                            href={item.video?.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
+                          <Link 
+                            href={`/analyse?id=${item.video?.id}`}
                             className="text-indigo-600 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:underline flex items-center gap-1 decoration-2 underline-offset-4"
                           >
-                             Ouvrir <ExternalLink className="size-2 md:size-2.5" />
-                          </a>
-                       ) : (
-                          <Link 
-                            href={`/scripts?id=${item.id}`}
-                            className="text-indigo-600 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:underline decoration-2 underline-offset-4"
-                          >
-                             Ouvrir
+                             Ouvrir <ArrowRight className="size-2 md:size-2.5" />
                           </Link>
+                       ) : (
+                          <button 
+                            disabled={resolvingScriptId !== null}
+                            onClick={() => handleOpenScript(item)}
+                            className="text-indigo-600 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:underline decoration-2 underline-offset-4 flex items-center gap-1.5 disabled:opacity-50"
+                          >
+                             {resolvingScriptId === item.id ? (
+                               <Loader2 className="size-2.5 md:size-3 animate-spin" />
+                             ) : null}
+                             Ouvrir
+                          </button>
                        )}
                     </div>
                  </div>

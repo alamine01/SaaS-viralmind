@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS workspaces (
     name TEXT NOT NULL,
     slug TEXT NOT NULL,
     color TEXT DEFAULT 'bg-indigo-400',
+    voice_profile_id UUID REFERENCES voice_profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 

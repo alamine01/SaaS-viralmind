@@ -39,9 +39,15 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  let user = null;
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      const { data } = await supabase.auth.getUser();
+      user = data?.user || null;
+    }
+  } catch (e) {
+    console.error("Middleware Supabase Session Error:", e);
+  }
 
   // Routes protégées
   const protectedRoutes = ['/dashboard', '/analyse', '/scripts', '/saved', '/settings']

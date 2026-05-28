@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 import Link from "next/link"
+import { useWorkspace } from "@/lib/workspace-context"
 import { 
   UserRound, 
   Plus, 
@@ -14,8 +15,8 @@ import {
   FileText,
   Save
 } from "lucide-react"
-
 export default function VoiceProfilePage() {
+  const { activeWorkspace, refreshWorkspaces } = useWorkspace()
   const [profiles, setProfiles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
@@ -53,20 +54,95 @@ export default function VoiceProfilePage() {
     fetchProfiles()
   }, [])
 
+  // Sync editor with active workspace voice profile (or active global profile for General)
+  useEffect(() => {
+    const loadActiveWorkspaceVoice = async () => {
+      setLoading(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setLoading(false)
+        return
+      }
+
+      if (activeWorkspace?.id && activeWorkspace.voice_profile_id) {
+        // Workspace en base avec profil de voix lié
+        const { data, error } = await supabase
+          .from("voice_profiles")
+          .select("*")
+          .eq("id", activeWorkspace.voice_profile_id)
+          .maybeSingle();
+
+        if (data && !error) {
+          setNewProfile({
+            name: data.name || "",
+            content: data.content || "",
+            niche: data.niche || ""
+          });
+          setProfiles([data]);
+        } else {
+          setProfiles([]);
+        }
+      } else if (!activeWorkspace?.id) {
+        // Workspace virtuel (Général) -> charger le profil global actif
+        const { data, error } = await supabase
+          .from("voice_profiles")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (data && !error) {
+          setNewProfile({
+            name: data.name || "",
+            content: data.content || "",
+            niche: data.niche || ""
+          });
+          setProfiles([data]);
+        } else {
+          setNewProfile({ name: "", content: "", niche: "" });
+          setProfiles([]);
+        }
+      } else {
+        setNewProfile({ name: "", content: "", niche: "" });
+        setProfiles([]);
+      }
+      setLoading(false)
+    };
+    loadActiveWorkspaceVoice();
+  }, [activeWorkspace?.id, activeWorkspace?.voice_profile_id]);
+
   const fetchProfiles = async () => {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { data, error } = await supabase
-      .from("voice_profiles")
-      .select("*")
-      .order("created_at", { ascending: false })
+    if (activeWorkspace?.id && activeWorkspace.voice_profile_id) {
+      const { data, error } = await supabase
+        .from("voice_profiles")
+        .select("*")
+        .eq("id", activeWorkspace.voice_profile_id)
+        .maybeSingle();
 
-    if (error) {
-      toast.error("Erreur de chargement")
+      if (!error && data) {
+        setProfiles([data]);
+      } else {
+        setProfiles([]);
+      }
+    } else if (!activeWorkspace?.id) {
+      const { data, error } = await supabase
+        .from("voice_profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (!error && data) {
+        setProfiles([data]);
+      } else {
+        setProfiles([]);
+      }
     } else {
-      setProfiles(data || [])
+      setProfiles([]);
     }
     setLoading(false)
   }
@@ -81,23 +157,101 @@ export default function VoiceProfilePage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { error } = await supabase
-      .from("voice_profiles")
-      .insert({
-        user_id: user.id,
-        name: newProfile.name,
-        content: newProfile.content,
-        niche: newProfile.niche,
-        is_active: profiles.length === 0 // Le premier devient actif par défaut
-      })
+    if (activeWorkspace?.id && activeWorkspace.voice_profile_id) {
+      // 1. UPDATE pour workspace DB existant
+      const { error } = await supabase
+        .from("voice_profiles")
+        .update({
+          name: newProfile.name,
+          content: newProfile.content,
+          niche: newProfile.niche
+        })
+        .eq("id", activeWorkspace.voice_profile_id);
 
-    if (error) {
-      toast.error("Erreur de création")
+      if (error) {
+        toast.error("Erreur de mise à jour du style de voix.")
+      } else {
+        toast.success("Style de voix mis à jour avec succès !")
+        fetchProfiles()
+      }
+    } else if (!activeWorkspace?.id) {
+      // 2. Gestion pour Général (sans ID de workspace)
+      // Chercher si un profil actif existe déjà
+      const { data: activeProfile } = await supabase
+        .from("voice_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (activeProfile) {
+        // UPDATE du profil actif de Général
+        const { error } = await supabase
+          .from("voice_profiles")
+          .update({
+            name: newProfile.name,
+            content: newProfile.content,
+            niche: newProfile.niche
+          })
+          .eq("id", activeProfile.id);
+
+        if (error) {
+          toast.error("Erreur de mise à jour du style de voix.")
+        } else {
+          toast.success("Style de voix Général mis à jour !")
+          fetchProfiles()
+        }
+      } else {
+        // INSERT d'un nouveau profil pour Général
+        const { data: insertedData, error } = await supabase
+          .from("voice_profiles")
+          .insert({
+            user_id: user.id,
+            name: newProfile.name,
+            content: newProfile.content,
+            niche: newProfile.niche,
+            is_active: true // Devient l'actif par défaut de Général
+          })
+          .select()
+          .single();
+
+        if (error) {
+          toast.error("Erreur de création")
+        } else {
+          toast.success("Profil créé pour Général !")
+          fetchProfiles()
+        }
+      }
     } else {
-      toast.success("Profil créé !")
-      setNewProfile({ name: "", content: "", niche: "" })
-      setIsCreating(false)
-      fetchProfiles()
+      // 3. INSERT pour un workspace DB qui n'a pas encore de profil lié
+      const { data: insertedData, error } = await supabase
+        .from("voice_profiles")
+        .insert({
+          user_id: user.id,
+          name: newProfile.name,
+          content: newProfile.content,
+          niche: newProfile.niche,
+          is_active: false
+        })
+        .select()
+        .single();
+
+      if (error) {
+        toast.error("Erreur de création")
+      } else {
+        toast.success("Profil créé !")
+        
+        if (insertedData) {
+          await supabase
+            .from("workspaces")
+            .update({ voice_profile_id: insertedData.id })
+            .eq("id", activeWorkspace.id);
+          
+          refreshWorkspaces()
+        }
+        
+        fetchProfiles()
+      }
     }
     setSaving(false)
   }
@@ -106,23 +260,37 @@ export default function VoiceProfilePage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // On désactive tout
-    await supabase
-      .from("voice_profiles")
-      .update({ is_active: false })
-      .eq("user_id", user.id)
+    if (activeWorkspace && activeWorkspace.id) {
+      // Activer pour le workspace actuel
+      const { error } = await supabase
+        .from("workspaces")
+        .update({ voice_profile_id: id })
+        .eq("id", activeWorkspace.id)
 
-    // On active celui-là
-    const { error } = await supabase
-      .from("voice_profiles")
-      .update({ is_active: true })
-      .eq("id", id)
-
-    if (error) {
-      toast.error("Erreur d'activation")
+      if (error) {
+        toast.error("Erreur d'activation pour ce projet.")
+      } else {
+        toast.success("Style de voix activé pour ce projet !")
+        refreshWorkspaces()
+      }
     } else {
-      toast.success("Style de voix activé")
-      fetchProfiles()
+      // Comportement par défaut (global ou General)
+      await supabase
+        .from("voice_profiles")
+        .update({ is_active: false })
+        .eq("user_id", user.id)
+
+      const { error } = await supabase
+        .from("voice_profiles")
+        .update({ is_active: true })
+        .eq("id", id)
+
+      if (error) {
+        toast.error("Erreur d'activation")
+      } else {
+        toast.success("Style de voix activé de manière globale.")
+        fetchProfiles()
+      }
     }
   }
 
@@ -136,6 +304,15 @@ export default function VoiceProfilePage() {
       toast.error("Erreur de suppression")
     } else {
       toast.success("Profil supprimé")
+      
+      if (activeWorkspace?.id && activeWorkspace.voice_profile_id === id) {
+        await supabase
+          .from("workspaces")
+          .update({ voice_profile_id: null })
+          .eq("id", activeWorkspace.id);
+        refreshWorkspaces();
+      }
+      
       fetchProfiles()
     }
   }
@@ -190,6 +367,10 @@ export default function VoiceProfilePage() {
     )
   }
 
+  const hasLinkedVoice = activeWorkspace?.id 
+    ? !!activeWorkspace.voice_profile_id 
+    : profiles.length > 0;
+
   return (
     <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in duration-700">
       
@@ -214,8 +395,12 @@ export default function VoiceProfilePage() {
                   <Plus className="size-5" />
                </div>
                <div>
-                  <p className="text-sm font-bold text-slate-900">Nouveau Style</p>
-                  <p className="text-[11px] text-slate-400 font-medium uppercase tracking-tighter">Entraîner l'IA</p>
+                  <p className="text-sm font-bold text-slate-900">
+                     {hasLinkedVoice ? "Édition du Style" : "Nouveau Style"}
+                  </p>
+                  <p className="text-[11px] text-slate-400 font-medium uppercase tracking-tighter">
+                     {hasLinkedVoice ? "Ajuster la voix du projet" : "Entraîner l'IA"}
+                  </p>
                </div>
             </div>
 
@@ -254,7 +439,7 @@ export default function VoiceProfilePage() {
                  disabled={saving}
                  className="w-full bg-slate-900 hover:bg-black text-white rounded-xl py-4 font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                >
-                 {saving ? <Loader2 className="size-4 animate-spin" /> : <><Save className="size-4" /> Sauvegarder & Analyser</>}
+                 {saving ? <Loader2 className="size-4 animate-spin" /> : <><Save className="size-4" /> {hasLinkedVoice ? "Mettre à jour le Style" : "Sauvegarder & Analyser"}</>}
                </button>
             </div>
           </div>
@@ -263,8 +448,10 @@ export default function VoiceProfilePage() {
         {/* Right: List Profiles */}
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between px-2">
-             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Vos Styles Enregistrés</p>
-             <p className="text-[11px] font-semibold text-slate-300 uppercase">{profiles.length} Profils</p>
+             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Style de Voix du Workspace</p>
+             <p className="text-[11px] font-semibold text-indigo-500 uppercase">
+                {profiles.length ? "1 Voix Liée" : "Aucune Voix"}
+             </p>
           </div>
 
           {loading && profiles.length === 0 ? (
@@ -277,48 +464,53 @@ export default function VoiceProfilePage() {
                   <UserRound className="size-8" />
                </div>
                <div className="space-y-1">
-                  <p className="text-sm font-bold text-slate-600">Aucun profil de voix</p>
-                  <p className="text-xs text-slate-400 font-medium">Commencez par en créer un à gauche pour personnaliser vos scripts.</p>
+                  <p className="text-sm font-bold text-slate-600">Aucun profil de voix lié</p>
+                  <p className="text-xs text-slate-400 font-medium">Configurez ou entraînez une voix sur la gauche pour l'associer automatiquement à ce projet.</p>
                </div>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 gap-4">
-               {profiles.map((profile) => (
-                 <div 
-                   key={profile.id}
-                   className={`
-                     p-6 rounded-[28px] border transition-all duration-300 relative group
-                     ${profile.is_active 
-                       ? 'bg-white border-indigo-600 shadow-xl shadow-indigo-100/50' 
-                       : 'bg-white border-slate-100 hover:border-slate-200 shadow-sm'}
-                   `}
-                 >
-                    {profile.is_active && (
-                      <div className="absolute top-4 right-4 text-indigo-600">
-                        <CheckCircle2 className="size-5 fill-indigo-50" />
-                      </div>
-                    )}
-                    
-                    <div className="space-y-4">
-                       <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                             <h4 className="font-bold text-slate-900">{profile.name}</h4>
-                          </div>
-                          {profile.niche && (
-                            <p className="text-[10px] text-indigo-500 font-black uppercase tracking-widest mt-0.5">{profile.niche}</p>
-                          )}
-                          <div className="flex items-center gap-2">
-                             <FileText className="size-3 text-slate-400" />
-                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
-                               {profile.content.length} Caractères d'entraînement
-                             </p>
-                          </div>
-                       </div>
+               {profiles.map((profile) => {
+                 const isProfileActive = activeWorkspace && activeWorkspace.id
+                   ? activeWorkspace.voice_profile_id === profile.id
+                   : profile.is_active;
 
-                       <div className="pt-2 flex items-center gap-2">
-                          {!profile.is_active && (
-                            <button 
-                              onClick={() => handleActivate(profile.id)}
+                 return (
+                  <div 
+                    key={profile.id}
+                    className={`
+                      p-6 rounded-[28px] border transition-all duration-300 relative group
+                      ${isProfileActive 
+                        ? 'bg-white border-indigo-600 shadow-xl shadow-indigo-100/50' 
+                        : 'bg-white border-slate-100 hover:border-slate-200 shadow-sm'}
+                    `}
+                  >
+                     {isProfileActive && (
+                       <div className="absolute top-4 right-4 text-indigo-600">
+                         <CheckCircle2 className="size-5 fill-indigo-50" />
+                       </div>
+                     )}
+                     
+                     <div className="space-y-4">
+                        <div className="space-y-1">
+                           <div className="flex items-center gap-2">
+                              <h4 className="font-bold text-slate-900">{profile.name}</h4>
+                           </div>
+                           {profile.niche && (
+                             <p className="text-[10px] text-indigo-500 font-black uppercase tracking-widest mt-0.5">{profile.niche}</p>
+                           )}
+                           <div className="flex items-center gap-2">
+                              <FileText className="size-3 text-slate-400" />
+                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+                                {profile.content.length} Caractères d'entraînement
+                              </p>
+                           </div>
+                        </div>
+
+                        <div className="pt-2 flex items-center gap-2">
+                           {!isProfileActive && (
+                             <button 
+                               onClick={() => handleActivate(profile.id)}
                               className="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-600 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all"
                             >
                               Activer
@@ -331,9 +523,10 @@ export default function VoiceProfilePage() {
                              <Trash2 className="size-4" />
                           </button>
                        </div>
-                    </div>
-                 </div>
-               ))}
+                     </div>
+                  </div>
+                 )
+               })}
             </div>
           )}
         </div>

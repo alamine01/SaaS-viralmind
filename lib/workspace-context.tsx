@@ -9,12 +9,14 @@ type Workspace = {
   name: string
   slug: string
   color: string
+  voice_profile_id?: string
 }
 
 type WorkspaceContextType = {
   activeCollection: string
   setActiveCollection: (name: string) => void
   workspaces: Workspace[]
+  activeWorkspace?: Workspace
   refreshWorkspaces: () => Promise<void>
   isCreateModalOpen: boolean
   setCreateModalOpen: (open: boolean) => void
@@ -33,6 +35,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [isCreateModalOpen, setCreateModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const searchParams = useSearchParams()
+
+  const activeWorkspace = workspaces.find(w => w.slug === activeCollection || w.name === activeCollection)
 
   const loadWorkspaces = async () => {
     try {
@@ -92,6 +96,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       activeCollection, 
       setActiveCollection, 
       workspaces, 
+      activeWorkspace,
       refreshWorkspaces: loadWorkspaces,
       isCreateModalOpen,
       setCreateModalOpen,

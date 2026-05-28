@@ -22,7 +22,7 @@ import Link from "next/link"
 import { useWorkspace } from "@/lib/workspace-context"
 
 export default function DashboardPage() {
-  const { activeCollection, setCreateModalOpen } = useWorkspace()
+  const { activeCollection, workspaces, setCreateModalOpen } = useWorkspace()
   const [user, setUser] = useState<any>(null)
   const [stats, setStats] = useState({
     totalAnalyses: 0,
@@ -30,6 +30,7 @@ export default function DashboardPage() {
     avgScore: 0,
     recentActivity: [] as any[]
   })
+  const [workspaceCounts, setWorkspaceCounts] = useState<{ [key: string]: number }>({})
   const [loading, setLoading] = useState(true)
 
   // QUOTAS STATE
@@ -43,18 +44,94 @@ export default function DashboardPage() {
         setUser(user)
 
         if (user) {
-          const { count: analysesCount } = await supabase.from("videos").select("*", { count: "exact", head: true })
-          const { count: scriptsCount } = await supabase.from("saved_items").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("type", "script")
-          const { data: scores } = await supabase.from("videos").select("viral_score")
-          const avg = scores && scores.length > 0 ? Math.round(scores.reduce((acc, curr) => acc + (curr.viral_score || 0), 0) / scores.length) : 0
-          const { data: recentVideos } = await supabase.from("videos").select("*").order("created_at", { ascending: false }).limit(3)
+          // 1. Vidéos scannées pour la collection active
+          let vQuery = supabase
+            .from("saved_items")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", user.id)
+            .eq("type", "video")
+
+          if (activeCollection && activeCollection !== "General") {
+            vQuery = vQuery.eq("collection_name", activeCollection)
+          } else if (activeCollection === "General") {
+            vQuery = vQuery.or("collection_name.eq.General,collection_name.is.null")
+          }
+          const { count: vCount } = await vQuery
+
+          // 2. Scripts rédigés pour la collection active
+          let sQuery = supabase
+            .from("saved_items")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", user.id)
+            .eq("type", "script")
+
+          if (activeCollection && activeCollection !== "General") {
+            sQuery = sQuery.eq("collection_name", activeCollection)
+          } else if (activeCollection === "General") {
+            sQuery = sQuery.or("collection_name.eq.General,collection_name.is.null")
+          }
+          const { count: sCount } = await sQuery
+
+          // 3. Score moyen des vidéos de la collection active
+          let scoreQuery = supabase
+            .from("saved_items")
+            .select("video:video_id(viral_score)")
+            .eq("user_id", user.id)
+            .eq("type", "video")
+
+          if (activeCollection && activeCollection !== "General") {
+            scoreQuery = scoreQuery.eq("collection_name", activeCollection)
+          } else if (activeCollection === "General") {
+            scoreQuery = scoreQuery.or("collection_name.eq.General,collection_name.is.null")
+          }
+          const { data: savedVids } = await scoreQuery
+          
+          let avg = 0
+          if (savedVids && savedVids.length > 0) {
+            const scores = savedVids
+              .map((item: any) => item.video?.viral_score)
+              .filter((score: any) => score !== undefined && score !== null)
+            avg = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0
+          }
+
+          // 4. Activité récente (vidéos de la collection active)
+          let recentQuery = supabase
+            .from("saved_items")
+            .select("*, video:video_id(*)")
+            .eq("user_id", user.id)
+            .eq("type", "video")
+            .order("created_at", { ascending: false })
+            .limit(3)
+
+          if (activeCollection && activeCollection !== "General") {
+            recentQuery = recentQuery.eq("collection_name", activeCollection)
+          } else if (activeCollection === "General") {
+            recentQuery = recentQuery.or("collection_name.eq.General,collection_name.is.null")
+          }
+          const { data: recentSaves } = await recentQuery
+          const recentVideos = recentSaves ? recentSaves.map((item: any) => item.video).filter(Boolean) : []
 
           setStats({
-            totalAnalyses: analysesCount || 0,
-            totalScripts: scriptsCount || 0,
+            totalAnalyses: vCount || 0,
+            totalScripts: sCount || 0,
             avgScore: avg,
-            recentActivity: recentVideos || []
+            recentActivity: recentVideos
           })
+
+          // 5. Agrégation des compteurs globaux par collection pour la liste à droite
+          const { data: allItems } = await supabase
+            .from("saved_items")
+            .select("collection_name")
+            .eq("user_id", user.id)
+
+          const countsMap: { [key: string]: number } = {}
+          if (allItems) {
+            allItems.forEach((item: any) => {
+              const col = item.collection_name || "General"
+              countsMap[col] = (countsMap[col] || 0) + 1
+            })
+          }
+          setWorkspaceCounts(countsMap)
 
           // Charger les quotas en temps réel
           try {
@@ -74,7 +151,7 @@ export default function DashboardPage() {
       }
     }
     fetchData()
-  }, [])
+  }, [activeCollection])
 
   if (loading) {
     return (
@@ -115,31 +192,61 @@ export default function DashboardPage() {
            </div>
         </div>
       </div>
-
-      {/* 2. CORE ENGINES (Quick Actions) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      
+      {/* 2. STATS & KEY METRICS (Top Dashboard Information) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
          {[
-           { title: "Radar Outlier", desc: "Détectez les opportunités virales", url: "/analyse", icon: Target, color: "from-indigo-600 to-indigo-800", shadow: "shadow-indigo-500/20" },
-           { title: "Script Studio", desc: "Générez avec votre Tone of Voice", url: "/scripts", icon: FileText, color: "from-indigo-600 to-indigo-800", shadow: "shadow-indigo-500/20" },
-           { title: "Viral Playbooks", desc: "Formules de rétention prêtes", url: "/playbooks", icon: Sparkles, color: "from-indigo-600 to-indigo-800", shadow: "shadow-indigo-500/20" }
-         ].map((action, i) => (
-           <Link key={i} href={action.url}>
-              <div className="group relative h-48 rounded-[32px] overflow-hidden p-8 flex flex-col justify-between transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10 shadow-xl shadow-indigo-900/10">
-                 <div className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-90 group-hover:opacity-100 transition-opacity`} />
-                 <div className="relative z-10 size-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/20">
-                    <action.icon className="size-6" />
+           { 
+             title: "Vidéos Analysées", 
+             value: stats.totalAnalyses, 
+             desc: "Scans Outliers dans ce profil", 
+             icon: Video, 
+             color: "text-indigo-600 bg-white border-indigo-200/50",
+             cardBg: "bg-gradient-to-br from-indigo-50/80 to-indigo-100/20 border-indigo-100/80 shadow-indigo-100/10" 
+           },
+           { 
+             title: "Scripts Rédigés", 
+             value: stats.totalScripts, 
+             desc: "Scripts générés par l'IA", 
+             icon: FileText, 
+             color: "text-purple-600 bg-white border-purple-200/50", 
+             cardBg: "bg-gradient-to-br from-purple-50/80 to-purple-100/20 border-purple-100/80 shadow-purple-100/10" 
+           },
+           { 
+             title: "Score Viral Moyen", 
+             value: `${stats.avgScore}%`, 
+             desc: "Performance estimée", 
+             icon: Zap, 
+             color: "text-amber-500 bg-white border-amber-200/50", 
+             cardBg: "bg-gradient-to-br from-amber-50/80 to-amber-100/20 border-amber-100/80 shadow-amber-100/10" 
+           },
+           { 
+             title: "Scans Radar Restants", 
+             value: quotas ? (quotas.limits.monthlyAnalysis - quotas.monthly_analysis_count) : 0, 
+             desc: `Sur un quota de ${quotas?.limits.monthlyAnalysis || 0}`, 
+             icon: Target, 
+             color: "text-emerald-600 bg-white border-emerald-200/50", 
+             cardBg: "bg-gradient-to-br from-emerald-50/80 to-emerald-100/20 border-emerald-100/80 shadow-emerald-100/10" 
+           }
+         ].map((kpi, i) => (
+           <Card key={i} className={`border shadow-[0_8px_30px_rgb(0,0,0,0.02)] rounded-3xl overflow-hidden hover:shadow-lg transition-all duration-300 ${kpi.cardBg}`}>
+              <CardContent className="p-5 md:p-6 flex items-center justify-between">
+                 <div className="space-y-1.5">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{kpi.title}</p>
+                    <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight leading-none">{kpi.value}</h3>
+                    <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 leading-none">{kpi.desc}</p>
                  </div>
-                 <div className="relative z-10 text-white space-y-1">
-                    <h3 className="text-xl font-black tracking-tight">{action.title}</h3>
-                    <p className="text-white/70 text-xs font-medium">{action.desc}</p>
+                 <div className={`size-10 md:size-12 rounded-2xl border flex items-center justify-center shrink-0 shadow-sm ${kpi.color}`}>
+                    <kpi.icon className="size-5 md:size-6" />
                  </div>
-                 <div className="absolute -bottom-4 -right-4 size-32 bg-white/10 rounded-full blur-2xl group-hover:scale-125 transition-transform" />
-              </div>
-           </Link>
+              </CardContent>
+           </Card>
          ))}
       </div>
 
-      {/* 3. PERFORMANCE & ACTIVITY */}
+
+
+      {/* 4. PERFORMANCE & ACTIVITY */}
       <div className="grid lg:grid-cols-12 gap-10">
          
          {/* Left Column: Recent Scans */}
@@ -178,38 +285,6 @@ export default function DashboardPage() {
 
          {/* Right Column: Workspaces & Tips */}
          <div className="lg:col-span-4 space-y-8">
-            <div className="bg-slate-900 rounded-[40px] p-8 text-white space-y-8 relative overflow-hidden">
-               <div className="absolute top-[-20%] right-[-20%] size-40 bg-indigo-600/30 blur-3xl rounded-full" />
-               <div className="space-y-2 relative z-10">
-                  <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">Active Workspaces</h4>
-                  <div className="space-y-4 pt-4">
-                     {[
-                       { name: "Général", count: stats.totalScripts, color: "bg-emerald-400", slug: "General" },
-                       { name: "Projet Alpha", count: 0, color: "bg-indigo-400", slug: "Projet Alpha" }
-                     ].map((ws) => {
-                       const isActive = activeCollection === ws.slug;
-                       return (
-                         <Link key={ws.name} href={`/saved?collection=${ws.slug}`}>
-                           <div className={`flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer ${isActive ? 'bg-white text-slate-900 border-indigo-400 shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-white border-white/5 hover:bg-white/10'}`}>
-                              <div className="flex items-center gap-3">
-                                 <div className={`size-2 rounded-full ${ws.color}`} />
-                                 <span className="text-sm font-bold">{ws.name}</span>
-                                 {isActive && <span className="text-[7px] font-black uppercase px-1.5 py-0.5 bg-indigo-600 text-white rounded ml-2">Actif</span>}
-                              </div>
-                              <span className={`text-[10px] font-black ${isActive ? 'text-slate-400' : 'opacity-40'}`}>{ws.count} items</span>
-                           </div>
-                         </Link>
-                       )
-                     })}
-                  </div>
-               </div>
-                <button 
-                  onClick={() => setCreateModalOpen(true)}
-                  className="w-full py-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
-                >
-                   Gérer les projets
-                </button>
-            </div>
 
             {quotas && (
                <div className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-md shadow-slate-100/50 space-y-4">
@@ -264,9 +339,8 @@ export default function DashboardPage() {
                   "Utilisez le Radar Outlier sur des vidéos de moins de 100k vues pour trouver des pépites de rétention inexploitées."
                </p>
             </Card>
-         </div>
-
-      </div>
+          </div>
+       </div>
     </div>
   )
 }

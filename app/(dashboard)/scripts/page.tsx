@@ -1,54 +1,162 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { AuthForm } from "@/components/auth-form"
 import { Card, CardContent } from "@/components/ui/card"
 import { 
   Plus, 
   Copy, 
-  Share2, 
   Sparkles, 
   Wand2, 
   Layout, 
-  Clock, 
-  History,
-  ChevronDown,
-  Zap,
-  Mic2,
+  ChevronRight, 
+  Zap, 
   Video,
   ArrowRight,
-  Download,
-  Play,
   Loader2,
-  TrendingUp,
-  Target,
+  Trash2,
+  Edit3,
   X,
-  Calendar
+  History,
+  MessageSquare,
+  Check,
+  Send,
+  Play,
+  Mic,
+  Square
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useWorkspace } from "@/lib/workspace-context"
 
 export default function ScriptsPage() {
-  const { activeCollection, workspaces } = useWorkspace()
-  const [targetCollection, setTargetCollection] = useState(activeCollection)
-  const [concept, setConcept] = useState("")
-
-  useEffect(() => {
-    setTargetCollection(activeCollection)
-  }, [activeCollection])
-  const [niche, setNiche] = useState("Dynamique & Viral (TikTok style)")
+  const { activeCollection } = useWorkspace()
+  const searchParams = useSearchParams()
+  const initialLoadRef = useRef(true)
+  
+  // App States
+  const [discussions, setDiscussions] = useState<any[]>([])
+  const [activeDiscussionId, setActiveDiscussionId] = useState<string | null>(null)
+  const [messages, setMessages] = useState<any[]>([])
+  const [inputMessage, setInputMessage] = useState("")
+  
+  // Custom script controls for the active chat
+  const [niche, setNiche] = useState("Dynamique & Viral (Style TikTok)")
   const [duration, setDuration] = useState("60")
-  const [loading, setLoading] = useState(false)
-  const [scriptData, setScriptData] = useState<{score: number, explanation: string, script: any[]} | null>(null)
-  const [showHistory, setShowHistory] = useState(false)
+  
+  // Loading & UI States
+  const [loadingDiscussions, setLoadingDiscussions] = useState(true)
+  const [loadingChat, setLoadingChat] = useState(false)
+  const [submittingMessage, setSubmittingMessage] = useState(false)
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [renameTitle, setRenameTitle] = useState("")
+  const [user, setUser] = useState<any>(null)
+  const [quotas, setQuotas] = useState<any>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [openModal, setOpenModal] = useState<"full" | "tech" | null>(null)
-  const [historyItems, setHistoryItems] = useState<any[]>([])
-  const [user, setUser] = useState<any>(null)
+  const [modalBlocks, setModalBlocks] = useState<any[]>([])
+  const [showHistory, setShowHistory] = useState(false)
+  
+  const chatEndRef = useRef<HTMLDivElement>(null)
 
-  // SCRIPT GENERATION QUOTA STATE
-  const [quotas, setQuotas] = useState<any>(null)
+  // Voice recording states & refs
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingTime, setRecordingTime] = useState(0)
+  const [transcribing, setTranscribing] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+  const recordingIntervalRef = useRef<any>(null)
+
+  useEffect(() => {
+    return () => {
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current)
+      }
+    }
+  }, [])
+
+  const startRecording = async () => {
+    if (typeof window === "undefined" || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+      toast.error("Votre navigateur ou connexion HTTP non-sécurisée ne supporte pas l'enregistrement audio. Utilisez HTTPS ou localhost.")
+      return
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      audioChunksRef.current = []
+      
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" })
+      mediaRecorderRef.current = mediaRecorder
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data)
+        }
+      }
+      
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" })
+        handleTranscribeAudio(audioBlob)
+        stream.getTracks().forEach(track => track.stop())
+      }
+      
+      mediaRecorder.start()
+      setIsRecording(true)
+      setRecordingTime(0)
+      
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1)
+      }, 1000)
+      
+      toast.info("Enregistrement vocal démarré...")
+    } catch (err) {
+      console.error("Microphone access error:", err)
+      toast.error("Impossible d'accéder au microphone. Veuillez autoriser l'accès.")
+    }
+  }
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current)
+      }
+    }
+  }
+
+  const formatTime = (secs: number) => {
+    const mins = Math.floor(secs / 60)
+    const remainingSecs = secs % 60
+    return `${mins}:${remainingSecs < 10 ? '0' : ''}${remainingSecs}`
+  }
+
+  const handleTranscribeAudio = async (blob: Blob) => {
+    setTranscribing(true)
+    const formData = new FormData()
+    formData.append("audio", blob, "recording.webm")
+    
+    try {
+      const res = await fetch("/api/scripts/transcribe", {
+        method: "POST",
+        body: formData
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      
+      if (data.text && data.text.trim()) {
+        setInputMessage(prev => prev ? `${prev} ${data.text}` : data.text)
+        toast.success("Voix transcrite avec succès !")
+      } else {
+        toast.warning("Aucune voix détectée ou l'audio est trop court.")
+      }
+    } catch (err: any) {
+      toast.error("Erreur de transcription : " + err.message)
+    } finally {
+      setTranscribing(false)
+    }
+  }
 
   const fetchQuotas = async () => {
     try {
@@ -62,401 +170,759 @@ export default function ScriptsPage() {
     }
   }
 
+  // Load user
   useEffect(() => {
-    if (user) {
-      fetchQuotas()
-    }
-  }, [user])
-
-  useEffect(() => {
-    // Get initial user
     supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-    });
+      setUser(data.user)
+    })
 
-    // Check for Remix data
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const scriptId = urlParams.get("id");
-      if (scriptId) {
-        supabase.from("saved_items").select("*").eq("id", scriptId).single()
-          .then(({ data }) => {
-            if (data) {
-              try {
-                const content = JSON.parse(data.content);
-                setScriptData(Array.isArray(content) ? { score: 90, explanation: "", script: content } : content);
-                toast.success("Script chargé depuis la bibliothèque !");
-              } catch(e) {}
-            }
-          })
-      }
-      
-      if (urlParams.get("remix") === "true") {
-        const remixData = localStorage.getItem("remix_data");
-        if (remixData) {
-          try {
-            const { structure, hook, niche: remixNiche } = JSON.parse(remixData);
-            setConcept(`Remixer cette structure virale :\nHook: ${hook}\nStructure: ${JSON.stringify(structure)}`);
-            if (remixNiche) setNiche(remixNiche);
-            toast.success("Structure Outlier chargée !");
-            localStorage.removeItem("remix_data");
-          } catch (e) {}
-        }
-      }
-    }
-
-    // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-    });
+      setUser(session?.user ?? null)
+    })
 
-    return () => subscription.unsubscribe();
+    return () => subscription.unsubscribe()
   }, [])
 
+  // Fetch discussions when workspace or user changes
   useEffect(() => {
-    if (showHistory) {
-      fetchHistory()
-    }
-  }, [showHistory, user])
-
-  const fetchHistory = async () => {
-    if (!user) return;
-    const { data, error } = await supabase
-      .from("saved_items")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("type", "script")
-      .order("created_at", { ascending: false })
-    
-    if (data) {
-      setHistoryItems(data);
-    }
-  }
-
-  const handleGenerate = async () => {
-    if (!concept) return
-    setLoading(true)
-    setScriptData(null)
-    
-    try {
-      const res = await fetch("/api/generate-script", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          concept, 
-          niche, 
-          tone: niche, 
-          duration,
-          userId: user?.id 
-        })
-      })
-      const data = await res.json()
-      if (data.error) throw new Error(data.error)
-      setScriptData(data)
+    if (user) {
+      fetchDiscussions()
       fetchQuotas()
-      window.dispatchEvent(new Event("quota-updated"))
-      
-      // Save to history on client side (using user session)
-      if (user) {
-        const { error: saveError } = await supabase
-          .from("saved_items")
-          .insert([
-            {
-              user_id: user.id,
-              content: JSON.stringify(data),
-              type: "script",
-              collection_name: targetCollection // Utilisation du workspace cible choisi
-            }
-          ])
+    }
+  }, [user, activeCollection])
+
+  // Trigger remix automatic prompt sending
+  useEffect(() => {
+    const triggerRemix = async () => {
+      const isRemix = searchParams.get("remix") === "true"
+      if (!isRemix || !user) return
+
+      const remixRaw = localStorage.getItem("remix_data")
+      if (!remixRaw) return
+
+      try {
+        const remixData = JSON.parse(remixRaw)
+        localStorage.removeItem("remix_data") // Eviter de reboucler
+
+        // 1. Créer une nouvelle discussion pour le remix
+        const title = `Remix - ${new Date().toLocaleDateString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+        const res = await fetch("/api/scripts/discussions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, collection: activeCollection })
+        })
+        const discData = await res.json()
+        if (discData.error) throw new Error(discData.error)
+
+        // 2. Mettre à jour les discussions locales et sélectionner la nouvelle
+        setDiscussions(prev => [discData, ...prev])
+        setActiveDiscussionId(discData.id)
+
+        // 3. Préparer le message de remix
+        const structureText = typeof remixData.structure === 'object' 
+          ? JSON.stringify(remixData.structure) 
+          : remixData.structure;
         
-        if (!saveError) {
-          fetchHistory();
+        const prompt = `Je souhaite remixer une vidéo virale à succès. Peux-tu me proposer un script unique en reprenant sa psychologie de rétention ?
+
+Voici les détails de la vidéo d'origine :
+- Accroche : "${remixData.hook || 'N/A'}"
+- Structure psychologique : "${structureText || 'N/A'}"
+- Niche : "${remixData.niche || 'N/A'}"
+
+Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'humanisation et anti-plagiat (sans copier-coller).`;
+
+        // 4. Lancer l'IA sur cette nouvelle discussion
+        setLoadingChat(true)
+        setMessages([])
+        
+        setTimeout(() => {
+          handleSendMessage(prompt, discData.id)
+        }, 400)
+
+      } catch (err: any) {
+        console.error("Remix failed:", err)
+        toast.error("Impossible de charger le remix.")
+      }
+    }
+
+    triggerRemix()
+  }, [searchParams, user, activeCollection])
+
+  // Scroll to bottom of chat or target message when messages change
+  useEffect(() => {
+    const messageIdParam = searchParams.get("messageId")
+    if (messageIdParam && messages.length > 0) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`msg-${messageIdParam}`)
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" })
+          // Premium halo visual cue highlight
+          el.classList.add("ring-4", "ring-indigo-500/20", "scale-[1.01]")
+          setTimeout(() => {
+            el.classList.remove("ring-4", "ring-indigo-500/20", "scale-[1.01]")
+          }, 3000)
+        } else {
+          chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
+        }
+      }, 400)
+      return () => clearTimeout(timer)
+    } else {
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    }
+  }, [messages, searchParams])
+
+  const fetchDiscussions = async () => {
+    setLoadingDiscussions(true)
+    try {
+      const res = await fetch(`/api/scripts/discussions?collection=${activeCollection}`)
+      const data = await res.json()
+      if (!data.error) {
+        setDiscussions(data)
+        
+        const idParam = searchParams.get("id")
+        const targetId = (initialLoadRef.current && idParam) ? idParam : activeDiscussionId
+        initialLoadRef.current = false // initial load completed
+        
+        if (targetId) {
+          handleSelectDiscussion(targetId)
+        } else if (data.length > 0) {
+          handleSelectDiscussion(data[0].id)
+        } else {
+          setActiveDiscussionId(null)
+          setMessages([])
         }
       }
-    } catch (error: any) {
-      toast.error("Erreur : " + error.message)
+    } catch (e) {
+      console.error("Error fetching discussions:", e)
     } finally {
-      setLoading(false)
+      setLoadingDiscussions(false)
     }
   }
 
-  const displayBlocks = scriptData?.script || []
-  const viralScore = scriptData?.score || 0
-  const explanation = scriptData?.explanation || ""
+  const handleSelectDiscussion = async (id: string) => {
+    setActiveDiscussionId(id)
+    setLoadingChat(true)
+    setMessages([])
+    try {
+      const res = await fetch(`/api/scripts/discussions?id=${id}`)
+      const data = await res.json()
+      if (!data.error) {
+        setMessages(data.messages || [])
+      }
+    } catch (e) {
+      toast.error("Impossible de charger la discussion.")
+    } finally {
+      setLoadingChat(false)
+    }
+  }
+
+  const handleCreateDiscussion = async () => {
+    if (!user) {
+      setShowAuthModal(true)
+      return
+    }
+    try {
+      const res = await fetch("/api/scripts/discussions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Nouveau Script", collection: activeCollection })
+      })
+      const data = await res.json()
+      if (!data.error) {
+        toast.success("Discussion créée !")
+        setDiscussions(prev => [data, ...prev])
+        handleSelectDiscussion(data.id)
+      }
+    } catch (e) {
+      toast.error("Erreur lors du lancement de la discussion.")
+    }
+  }
+
+  const handleDeleteDiscussion = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      const res = await fetch(`/api/scripts/discussions?id=${id}`, { method: "DELETE" })
+      const data = await res.json()
+      if (!data.error) {
+        toast.success("Discussion supprimée.")
+        setDiscussions(prev => prev.filter(d => d.id !== id))
+        if (activeDiscussionId === id) {
+          setActiveDiscussionId(null)
+          setMessages([])
+        }
+      }
+    } catch (e) {
+      toast.error("Erreur de suppression.")
+    }
+  }
+
+  const handleStartRename = (id: string, title: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setRenamingId(id)
+    setRenameTitle(title)
+  }
+
+  const handleSaveRename = async (id: string, e?: React.SyntheticEvent) => {
+    if (e) e.stopPropagation()
+    if (!renameTitle.trim()) return
+    try {
+      const res = await fetch("/api/scripts/discussions", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, title: renameTitle.trim() })
+      })
+      const data = await res.json()
+      if (!data.error) {
+        setDiscussions(prev => prev.map(d => d.id === id ? data : d))
+        setRenamingId(null)
+        toast.success("Discussion renommée !")
+      }
+    } catch (e) {
+      toast.error("Erreur de renommage.")
+    }
+  }
+
+  const handleSendMessage = async (conceptOverride?: string, discussionIdOverride?: string) => {
+    const textToSend = conceptOverride || inputMessage;
+    const targetDiscussionId = discussionIdOverride || activeDiscussionId;
+    if (!textToSend.trim() || !targetDiscussionId) return;
+
+    if (!user) {
+      setShowAuthModal(true)
+      return
+    }
+
+    setSubmittingMessage(true)
+    setInputMessage("")
+    
+    // Add user message locally for instant UI update
+    const tempUserMsg = { id: Date.now().toString(), role: "user", content: textToSend }
+    setMessages(prev => [...prev, tempUserMsg])
+
+    try {
+      const res = await fetch("/api/scripts/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          discussionId: targetDiscussionId,
+          message: textToSend,
+          niche,
+          tone: niche,
+          duration
+        })
+      })
+      
+      const data = await res.json()
+      if (res.status === 403 && data.quotaExceeded) {
+        toast.error(data.error)
+        return
+      }
+
+      if (data.error) throw new Error(data.error)
+
+      // Add assistant response
+      setMessages(prev => [...prev.filter(m => m.id !== tempUserMsg.id), tempUserMsg, data])
+      
+      // Auto-rename discussion if it was default
+      const activeDisc = discussions.find(d => d.id === targetDiscussionId)
+      if (activeDisc && activeDisc.title === "Nouveau Script") {
+        const shortenedTitle = textToSend.slice(0, 24) + (textToSend.length > 24 ? "..." : "")
+        // Silent rename
+        fetch("/api/scripts/discussions", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: targetDiscussionId, title: shortenedTitle })
+        }).then(r => r.json()).then(renamedData => {
+          if (!renamedData.error) {
+            setDiscussions(prev => prev.map(d => d.id === targetDiscussionId ? renamedData : d))
+          }
+        })
+      }
+
+      fetchQuotas()
+      window.dispatchEvent(new Event("quota-updated"))
+    } catch (e: any) {
+      toast.error("Erreur : " + e.message)
+    } finally {
+      setSubmittingMessage(false)
+    }
+  }
 
   return (
-    <div className="space-y-8 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 max-w-7xl mx-auto">
+    <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-10 max-w-7xl mx-auto px-4 md:px-0">
       
       {/* 1. Header Premium */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative px-4 md:px-0">
-        <div className="space-y-2">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative">
+        <div className="space-y-1">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-bold uppercase tracking-widest border border-indigo-100">
             <Wand2 className="size-3" />
-            Studio Créatif
+            Studio Conversationnel
           </div>
-          <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-none">
             Script <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Studio</span>
           </h1>
-          <p className="text-slate-500 font-medium max-w-lg text-sm md:text-base">
-            Créez des scripts optimisés pour la rétention et la viralité en quelques secondes.
+          <p className="text-slate-500 font-medium text-xs md:text-sm">
+            Discutez avec notre IA pour concevoir et affiner votre vidéo virale parfaite.
           </p>
         </div>
         
-        <div className="flex items-center gap-2 md:gap-3">
-            <div 
-              onClick={() => !user && setShowAuthModal(true)}
-              className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest flex items-center gap-2 cursor-pointer transition-all hover:scale-105 ${user ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}
-            >
-              <div className={`size-1.5 rounded-full animate-pulse ${user ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-              {user ? 'Connecté' : 'Se Connecter'}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className="lg:hidden px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center gap-2 transition-all"
+            title={showHistory ? "Masquer l'historique" : "Voir l'historique"}
+          >
+            <History className="size-4 text-slate-500" />
+            <span>{showHistory ? "Masquer" : "Historique"}</span>
+          </button>
+
+          <div 
+            onClick={() => !user && setShowAuthModal(true)}
+            className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest flex items-center gap-2 cursor-pointer transition-all hover:scale-105 ${user ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}
+          >
+            <div className={`size-1.5 rounded-full animate-pulse ${user ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+            {user ? 'Studio Connecté' : 'Se Connecter'}
+          </div>
+          
+          {quotas && (
+            <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-xl border border-slate-200/50 text-xs font-bold text-slate-600 shadow-xs">
+              <span>Quota : {quotas.daily_script_count} / {quotas.limits.dailyScripts === 9999 ? "∞" : quotas.limits.dailyScripts}</span>
+              <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                  style={{ width: `${Math.min(100, (quotas.daily_script_count / (quotas.limits.dailyScripts || 1)) * 100)}%` }}
+                />
+              </div>
             </div>
-           <button 
-             onClick={() => setShowHistory(true)}
-             className="flex-1 md:flex-none h-11 md:h-12 px-4 md:px-6 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-[10px] md:text-[11px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm"
-           >
-              <History className="size-4" /> Historique
-           </button>
-           <button 
-             onClick={() => {setScriptData(null); setConcept("")}} 
-             className="flex-1 md:flex-none h-11 md:h-12 px-4 md:px-6 bg-slate-900 text-white rounded-xl font-bold text-[10px] md:text-[11px] uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2"
-           >
-              <Plus className="size-4" /> Nouveau
-           </button>
+          )}
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-12 gap-6 md:gap-10 px-4 md:px-0">
-        {/* 2. Configuration Panel (Left) */}
-        <aside className="col-span-12 lg:col-span-5 space-y-6 md:space-y-8">
-          <div className="lg:sticky lg:top-8 space-y-6 md:space-y-8">
-            <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl bg-white/80 backdrop-blur-xl overflow-hidden border border-white/20">
-              <CardContent className="p-6 md:p-8 space-y-6 md:space-y-8">
-                <div className="space-y-4">
-                  <label className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                     <Target className="size-3.5 text-indigo-500" /> Sujet de la vidéo
-                  </label>
-                  <textarea 
-                    value={concept}
-                    onChange={(e) => setConcept(e.target.value)}
-                    placeholder="De quoi parle votre vidéo ?" 
-                    className="w-full bg-slate-50/50 border border-slate-100 rounded-xl px-4 md:px-6 py-4 md:py-5 text-[14px] md:text-[15px] font-medium text-slate-900 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 outline-hidden transition-all min-h-[140px] md:min-h-[180px] resize-none leading-relaxed shadow-inner"
-                  />
-                </div>
-                
-                <div className="space-y-4">
-                  <label className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Format & Angle</label>
-                  <div className="relative">
-                    <select 
-                      value={niche}
-                      onChange={(e) => setNiche(e.target.value)}
-                      className="w-full bg-slate-50/50 border border-slate-100 rounded-xl px-4 md:px-6 py-4 md:py-5 text-xs md:text-sm font-bold focus:bg-white focus:border-indigo-500/30 outline-hidden cursor-pointer text-slate-700 shadow-inner min-h-[60px]"
-                    >
-                      <option>Dynamique & Viral (Style TikTok)</option>
-                      <option>Expert & Éducatif (Style LinkedIn)</option>
-                      <option>Motivation & Inspiration</option>
-                      <option>Storytelling Mystérieux</option>
-                      <option>Humoristique & Décalé</option>
-                      <option>UGC & Témoignage</option>
-                      <option>Publicité Directe (Ventes)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <label className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Durée de la vidéo</label>
-                  <div className="relative">
-                    <select 
-                      value={duration}
-                      onChange={(e) => setDuration(e.target.value)}
-                      className="w-full bg-slate-50/50 border border-slate-100 rounded-xl px-4 md:px-6 py-4 md:py-5 text-xs md:text-sm font-bold focus:bg-white focus:border-indigo-500/30 outline-hidden cursor-pointer text-slate-700 shadow-inner min-h-[60px]"
-                    >
-                      <option value="30">30 Secondes (~75 mots)</option>
-                      <option value="60">60 Secondes (~150 mots)</option>
-                      <option value="90">90 Secondes (~225 mots)</option>
-                      <option value="120">2 Minutes (~300 mots)</option>
-                      <option value="180">3 Minutes (~450 mots)</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <label className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Enregistrer dans le projet</label>
-                  <div className="relative">
-                    <select 
-                      value={targetCollection}
-                      onChange={(e) => setTargetCollection(e.target.value)}
-                      className="w-full bg-slate-50/50 border border-slate-100 rounded-xl px-4 md:px-6 py-4 md:py-5 text-xs md:text-sm font-bold focus:bg-white focus:border-indigo-500/30 outline-hidden cursor-pointer text-slate-900 shadow-inner min-h-[60px]"
-                    >
-                      {workspaces.map(ws => (
-                        <option key={ws.slug} value={ws.slug}>{ws.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {quotas && (
-                  <div className="space-y-2.5 p-4 bg-slate-50/50 rounded-2xl border border-slate-100/50 shadow-inner">
-                    <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-slate-500">
-                      <span>Quota de Scripts ({quotas.plan})</span>
-                      <span>
-                        {quotas.daily_script_count} / {quotas.limits.dailyScripts === 9999 ? "∞" : quotas.limits.dailyScripts}
-                      </span>
-                    </div>
-                    <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500 rounded-full"
-                        style={{ width: `${Math.min(100, (quotas.daily_script_count / (quotas.limits.dailyScripts || 1)) * 100)}%` }}
-                      />
-                    </div>
-                    <p className="text-[9px] text-slate-400 font-semibold italic flex items-center justify-between">
-                      {quotas.limits.dailyScripts === 9999
-                        ? "🎉 Générations illimitées actives !"
-                        : quotas.limits.dailyScripts - quotas.daily_script_count > 0 
-                          ? `Il vous reste ${quotas.limits.dailyScripts - quotas.daily_script_count} génération(s) aujourd'hui.`
-                          : "⚠️ Limite journalière atteinte !"}
-                      {quotas.limits.dailyScripts !== 9999 && quotas.limits.dailyScripts - quotas.daily_script_count === 0 && (
-                        <a href="/settings?tab=Abonnement" className="underline text-indigo-600 hover:text-indigo-700 font-bold ml-1">
-                          Mettre à niveau mon plan
-                        </a>
-                      )}
-                    </p>
-                  </div>
-                )}
-
+      {/* 2. Main Workspace Layout */}
+      <div className="grid lg:grid-cols-12 gap-6 min-h-[600px]">
+        
+        {/* Left Side: Discussions History Panel */}
+        <aside className={`col-span-12 lg:col-span-3 bg-white border border-slate-100 rounded-3xl p-5 flex flex-col justify-between shadow-sm min-h-[300px] lg:min-h-auto ${showHistory ? 'block' : 'hidden lg:flex'}`}>
+          <div className="space-y-4 flex-1 flex flex-col min-w-0">
+             <div className="flex items-center justify-between">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Discussions récentes</p>
                 <button 
-                  onClick={handleGenerate}
-                  disabled={loading || !concept}
-                  className="w-full h-14 md:h-16 bg-gradient-to-r from-indigo-600 to-purple-600 disabled:from-slate-200 disabled:to-slate-300 text-white rounded-xl font-black text-[10px] md:text-xs uppercase tracking-[0.15em] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xl shadow-indigo-200 flex items-center justify-center gap-3 group relative overflow-hidden"
+                  onClick={handleCreateDiscussion}
+                  className="p-1 text-indigo-600 hover:text-indigo-800 transition-colors"
+                  title="Nouvelle discussion"
                 >
-                  {loading ? (
-                    <><Loader2 className="size-5 animate-spin" /> IA en action...</>
-                  ) : (
-                    <>
-                      <Sparkles className="size-5 group-hover:rotate-12 transition-transform" />
-                      Générer le Script
-                    </>
-                  )}
+                  <Plus className="size-4" />
                 </button>
-              </CardContent>
-            </Card>
-
-            {/* Viral Score Widget */}
-            <div className="relative group overflow-hidden rounded-2xl bg-slate-900 p-6 md:p-8 shadow-2xl transition-all duration-500 hover:scale-[1.02]">
-              <div className="absolute top-0 right-0 p-6 md:p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                <TrendingUp className="size-16 md:size-24 text-white" />
-              </div>
-              <div className="relative z-10 space-y-4 md:space-y-6">
-                <div className="flex items-center justify-between">
-                   <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Score Viral Estimé</span>
-                   <div className="px-2 py-0.5 bg-white/10 rounded-full text-[9px] font-bold text-white uppercase tracking-tighter">
-                     TOP 1%
-                   </div>
-                </div>
-                <div className="flex items-baseline gap-2">
-                   <span className="text-4xl md:text-6xl font-black text-white">{viralScore > 0 ? viralScore : "--"}</span>
-                   <span className="text-lg md:text-xl font-bold text-indigo-400">/100</span>
-                </div>
-                <div className="space-y-2">
-                   <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                     <div 
-                       className="h-full bg-gradient-to-r from-indigo-400 to-purple-400 transition-all duration-1000 ease-out"
-                       style={{ width: `${viralScore}%` }}
-                     />
-                   </div>
-                   <p className="text-[10px] md:text-[11px] font-medium text-slate-400 leading-relaxed italic">
-                     {viralScore > 0 
-                       ? explanation 
-                       : "Générez un script pour voir l'estimation."}
-                   </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        {/* 3. Results Section (Right) */}
-        <main className="col-span-12 lg:col-span-7 space-y-8">
-          {loading ? (
-             <div className="h-full min-h-[500px] flex flex-col items-center justify-center text-center p-12 bg-white rounded-[32px] border border-slate-100 space-y-8 animate-pulse">
-                <div className="relative">
-                  <div className="size-24 rounded-3xl bg-indigo-50 flex items-center justify-center text-indigo-600 animate-bounce">
-                    <Sparkles className="size-12" />
-                  </div>
-                  <div className="absolute -top-2 -right-2 size-6 bg-purple-500 rounded-full border-4 border-white animate-ping" />
-                </div>
-                <div className="space-y-3">
-                   <h3 className="text-2xl font-black text-slate-900 tracking-tight">Analyse & Génération...</h3>
-                   <p className="text-slate-400 max-w-sm mx-auto font-medium leading-relaxed">
-                     L'IA configure les hooks et optimise la rétention pour votre niche {niche}.
-                   </p>
-                </div>
-                <div className="w-64 h-2 bg-slate-100 rounded-full overflow-hidden mx-auto">
-                   <div className="h-full bg-indigo-600 w-1/2 animate-[shimmer_2s_infinite] origin-left" />
-                </div>
              </div>
-          ) : !scriptData ? (
-            <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-slate-100 rounded-[32px] space-y-6">
-               <div className="size-24 rounded-3xl bg-slate-50 flex items-center justify-center text-slate-200">
-                  <Sparkles className="size-12" />
-               </div>
-               <div className="space-y-2">
-                  <h3 className="text-xl font-bold text-slate-900">Prêt à créer du viral ?</h3>
-                  <p className="text-slate-400 max-w-sm mx-auto font-medium">
-                    Remplissez le formulaire à gauche pour générer votre premier script optimisé par l'IA.
-                  </p>
-               </div>
-            </div>
-          ) : (
-            <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
-               <Card className="border-none shadow-2xl shadow-indigo-500/5 rounded-3xl bg-white overflow-hidden border border-white/50">
-                  <CardContent className="p-8 md:p-12 space-y-10">
-                     <div className="flex items-center gap-4">
-                        <div className="size-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-xl shadow-indigo-100">
-                           <Zap className="size-6" />
+
+             <div className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[350px] lg:max-h-[500px]">
+                {loadingDiscussions ? (
+                  <div className="flex justify-center py-10">
+                     <Loader2 className="size-6 text-indigo-600 animate-spin" />
+                  </div>
+                ) : discussions.length === 0 ? (
+                  <div className="text-center py-12 px-4 border border-dashed border-slate-100 rounded-2xl bg-slate-50/50">
+                     <p className="text-xs font-bold text-slate-400 italic">Aucune discussion lancée</p>
+                     <button onClick={handleCreateDiscussion} className="mt-3 text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline flex items-center gap-1 mx-auto">
+                        <Plus className="size-3" /> Nouveau script
+                     </button>
+                  </div>
+                ) : (
+                  discussions.map((d) => {
+                    const isActive = activeDiscussionId === d.id
+                    return (
+                      <div 
+                        key={d.id}
+                        onClick={() => handleSelectDiscussion(d.id)}
+                        onDoubleClick={(e) => handleStartRename(d.id, d.title, e as any)}
+                        className={`group p-3 rounded-2xl flex items-center justify-between cursor-pointer border transition-all ${
+                          isActive 
+                            ? 'bg-slate-900 border-slate-900 text-white shadow-lg' 
+                            : 'bg-white border-slate-50 hover:bg-slate-50 hover:border-slate-100 text-slate-700'
+                        }`}
+                        title="Double-cliquez pour renommer"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                           <MessageSquare className={`size-4 shrink-0 ${isActive ? 'text-indigo-400' : 'text-slate-400'}`} />
+                           
+                           {renamingId === d.id ? (
+                             <input 
+                               value={renameTitle}
+                               onChange={(e) => setRenameTitle(e.target.value)}
+                               onClick={(e) => e.stopPropagation()}
+                               onKeyDown={(e) => {
+                                 if (e.key === 'Enter') handleSaveRename(d.id, e as any)
+                                 else if (e.key === 'Escape') setRenamingId(null)
+                               }}
+                               autoFocus
+                               className="bg-white text-slate-900 text-xs font-bold border border-slate-300 rounded px-1.5 py-0.5 focus:outline-hidden w-full"
+                             />
+                           ) : (
+                             <span className="text-xs font-bold truncate pr-1">{d.title}</span>
+                           )}
                         </div>
-                        <div>
-                           <h2 className="text-2xl font-black text-slate-900 tracking-tight">Script Généré avec Succès</h2>
-                           <p className="text-slate-400 font-medium text-sm">Votre contenu est prêt à être utilisé.</p>
+
+                        <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                           {renamingId === d.id ? (
+                             <button 
+                               onClick={(e) => handleSaveRename(d.id, e)}
+                               className="p-1 hover:bg-white/10 rounded-md text-emerald-500"
+                             >
+                               <Check className="size-3.5" />
+                             </button>
+                           ) : (
+                             <button 
+                               onClick={(e) => handleStartRename(d.id, d.title, e)}
+                               className={`p-1 hover:bg-white/10 rounded-md transition-colors ${isActive ? 'text-white/40 hover:text-white' : 'text-slate-400 hover:text-slate-800'}`}
+                               title="Renommer (Double-cliquer)"
+                             >
+                               <Edit3 className="size-3.5" />
+                             </button>
+                           )}
+                           
+                           <button 
+                             onClick={(e) => handleDeleteDiscussion(d.id, e)}
+                             className={`p-1 hover:bg-white/10 rounded-md transition-colors ${isActive ? 'text-white/40 hover:text-rose-400' : 'text-slate-400 hover:text-rose-600'}`}
+                             title="Supprimer"
+                           >
+                             <Trash2 className="size-3.5" />
+                           </button>
                         </div>
-                     </div>
-
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                        <button 
-                          id="btn-visualize-v6"
-                          onClick={() => setOpenModal("full")}
-                          className="group relative h-20 md:h-24 bg-slate-900 rounded-2xl overflow-hidden flex items-center justify-center p-4 gap-3 md:gap-5 hover:scale-[1.02] transition-all shadow-xl"
-                        >
-                           <div className="size-10 md:size-12 shrink-0 rounded-xl bg-white/10 flex items-center justify-center text-white group-hover:bg-indigo-500 transition-colors">
-                              <Layout className="size-5 md:size-6" />
-                           </div>
-                           <div className="text-center">
-                              <span className="block text-white font-bold text-xs md:text-sm uppercase tracking-tight">Visualiser</span>
-                           </div>
-                        </button>
-
-                        <button 
-                          id="btn-storyboard-v6"
-                          onClick={() => setOpenModal("tech")}
-                          className="group relative h-20 md:h-24 bg-white border border-slate-100 rounded-2xl overflow-hidden flex items-center justify-center p-4 gap-3 md:gap-5 hover:scale-[1.02] transition-all shadow-lg"
-                        >
-                           <div className="size-10 md:size-12 shrink-0 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-amber-500 group-hover:text-white transition-colors">
-                              <Video className="size-5 md:size-6" />
-                           </div>
-                           <div className="text-center">
-                              <span className="block text-slate-900 font-bold text-xs md:text-sm uppercase tracking-tight">Storyboard</span>
-                           </div>
-                        </button>
-                     </div>
-
-                     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Aperçu du Hook</h4>
-                        <p className="text-lg font-bold text-slate-800 leading-relaxed italic">
-                           "{displayBlocks[0]?.audio}"
-                        </p>
-                     </div>
-                  </CardContent>
-               </Card>
+                      </div>
+                    )
+                  })
+                )}
+             </div>
+          </div>
+          
+          {quotas && (
+            <div className="mt-4 pt-4 border-t border-slate-100 space-y-2 text-[10px] font-semibold text-slate-400 leading-normal">
+               <div className="flex justify-between">
+                  <span>Plan :</span>
+                  <span className="font-extrabold uppercase text-indigo-600">{quotas.plan}</span>
+               </div>
+               <div className="flex justify-between">
+                  <span>Générations du jour :</span>
+                  <span>{quotas.daily_script_count} / {quotas.limits.dailyScripts === 9999 ? "∞" : quotas.limits.dailyScripts}</span>
+               </div>
             </div>
           )}
+        </aside>
+
+        {/* Right Side: Chat Container Panel */}
+        <main className="col-span-12 lg:col-span-9 bg-white border border-slate-100 rounded-3xl overflow-hidden flex flex-col justify-between shadow-sm min-h-[500px]">
+          
+          {/* Header de la discussion active (Sélecteurs de contraintes) */}
+          {activeDiscussionId && (
+            <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-4">
+               <div className="flex items-center gap-2">
+                  <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <p className="text-xs font-bold text-slate-800">Configuration en temps réel :</p>
+               </div>
+               
+               <div className="flex flex-wrap items-center gap-3">
+                  {/* Angle Selector */}
+                  <div className="flex items-center gap-2">
+                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Format</span>
+                     <select 
+                       value={niche}
+                       onChange={(e) => {
+                         setNiche(e.target.value)
+                         toast.success(`Format défini sur : ${e.target.value}`)
+                       }}
+                       className="bg-white border border-slate-200 rounded-lg pl-3 pr-8 py-1.5 text-[11px] font-bold outline-hidden cursor-pointer text-slate-700 shadow-xs focus:border-indigo-500"
+                     >
+                        <option>Dynamique & Viral (Style TikTok)</option>
+                        <option>Expert & Éducatif (Style LinkedIn)</option>
+                        <option>Motivation & Inspiration</option>
+                        <option>Storytelling Mystérieux</option>
+                        <option>Humoristique & Décalé</option>
+                        <option>UGC & Témoignage</option>
+                        <option>Publicité Directe (Ventes)</option>
+                     </select>
+                  </div>
+
+                  {/* Duration Selector */}
+                  <div className="flex items-center gap-2">
+                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Durée</span>
+                     <select 
+                       value={duration}
+                       onChange={(e) => {
+                         setDuration(e.target.value)
+                         const durationMin = parseInt(e.target.value) >= 60 ? `${parseInt(e.target.value) / 60} min` : `${e.target.value}s`;
+                         toast.success(`Durée ajustée sur : ${durationMin}`)
+                       }}
+                       className="bg-white border border-slate-200 rounded-lg pl-3 pr-8 py-1.5 text-[11px] font-bold outline-hidden cursor-pointer text-slate-700 shadow-xs focus:border-indigo-500"
+                     >
+                        <option value="30">30 Secondes</option>
+                        <option value="60">60 Secondes</option>
+                        <option value="90">90 Secondes</option>
+                        <option value="120">2 Minutes</option>
+                        <option value="180">3 Minutes</option>
+                        <option value="300">5 Minutes (YouTube)</option>
+                        <option value="600">10 Minutes (YouTube)</option>
+                        <option value="900">15 Minutes (YouTube)</option>
+                     </select>
+                  </div>
+
+               </div>
+            </div>
+          )}
+
+          {/* Corps de la discussion (Messages) */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 max-h-[480px]">
+             {loadingChat ? (
+                <div className="h-full flex flex-col items-center justify-center gap-3">
+                   <Loader2 className="size-8 text-indigo-500 animate-spin" />
+                   <p className="text-xs text-slate-400 font-bold uppercase tracking-widest animate-pulse">Chargement de la discussion...</p>
+                </div>
+             ) : !activeDiscussionId ? (
+                <div className="h-full flex flex-col items-center justify-center text-center max-w-sm mx-auto space-y-6 py-20">
+                   <div className="size-16 rounded-3xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-inner">
+                      <MessageSquare className="size-8" />
+                   </div>
+                   <div className="space-y-2">
+                      <h3 className="text-lg font-bold text-slate-900">Studio de Discussion Actif</h3>
+                      <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                         Sélectionnez un script ou cliquez sur le bouton "+" dans le volet de gauche pour démarrer un nouvel échange guidé.
+                      </p>
+                   </div>
+                   <button 
+                     onClick={handleCreateDiscussion}
+                     className="px-6 py-3.5 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-2"
+                   >
+                      <Plus className="size-4" /> Nouvelle Discussion
+                   </button>
+                </div>
+             ) : messages.length === 0 ? (
+                // Welcome Assistant (Start Discussion Prompt)
+                <div className="space-y-8 py-4 animate-in fade-in duration-500">
+                   <div className="space-y-3 max-w-lg">
+                      <h2 className="text-2xl font-black text-slate-900 leading-tight">Génération de script guidée</h2>
+                      <p className="text-xs font-medium text-slate-400 leading-relaxed">
+                         Choisissez l'une des suggestions ci-dessous pour lancer l'IA, ou décrivez directement votre idée de vidéo.
+                      </p>
+                   </div>
+
+                   <div className="grid md:grid-cols-2 gap-4">
+                      {[
+                        { title: "Storytelling UGC", desc: "Créer une vidéo où j'explique comment j'ai résolu un problème quotidien...", concept: "Je veux faire un script type UGC expliquant comment mon produit a résolu un problème majeur d'un utilisateur." },
+                        { title: "Hook Éducatif", desc: "Expliquer 3 secrets ou erreurs méconnues de ma niche d'activité...", concept: "Rédige un script expliquant les 3 plus grosses erreurs que les débutants commettent dans ma niche." },
+                        { title: "Contre-courant Viral", desc: "Briser un mythe ou une idée reçue très populaire sur mon marché...", concept: "Je souhaite démonter un mythe ou une fausse croyance très répandue dans mon secteur d'activité." },
+                        { title: "Story / Anecdote", desc: "Raconter une histoire personnelle ou client captivante...", concept: "Raconte l'histoire inspirante de la réussite de l'un de mes clients." }
+                      ].map((item, i) => (
+                        <div 
+                          key={i} 
+                          onClick={() => handleSendMessage(item.concept)}
+                          className="p-5 bg-slate-50/50 hover:bg-slate-900 border border-slate-100 hover:border-slate-900 hover:text-white rounded-2xl transition-all cursor-pointer group shadow-xs active:scale-[0.98] flex flex-col justify-between h-28"
+                        >
+                           <h4 className="text-xs font-black uppercase tracking-widest group-hover:text-indigo-400 text-indigo-600">{item.title}</h4>
+                           <p className="text-xs font-medium opacity-60 line-clamp-2 mt-2 leading-relaxed">{item.desc}</p>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+             ) : (
+                // Chat bubbles
+                <div className="space-y-6 pb-4">
+                   {messages.map((m) => {
+                     const isUser = m.role === "user"
+                     return (
+                       <div 
+                         key={m.id}
+                         id={`msg-${m.id}`}
+                         className={`flex gap-4 ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in duration-300 rounded-3xl transition-all duration-1000`}
+                       >
+                          {!isUser && (
+                            <div className="size-9 shrink-0 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-xs font-black shadow-md shadow-indigo-100">
+                               VM
+                            </div>
+                          )}
+                          
+                          <div className="max-w-[80%] space-y-3">
+                             <div className={`p-4 rounded-2xl text-sm font-medium leading-relaxed ${
+                               isUser 
+                                 ? 'bg-slate-900 text-white rounded-tr-xs shadow-md' 
+                                 : 'bg-slate-100/60 border border-slate-100 text-slate-800 rounded-tl-xs'
+                             }`}>
+                                {m.content}
+                             </div>
+
+                             {/* SCRIPT BLOCK EMBEDDED */}
+                             {!isUser && m.script_data && (
+                               <Card className="border-none shadow-xl shadow-indigo-100/40 rounded-3xl overflow-hidden border border-slate-100/50 bg-white">
+                                  <CardContent className="p-6 space-y-6">
+                                     
+                                     {/* Jauge du score viral */}
+                                     <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                                        <div className="flex items-center gap-3">
+                                           <div className="size-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-sm border border-emerald-100 shadow-xs">
+                                              {m.script_data.score || 90}
+                                           </div>
+                                           <div>
+                                              <p className="text-xs font-black text-slate-900 uppercase tracking-widest">Score Viral IA</p>
+                                              <p className="text-[10px] text-slate-400 font-medium">Estimé pour la niche</p>
+                                           </div>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-2">
+                                           <button
+                                             onClick={() => {
+                                               const blocks = m.script_data.script || []
+                                               const text = blocks.map((b: any) => b.audio).join('\n\n')
+                                               navigator.clipboard.writeText(text)
+                                               toast.success("Script complet copié !")
+                                             }}
+                                             className="p-2 hover:bg-slate-50 border border-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+                                             title="Copier le script"
+                                           >
+                                              <Copy className="size-3.5" />
+                                           </button>
+                                        </div>
+                                     </div>
+
+                                     {/* Aperçu du Hook */}
+                                     {m.script_data.script && m.script_data.script[0] && (
+                                       <div className="bg-slate-50/50 border border-slate-100/50 p-4 rounded-2xl">
+                                          <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1.5">Accroche (Hook)</p>
+                                          <p className="text-xs font-bold text-slate-800 italic leading-relaxed">
+                                             "{m.script_data.script[0].audio}"
+                                          </p>
+                                       </div>
+                                     )}
+
+                                     {/* Commandes Storyboard, Visualiser, Prompteur */}
+                                     <div className="grid grid-cols-3 gap-2 pt-2">
+                                        <button
+                                          onClick={() => {
+                                            setModalBlocks(m.script_data.script || [])
+                                            setOpenModal("full")
+                                          }}
+                                          className="h-10 px-3 bg-slate-900 text-white rounded-xl font-bold text-[9px] uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-1 shadow-xs"
+                                        >
+                                           <Layout className="size-3" /> Visualiser
+                                        </button>
+
+                                        <button
+                                          onClick={() => {
+                                            setModalBlocks(m.script_data.script || [])
+                                            setOpenModal("tech")
+                                          }}
+                                          className="h-10 px-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-[9px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-1 shadow-xs"
+                                        >
+                                           <Video className="size-3 text-amber-500" /> Storyboard
+                                        </button>
+
+                                        <button
+                                          onClick={() => {
+                                             setModalBlocks(m.script_data.script || [])
+                                             // Open fully to prompter by setting state, wait: the prompter is triggered inside ScriptModals directly !
+                                             // We can open visualizer full mode, then the user clicks "Mode Prompteur" or we can pass a trigger.
+                                             // Let's set openModal to "full" and let them use the beautiful prompter button at the top right of the modal !
+                                             setModalBlocks(m.script_data.script || [])
+                                             setOpenModal("full")
+                                             toast.info("Cliquez sur 'Mode Prompteur' en haut à droite du modal pour démarrer !");
+                                          }}
+                                          className="h-10 px-3 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-xl font-bold text-[9px] uppercase tracking-widest hover:bg-indigo-100 transition-all flex items-center justify-center gap-1 shadow-xs"
+                                        >
+                                           <Zap className="size-3 text-indigo-500" /> Prompteur
+                                        </button>
+                                     </div>
+
+                                  </CardContent>
+                               </Card>
+                             )}
+                          </div>
+
+                          {isUser && (
+                            <div className="size-9 shrink-0 rounded-xl bg-slate-900 border border-slate-800 text-indigo-400 flex items-center justify-center text-xs font-black shadow-md">
+                               ME
+                            </div>
+                          )}
+                       </div>
+                     )
+                   })}
+                   
+                   {submittingMessage && (
+                     <div className="flex gap-4 justify-start animate-in fade-in duration-300">
+                        <div className="size-9 shrink-0 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-xs font-black animate-pulse">
+                           VM
+                        </div>
+                        <div className="bg-slate-100/60 border border-slate-100 p-4 rounded-2xl rounded-tl-xs flex items-center gap-2 shadow-inner">
+                           <Loader2 className="size-4 text-indigo-600 animate-spin" />
+                           <span className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">L'IA analyse et écrit...</span>
+                        </div>
+                     </div>
+                   )}
+                   
+                   <div ref={chatEndRef} />
+                </div>
+             )}
+          </div>
+
+          {/* Saisie de message et envoi (Bas) */}
+          {activeDiscussionId && (
+            <div className="p-4 border-t border-slate-100 bg-white sticky bottom-0 z-10">
+               <form 
+                 onSubmit={(e) => {
+                   e.preventDefault()
+                   handleSendMessage()
+                 }}
+                 className="flex gap-3 bg-slate-50/80 border border-slate-100 p-2 pr-2.5 rounded-2xl shadow-inner focus-within:bg-white focus-within:border-indigo-500/30 transition-all items-center"
+               >
+                  {isRecording ? (
+                    <div className="flex-1 flex items-center justify-between px-4 py-2 bg-rose-50 border border-rose-100 rounded-xl animate-pulse">
+                      <div className="flex items-center gap-3 text-rose-600 font-bold text-xs">
+                        <span className="size-2.5 rounded-full bg-rose-600 animate-ping" />
+                        <span>Enregistrement en cours ({formatTime(recordingTime)})...</span>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={stopRecording}
+                        className="h-8 px-4 bg-rose-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg hover:bg-rose-700 transition-all flex items-center gap-1.5"
+                      >
+                        <Square className="size-3" /> Arrêter
+                      </button>
+                    </div>
+                  ) : (
+                    <input 
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      placeholder={submittingMessage ? "L'IA réfléchit..." : transcribing ? "Transcription en cours..." : "Demandez une modification (ou parlez au micro)..."}
+                      disabled={submittingMessage || transcribing}
+                      className="flex-1 bg-transparent border-0 px-3 py-3 text-xs md:text-sm font-medium text-slate-900 focus:ring-0 outline-hidden placeholder:text-slate-300"
+                    />
+                  )}
+                  
+                  {/* Microphone Button */}
+                  {!isRecording && (
+                    <button 
+                      type="button"
+                      onClick={startRecording}
+                      disabled={submittingMessage || transcribing}
+                      className={`h-10 w-10 shrink-0 border border-slate-200 hover:border-indigo-500/20 rounded-xl flex items-center justify-center transition-all cursor-pointer ${transcribing ? 'bg-indigo-50 text-indigo-600' : 'bg-white text-slate-500 hover:text-slate-900'}`}
+                      title="Enregistrer un message vocal"
+                    >
+                      {transcribing ? (
+                        <Loader2 className="size-4 animate-spin text-indigo-600" />
+                      ) : (
+                        <Mic className="size-4" />
+                      )}
+                    </button>
+                  )}
+                  
+                  <button 
+                    type="submit"
+                    disabled={submittingMessage || transcribing || !inputMessage.trim()}
+                    className="h-10 w-10 shrink-0 bg-slate-900 hover:bg-indigo-600 disabled:bg-slate-100 disabled:text-slate-300 text-white rounded-xl flex items-center justify-center transition-all cursor-pointer"
+                  >
+                     <Send className="size-4" />
+                  </button>
+               </form>
+            </div>
+          )}
+
         </main>
       </div>
 
@@ -464,50 +930,8 @@ export default function ScriptsPage() {
       <ScriptModals 
         isOpen={openModal} 
         onClose={() => setOpenModal(null)} 
-        blocks={displayBlocks} 
+        blocks={modalBlocks} 
       />
-
-      {/* History Slide-over */}
-      {showHistory && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowHistory(false)} />
-          <div className="absolute inset-y-0 right-0 max-w-md w-full bg-white shadow-2xl animate-in slide-in-from-right duration-500 flex flex-col">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white/50 backdrop-blur-md sticky top-0 z-20">
-               <div className="flex items-center gap-3">
-                 <div className="size-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                   <History className="size-5" />
-                 </div>
-                 <h2 className="font-black text-slate-900 uppercase tracking-widest text-sm">Historique</h2>
-               </div>
-               <button onClick={() => setShowHistory(false)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-400">
-                 <X className="size-5" />
-               </button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {historyItems.length === 0 ? (
-                <div className="h-64 flex flex-col items-center justify-center text-center space-y-4">
-                  <p className="text-slate-400 font-medium">Aucun script enregistré.</p>
-                </div>
-              ) : (
-                historyItems.map((item, i) => (
-                  <Card key={i} className="border border-slate-100 hover:border-indigo-100 transition-all cursor-pointer group" onClick={() => {
-                    try {
-                      const content = JSON.parse(item.content);
-                      setScriptData(Array.isArray(content) ? { score: 90, explanation: "", script: content } : content);
-                      setShowHistory(false);
-                    } catch(e) {}
-                  }}>
-                    <CardContent className="p-5">
-                      <p className="text-sm font-bold text-slate-900">{item.collection_name || "Script sans titre"}</p>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Auth Modal */}
       {showAuthModal && (
@@ -606,9 +1030,9 @@ function ScriptModals({ isOpen, onClose, blocks }: any) {
                </button>
                <button 
                  onClick={() => {
-                    const text = blocks.map((b: any) => isOpen === 'full' ? b.audio : `${b.type}\nAudio: ${b.audio}\nVisuel: ${b.visual}`).join('\n\n');
-                    navigator.clipboard.writeText(text);
-                    toast.success("Copié !");
+                    const text = blocks.map((b: any) => isOpen === 'full' ? b.audio : `${b.type}\nAudio: ${b.audio}\nVisuel: ${b.visual}`).join('\n\n')
+                    navigator.clipboard.writeText(text)
+                    toast.success("Copié !")
                  }}
                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-100 transition-all shadow-sm"
                >

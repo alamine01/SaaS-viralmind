@@ -5,7 +5,7 @@ import { checkAndIncrementScriptQuota } from "@/lib/quota-service";
 
 export async function POST(req: Request) {
   try {
-    const { concept, niche, tone, duration } = await req.json();
+    const { concept, niche, tone, duration, collection } = await req.json();
 
     if (!concept) {
       return NextResponse.json({ error: "Concept manquant" }, { status: 400 });
@@ -34,17 +34,50 @@ export async function POST(req: Request) {
       );
     }
 
-    // Récupérer le profil de voix actif de l'utilisateur
+    // Récupérer le profil de voix spécifique au workspace (collection) associé
     let toneProfile = "";
-    const { data: activeVoice } = await supabase
-      .from("voice_profiles")
-      .select("content")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .maybeSingle(); // Utiliser maybeSingle pour éviter les exceptions si aucun profil n'est actif
-    
-    if (activeVoice?.content) {
-      toneProfile = activeVoice.content;
+    let activeVoiceId = null;
+
+    if (collection && collection !== "General") {
+      // Trouver le workspace associé
+      const { data: workspace } = await supabase
+        .from("workspaces")
+        .select("voice_profile_id")
+        .eq("user_id", user.id)
+        .eq("slug", collection)
+        .maybeSingle();
+
+      if (workspace?.voice_profile_id) {
+        activeVoiceId = workspace.voice_profile_id;
+      }
+    }
+
+    if (activeVoiceId) {
+      // Charger la voix spécifique du workspace
+      const { data: workspaceVoice } = await supabase
+        .from("voice_profiles")
+        .select("content")
+        .eq("id", activeVoiceId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (workspaceVoice?.content) {
+        toneProfile = workspaceVoice.content;
+      }
+    }
+
+    // Repli (Fallback) : si pas de voix spécifique au projet, utiliser la voix globale active
+    if (!toneProfile) {
+      const { data: activeVoice } = await supabase
+        .from("voice_profiles")
+        .select("content")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle(); // Utiliser maybeSingle pour éviter les exceptions si aucun profil n'est actif
+      
+      if (activeVoice?.content) {
+        toneProfile = activeVoice.content;
+      }
     }
 
     // 1. Générer via l'IA

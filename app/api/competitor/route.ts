@@ -4,7 +4,7 @@ import { analyzeCompetitorProfile } from "@/lib/ai-service";
 
 export async function POST(req: Request) {
   try {
-    const { handle, platform, userId, forceRefresh = false } = await req.json();
+    const { handle, platform, userId, forceRefresh = false, collectionName } = await req.json();
 
     if (!handle || !platform || !userId) {
       return NextResponse.json({ error: "Handle, plateforme et userId requis." }, { status: 400 });
@@ -16,6 +16,8 @@ export async function POST(req: Request) {
     // Authenticated Supabase Server Client to respect RLS policies
     const supabase = await createSupabaseServerClient();
 
+    const targetCol = collectionName || "General";
+
     // 1. VÉRIFICATION DU CACHE : charger l'audit si déjà existant
     if (!forceRefresh) {
       const { data: existingAccount } = await supabase
@@ -24,6 +26,7 @@ export async function POST(req: Request) {
         .eq("user_id", userId)
         .eq("handle", cleanHandle)
         .eq("platform", platform)
+        .eq("collection_name", targetCol)
         .maybeSingle();
 
       if (existingAccount && existingAccount.audit_report) {
@@ -338,67 +341,49 @@ export async function POST(req: Request) {
     }
 
     // 6. ENREGISTREMENT EN BASE DE DONNÉES (MONITORED_ACCOUNTS)
-    // On fait un upsert dans la table monitored_accounts
-    const { data: updatedAccount, error: dbError } = await supabase
+    const { data: existing } = await supabase
       .from("monitored_accounts")
-      .upsert(
-        {
+      .select("*")
+      .eq("user_id", userId)
+      .eq("handle", cleanHandle)
+      .eq("platform", platform)
+      .eq("collection_name", targetCol)
+      .maybeSingle();
+
+    let finalAccount = null;
+    if (existing) {
+      const { data: updated, error: updateErr } = await supabase
+        .from("monitored_accounts")
+        .update({
+          followers_count: followers,
+          median_views: medianViews,
+          audit_report: auditReport,
+          last_scanned_at: new Date().toISOString()
+        })
+        .eq("id", existing.id)
+        .select()
+        .single();
+      
+      if (updateErr) throw updateErr;
+      finalAccount = updated;
+    } else {
+      const { data: inserted, error: insertErr } = await supabase
+        .from("monitored_accounts")
+        .insert({
           user_id: userId,
           handle: cleanHandle,
           platform,
           followers_count: followers,
           median_views: medianViews,
           audit_report: auditReport,
+          collection_name: targetCol,
           last_scanned_at: new Date().toISOString()
-        },
-        { onConflict: "user_id,handle,platform" } // Unique conflict constraint or we find existing and update
-      )
-      .select()
-      .single();
-
-    // Note: if upsert on Conflict target fails because we don't have a unique constraint on those 3 columns,
-    // we can do standard check & insert/update.
-    let finalAccount = updatedAccount;
-    if (dbError) {
-      console.log("DB Upsert conflict/error, trying fallback select and insert/update");
+        })
+        .select()
+        .single();
       
-      const { data: existing } = await supabase
-        .from("monitored_accounts")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("handle", cleanHandle)
-        .eq("platform", platform)
-        .maybeSingle();
-
-      if (existing) {
-        const { data: updated } = await supabase
-          .from("monitored_accounts")
-          .update({
-            followers_count: followers,
-            median_views: medianViews,
-            audit_report: auditReport,
-            last_scanned_at: new Date().toISOString()
-          })
-          .eq("id", existing.id)
-          .select()
-          .single();
-        finalAccount = updated;
-      } else {
-        const { data: inserted } = await supabase
-          .from("monitored_accounts")
-          .insert({
-            user_id: userId,
-            handle: cleanHandle,
-            platform,
-            followers_count: followers,
-            median_views: medianViews,
-            audit_report: auditReport,
-            last_scanned_at: new Date().toISOString()
-          })
-          .select()
-          .single();
-        finalAccount = inserted;
-      }
+      if (insertErr) throw insertErr;
+      finalAccount = inserted;
     }
 
     // 7. ENREGISTREMENT DES OUTLIERS DANS DETECTED_OUTLIERS

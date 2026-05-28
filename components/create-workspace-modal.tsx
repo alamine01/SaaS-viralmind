@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { X, Plus, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase"
@@ -9,7 +9,17 @@ import { useWorkspace } from "@/lib/workspace-context"
 export function CreateWorkspaceModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const [name, setName] = useState("")
   const [loading, setLoading] = useState(false)
+  const [voiceProfiles, setVoiceProfiles] = useState<any[]>([])
+  const [selectedVoiceProfileId, setSelectedVoiceProfileId] = useState<string>("auto")
   const { refreshWorkspaces } = useWorkspace()
+
+  useEffect(() => {
+    if (isOpen) {
+      supabase.from("voice_profiles").select("id, name").order("name").then(({ data }) => {
+        if (data) setVoiceProfiles(data)
+      })
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -21,6 +31,29 @@ export function CreateWorkspaceModal({ isOpen, onClose }: { isOpen: boolean, onC
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error("Vous devez être connecté")
 
+      let finalVoiceProfileId = null;
+
+      if (selectedVoiceProfileId === "auto") {
+        // Créer automatiquement un profil de voix par défaut pour ce projet
+        const { data: voiceData, error: voiceError } = await supabase
+          .from("voice_profiles")
+          .insert({
+            user_id: user.id,
+            name: `${name} - Style de Voix`,
+            content: `Profil de voix par défaut pour le projet ${name}. Entraînez-moi en collant vos propres textes d'entraînement sur la page profil de voix.`
+          })
+          .select()
+          .single();
+
+        if (voiceError) {
+          console.error("Auto Voice creation failed:", voiceError);
+        } else if (voiceData) {
+          finalVoiceProfileId = voiceData.id;
+        }
+      } else if (selectedVoiceProfileId !== "none") {
+        finalVoiceProfileId = selectedVoiceProfileId;
+      }
+
       // Tentative de sauvegarde dans Supabase
       const { error } = await supabase
         .from("workspaces")
@@ -28,7 +61,8 @@ export function CreateWorkspaceModal({ isOpen, onClose }: { isOpen: boolean, onC
           user_id: user.id,
           name: name,
           slug: name, // On garde le nom comme slug pour l'instant
-          color: 'bg-indigo-400'
+          color: 'bg-indigo-400',
+          voice_profile_id: finalVoiceProfileId
         })
 
       if (error) {
@@ -48,6 +82,7 @@ export function CreateWorkspaceModal({ isOpen, onClose }: { isOpen: boolean, onC
       await refreshWorkspaces()
       onClose()
       setName("")
+      setSelectedVoiceProfileId("auto")
       
     } catch (error: any) {
       toast.error(error.message)
@@ -82,6 +117,21 @@ export function CreateWorkspaceModal({ isOpen, onClose }: { isOpen: boolean, onC
               autoFocus
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             />
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Profil de voix associé</label>
+            <select 
+              value={selectedVoiceProfileId}
+              onChange={(e) => setSelectedVoiceProfileId(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 outline-hidden transition-all cursor-pointer text-slate-700"
+            >
+              <option value="auto">Créer un profil de voix par défaut</option>
+              {voiceProfiles.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+              <option value="none">Aucun profil de voix (Neutre)</option>
+            </select>
           </div>
           
           <div className="p-6 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">

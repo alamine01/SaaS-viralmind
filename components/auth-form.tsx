@@ -35,7 +35,7 @@ export function AuthForm({ mode = "signin" }: AuthFormProps) {
         if (error) throw error
         toast.success("Compte créé ! Redirection...")
         setTimeout(() => {
-          window.location.href = "/dashboard"
+          window.location.href = "/onboarding"
         }, 1000)
       } else {
         const { error } = await supabase.auth.signInWithPassword({ 

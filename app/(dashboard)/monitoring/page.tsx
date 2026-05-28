@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useWorkspace } from "@/lib/workspace-context"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -29,6 +30,7 @@ import {
 } from "lucide-react"
 
 export default function MonitoringPage() {
+  const { activeCollection } = useWorkspace()
   const router = useRouter()
   const [accounts, setAccounts] = useState<any[]>([])
   const [selectedAccount, setSelectedAccount] = useState<any | null>(null)
@@ -40,6 +42,7 @@ export default function MonitoringPage() {
   const [activeTab, setActiveTab] = useState<"outliers" | "audit">("outliers")
   const [checkingPlan, setCheckingPlan] = useState(true)
   const [isLocked, setIsLocked] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
   
   // Form states
   const [handle, setHandle] = useState("")
@@ -81,26 +84,42 @@ export default function MonitoringPage() {
       }
     }
     verifyPlan()
-    fetchAccounts()
   }, [])
+
+  useEffect(() => {
+    fetchAccounts()
+  }, [activeCollection])
 
   const fetchAccounts = async () => {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("monitored_accounts")
       .select("*")
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
+
+    if (activeCollection && activeCollection !== "General") {
+      query = query.eq("collection_name", activeCollection)
+    } else {
+      query = query.or("collection_name.eq.General,collection_name.is.null")
+    }
+
+    const { data, error } = await query.order("created_at", { ascending: false })
 
     if (!error && data) {
       setAccounts(data)
-      // Sélectionner automatiquement le premier compte par défaut s'il y en a un
-      if (data.length > 0 && !selectedAccount) {
+      if (data.length > 0) {
         handleSelectAccount(data[0])
+      } else {
+        setSelectedAccount(null)
+        setOutliers([])
       }
+    } else {
+      setAccounts([])
+      setSelectedAccount(null)
+      setOutliers([])
     }
     setLoading(false)
   }
@@ -173,7 +192,8 @@ export default function MonitoringPage() {
           handle: cleanHandle, 
           platform, 
           userId: user.id,
-          forceRefresh: force
+          forceRefresh: force,
+          collectionName: activeCollection
         })
       });
       
@@ -395,10 +415,23 @@ export default function MonitoringPage() {
 
       {/* 3. CORE CORE WORKSPACE (Sidebar & Details Panels) */}
       {!auditLoading && (
-        <div className="grid lg:grid-cols-4 gap-8">
+        <div className="space-y-4">
           
-          {/* Left: History Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
+          {/* Mobile toggle button for audited competitors list */}
+          <div className="flex justify-end lg:hidden">
+             <button
+               onClick={() => setShowHistory(!showHistory)}
+               className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center gap-2 transition-all shadow-xs"
+             >
+                <Users className="size-4 text-slate-500" />
+                <span>{showHistory ? "Masquer Liste" : "Liste Concurrents"}</span>
+             </button>
+          </div>
+
+          <div className="grid lg:grid-cols-4 gap-8">
+            
+            {/* Left: History Sidebar */}
+            <div className={`lg:col-span-1 space-y-6 ${showHistory ? 'block' : 'hidden lg:block'}`}>
              <div className="flex items-center justify-between px-1">
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Concurrents audités</p>
                 <span className="size-2.5 rounded-full bg-indigo-600 shadow-lg shadow-indigo-600/50" />
@@ -712,8 +745,8 @@ export default function MonitoringPage() {
                 </div>
              )}
           </div>
-
         </div>
+      </div>
       )}
 
     </div>

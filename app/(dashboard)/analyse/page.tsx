@@ -17,7 +17,8 @@ import {
   X, 
   Check, 
   Copy,
-  Bookmark
+  Bookmark,
+  RotateCw
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useWorkspace } from "@/lib/workspace-context"
@@ -32,6 +33,7 @@ export default function AnalysePage() {
   const [loading, setLoading] = useState(false)
   const [selectedAnalysis, setSelectedAnalysis] = useState<any | null>(null)
   const [showTranscript, setShowTranscript] = useState(false)
+  const [modalLang, setModalLang] = useState<'original' | 'french'>('original')
   const [showPsychologyModal, setShowPsychologyModal] = useState(false)
   const [showRetentionModal, setShowRetentionModal] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -70,8 +72,8 @@ export default function AnalysePage() {
     return parseInt(clean) || 0;
   };
 
-  const handleAnalyse = async (targetUrl?: string | React.MouseEvent) => {
-    const activeUrl = typeof targetUrl === 'string' ? targetUrl : url;
+  const handleAnalyse = async (targetUrl?: string, forceRefresh = false) => {
+    const activeUrl = targetUrl || url;
     if (!activeUrl) return
     setLoading(true)
     try {
@@ -84,7 +86,9 @@ export default function AnalysePage() {
            followers: parseCompactNumber(followers),
            title: activeUrl.includes("tiktok") ? "Radar TikTok Outlier" : activeUrl.includes("instagram") ? "Radar Instagram Outlier" : "Radar YouTube Outlier",
            niche: "Niche Détectée",
-           userId: user?.id
+           userId: user?.id,
+           collectionName: targetCollection || activeCollection || "General",
+           forceRefresh
         })
       })
       const data = await res.json()
@@ -162,8 +166,19 @@ export default function AnalysePage() {
   }
 
   const handleCopy = () => {
-    if (!selectedAnalysis?.transcript) return
-    navigator.clipboard.writeText(selectedAnalysis.transcript)
+    const rawText = selectedAnalysis?.transcript || "";
+    let textToCopy = rawText;
+    if (rawText.startsWith("{") && rawText.endsWith("}")) {
+      try {
+        const parsed = JSON.parse(rawText);
+        if (parsed.original && parsed.french) {
+          textToCopy = modalLang === 'original' ? parsed.original : parsed.french;
+        }
+      } catch (e) {}
+    }
+    
+    if (!textToCopy) return
+    navigator.clipboard.writeText(textToCopy)
     setCopied(true)
     toast.success("Transcription copiée !")
     setTimeout(() => setCopied(false), 2000)
@@ -296,7 +311,7 @@ export default function AnalysePage() {
                )}
 
                <button 
-                 onClick={handleAnalyse}
+                 onClick={() => handleAnalyse()}
                  disabled={loading || !url}
                  className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-2xl py-5 font-black text-[12px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl shadow-indigo-600/20 active:scale-[0.98]"
                >
@@ -369,28 +384,37 @@ export default function AnalysePage() {
                                     <span className="text-xs font-bold text-slate-400">• Analysé par ViralMind IA</span>
                                  </div>
                               </div>
-                              <div className="flex items-center gap-3 bg-slate-50 p-1.5 rounded-[22px] border border-slate-100">
+                              <div className="flex flex-col lg:flex-row lg:items-center gap-3 bg-slate-50 p-2 lg:p-1.5 rounded-[22px] border border-slate-100 w-full lg:w-auto">
                                  <select 
                                    value={targetCollection}
                                    onChange={(e) => setTargetCollection(e.target.value)}
-                                   className="bg-transparent border-0 text-[11px] font-black uppercase tracking-widest text-slate-500 focus:ring-0 cursor-pointer pl-4 pr-8"
+                                   className="bg-transparent border-0 text-[11px] font-black uppercase tracking-widest text-slate-500 focus:ring-0 cursor-pointer pl-4 pr-8 py-3 lg:py-0 w-full lg:w-auto text-center lg:text-left"
                                  >
                                     {workspaces.map(ws => (
                                       <option key={ws.slug} value={ws.slug}>{ws.name}</option>
                                     ))}
                                  </select>
-                                 <button 
-                                   onClick={handleSaveVideo}
-                                   className="px-6 py-3 bg-white border border-slate-200 text-slate-900 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-3 shadow-sm"
-                                 >
-                                    <Bookmark className="size-4" /> Enregistrer
-                                 </button>
-                                 <button 
-                                   onClick={handleRemix}
-                                   className="px-6 py-3 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all flex items-center gap-3 shadow-xl"
-                                 >
-                                    <Sparkles className="size-4" /> Remixer
-                                 </button>
+                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full lg:w-auto">
+                                    <button 
+                                      onClick={() => handleAnalyse(selectedAnalysis?.url || url, true)}
+                                      disabled={loading}
+                                      className="px-5 py-3 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-950 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                                    >
+                                       <RotateCw className="size-3.5" /> Réanalyser
+                                    </button>
+                                   <button 
+                                     onClick={handleSaveVideo}
+                                     className="px-5 py-3 bg-white border border-slate-200 text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm"
+                                   >
+                                      <Bookmark className="size-3.5" /> Enregistrer
+                                   </button>
+                                   <button 
+                                     onClick={handleRemix}
+                                     className="px-5 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all flex items-center justify-center gap-2 shadow-xl"
+                                   >
+                                      <Sparkles className="size-3.5" /> Remixer
+                                   </button>
+                                 </div>
                               </div>
                            </div>
 
@@ -543,34 +567,78 @@ export default function AnalysePage() {
         </div>
       )}
 
-      {showTranscript && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
-           <Card className="w-full max-w-3xl bg-white rounded-[32px] shadow-2xl overflow-hidden max-h-[80vh] flex flex-col">
-              <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
-                 <div className="flex items-center gap-4">
-                    <div className="size-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-lg">
-                       <FileText className="size-6" />
-                    </div>
-                    <div>
-                       <h3 className="text-xl font-black text-slate-900 tracking-tight">Transcription Intégrale</h3>
-                       <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Générée par ViralMind IA</p>
-                    </div>
-                 </div>
-                 <button onClick={() => setShowTranscript(false)} className="p-3 hover:bg-slate-100 rounded-full transition-colors">
-                    <X className="size-6 text-slate-400" />
-                 </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-10 md:p-16 text-slate-700 text-lg leading-relaxed whitespace-pre-wrap font-medium">
-                 {selectedAnalysis?.transcript || "Aucune transcription disponible pour cette vidéo."}
-              </div>
-              <div className="p-8 border-t border-slate-50 bg-slate-50/50 flex justify-end gap-4">
-                 <button onClick={handleCopy} className={`px-10 py-5 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all flex items-center gap-3 ${copied ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white hover:bg-indigo-600 shadow-xl'}`}>
-                    {copied ? <><Check className="size-5" /> Copié !</> : <><Copy className="size-5" /> Copier le texte</>}
-                 </button>
-              </div>
-           </Card>
-        </div>
-      )}
+      {showTranscript && (() => {
+        const rawText = selectedAnalysis?.transcript || "";
+        let isBilingual = false;
+        let original = rawText;
+        let french = rawText;
+        
+        if (rawText.startsWith("{") && rawText.endsWith("}")) {
+          try {
+            const parsed = JSON.parse(rawText);
+            if (parsed.original && parsed.french) {
+              original = parsed.original;
+              french = parsed.french;
+              isBilingual = true;
+            }
+          } catch (e) {}
+        }
+        
+        const activeText = modalLang === 'original' ? original : french;
+        
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
+             <Card className="w-full max-w-3xl bg-white rounded-[32px] shadow-2xl overflow-hidden max-h-[80vh] flex flex-col">
+                <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
+                   <div className="flex items-center gap-4">
+                      <div className="size-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-lg">
+                         <FileText className="size-6" />
+                      </div>
+                      <div>
+                         <h3 className="text-xl font-black text-slate-900 tracking-tight leading-tight">Transcription Intégrale</h3>
+                         {isBilingual ? (
+                           <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-0.5">Vidéo multilingue détectée</p>
+                         ) : (
+                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Générée par ViralMind IA</p>
+                         )}
+                      </div>
+                   </div>
+                   
+                   <div className="flex items-center gap-3">
+                      {isBilingual && (
+                        <div className="bg-slate-100 p-1.5 rounded-2xl flex items-center border border-slate-200/50">
+                          <button 
+                            onClick={() => setModalLang('original')}
+                            className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${modalLang === 'original' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-400 hover:text-slate-600'}`}
+                          >
+                             Original
+                          </button>
+                          <button 
+                            onClick={() => setModalLang('french')}
+                            className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${modalLang === 'french' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/10' : 'text-slate-400 hover:text-slate-600'}`}
+                          >
+                             Français
+                          </button>
+                        </div>
+                      )}
+                      
+                      <button onClick={() => { setShowTranscript(false); setModalLang('original'); }} className="p-3 hover:bg-slate-200 rounded-xl transition-colors">
+                         <X className="size-6 text-slate-400" />
+                      </button>
+                   </div>
+                </div>
+                <div className="flex-1 overflow-y-auto p-10 md:p-16 text-slate-700 text-lg leading-relaxed whitespace-pre-wrap font-medium">
+                   {activeText || "Aucune transcription disponible pour cette vidéo."}
+                </div>
+                <div className="p-8 border-t border-slate-50 bg-slate-50/50 flex justify-end gap-4">
+                   <button onClick={handleCopy} className={`px-10 py-5 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all flex items-center gap-3 ${copied ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white hover:bg-indigo-600 shadow-xl'}`}>
+                      {copied ? <><Check className="size-5" /> Copié !</> : <><Copy className="size-5" /> Copier le texte</>}
+                   </button>
+                </div>
+             </Card>
+          </div>
+        )
+      })()}
     </div>
   )
 }

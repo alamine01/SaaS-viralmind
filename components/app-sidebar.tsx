@@ -17,11 +17,12 @@ import {
   Video,
   UserRound,
   Eye,
-  Sparkles
+  Sparkles,
+  Calendar
 } from "lucide-react"
 import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams, useRouter } from "next/navigation"
 import Logo from "@/components/ui/logo"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
@@ -54,11 +55,6 @@ const menuItems = [
     url: "/monitoring",
     icon: Eye,
   },
-  {
-    title: "Mes Vidéos",
-    url: "/videos",
-    icon: Video,
-  },
   { 
     title: "Générateur de Scripts", 
     url: "/scripts", 
@@ -74,6 +70,11 @@ const menuItems = [
     url: "/hooks", 
     icon: Sparkles 
   },
+  {
+    title: "Calendrier Éditorial",
+    url: "/calendar",
+    icon: Calendar
+  },
   { 
     title: "Bibliothèque", 
     url: "/saved", 
@@ -84,8 +85,15 @@ const menuItems = [
 function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [userName, setUserName] = useState<string>("User")
-  const { activeCollection, workspaces, setCreateModalOpen } = useWorkspace()
+  const { activeCollection, workspaces, setCreateModalOpen, setActiveCollection } = useWorkspace()
+
+  const handleSelectWorkspace = (slug: string) => {
+    setActiveCollection(slug)
+    router.push(`${pathname}?collection=${slug}`)
+    onClose?.()
+  }
   const [quotas, setQuotas] = useState<any>(null)
 
   const fetchQuotas = async () => {
@@ -190,26 +198,25 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                 <Plus className="size-3" />
               </button>
            </div>
-           <div className="space-y-1">
-              {workspaces.map((ws) => {
-                const isActive = activeCollection === ws.slug && pathname === "/saved";
-                
-                return (
-                  <Link 
-                    key={ws.slug}
-                    href={`/saved?collection=${ws.slug}`} 
-                    onClick={() => onClose?.()}
-                    className={`
-                      flex items-center px-4 py-2 rounded-xl text-[13px] font-medium transition-all
-                      ${isActive ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}
-                    `}
-                  >
-                     <div className={`size-2 rounded-full ${ws.color} mr-3`} />
-                     {ws.name}
-                  </Link>
-                )
-              })}
-           </div>
+            <div className="space-y-1">
+               {workspaces.map((ws) => {
+                 const isActive = activeCollection === ws.slug;
+                 
+                 return (
+                   <button 
+                     key={ws.slug}
+                     onClick={() => handleSelectWorkspace(ws.slug)}
+                     className={`
+                       w-full flex items-center px-4 py-2 rounded-xl text-[13px] font-medium transition-all text-left
+                       ${isActive ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}
+                     `}
+                   >
+                      <div className={`size-2 rounded-full ${ws.color} mr-3`} />
+                      {ws.name}
+                   </button>
+                 )
+               })}
+            </div>
         </div>
       </div>
 

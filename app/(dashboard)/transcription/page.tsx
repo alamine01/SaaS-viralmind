@@ -10,29 +10,58 @@ import {
   Check, 
   ArrowRight,
   Sparkles,
-  Link as LinkIcon
+  Link as LinkIcon,
+  RotateCw
 } from "lucide-react"
 import { toast } from "sonner"
-
 export default function TranscriptionPage() {
   const [url, setUrl] = useState("")
   const [loading, setLoading] = useState(false)
   const [transcript, setTranscript] = useState("")
   const [copied, setCopied] = useState(false)
+  const [bilingual, setBilingual] = useState<{ original: string, french: string, isBilingual: boolean }>({
+    original: "",
+    french: "",
+    isBilingual: false
+  })
+  const [activeLang, setActiveLang] = useState<'original' | 'french'>('original')
 
-  const handleTranscribe = async () => {
+  const handleTranscribe = async (forceRefresh = false) => {
     if (!url) return
     setLoading(true)
     setTranscript("")
+    setBilingual({ original: "", french: "", isBilingual: false })
     try {
       const res = await fetch("/api/analyse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url })
+        body: JSON.stringify({ url, forceRefresh })
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      setTranscript(data.transcript || data.full_transcript || "Aucune transcription trouvée.")
+      
+      const rawText = data.transcript || data.full_transcript || "Aucune transcription trouvée."
+      setTranscript(rawText)
+      
+      // Parse bilingual transcript
+      if (rawText.startsWith("{") && rawText.endsWith("}")) {
+        try {
+          const parsed = JSON.parse(rawText)
+          if (parsed.original && parsed.french) {
+            setBilingual({
+              original: parsed.original,
+              french: parsed.french,
+              isBilingual: true
+            })
+            setActiveLang('original')
+            setTranscript(parsed.original)
+            toast.success("Transcription terminée (Multilingue) !")
+            return
+          }
+        } catch (e) {}
+      }
+      
+      setBilingual({ original: rawText, french: rawText, isBilingual: false })
       toast.success("Transcription terminée !")
     } catch (error: any) {
       toast.error("Erreur : " + error.message)
@@ -47,6 +76,11 @@ export default function TranscriptionPage() {
     setCopied(true)
     toast.success("Copié !")
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const toggleLanguage = (lang: 'original' | 'french') => {
+    setActiveLang(lang)
+    setTranscript(lang === 'original' ? bilingual.original : bilingual.french)
   }
 
   return (
@@ -79,7 +113,7 @@ export default function TranscriptionPage() {
             />
           </div>
           <button 
-            onClick={handleTranscribe}
+            onClick={() => handleTranscribe()}
             disabled={loading || !url}
             className="px-10 h-16 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-indigo-600 transition-all flex items-center justify-center gap-3 shadow-xl disabled:opacity-50"
           >
@@ -100,20 +134,56 @@ export default function TranscriptionPage() {
         ) : transcript ? (
           <Card className="border-none shadow-2xl shadow-indigo-500/5 rounded-[40px] bg-white overflow-hidden border border-slate-50 animate-in slide-in-from-bottom-8 duration-500">
             <CardContent className="p-8 md:p-14 space-y-10">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
-                  <div className="size-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center">
+                  <div className="size-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/10">
                     <FileText className="size-6" />
                   </div>
-                  <h3 className="text-xl font-black text-slate-900">Résultat de l'analyse</h3>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 leading-tight">Résultat de l'analyse</h3>
+                    {bilingual.isBilingual && (
+                      <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-0.5">Vidéo multilingue détectée</p>
+                    )}
+                  </div>
                 </div>
-                <button 
-                  onClick={handleCopy}
-                  className={`px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-3 ${copied ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white hover:bg-indigo-600 shadow-xl'}`}
-                >
-                  {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-                  {copied ? 'Copié' : 'Copier'}
-                </button>
+                
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                  {bilingual.isBilingual && (
+                    <div className="bg-slate-100 p-1 rounded-xl flex items-center border border-slate-200/50 w-full sm:w-auto">
+                      <button 
+                        onClick={() => toggleLanguage('original')}
+                        className={`flex-1 sm:flex-initial px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-center ${activeLang === 'original' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-400 hover:text-slate-600'}`}
+                      >
+                         Original
+                      </button>
+                      <button 
+                        onClick={() => toggleLanguage('french')}
+                        className={`flex-1 sm:flex-initial px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-center ${activeLang === 'french' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/10' : 'text-slate-400 hover:text-slate-600'}`}
+                      >
+                         Français
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+                    <button 
+                      onClick={() => handleTranscribe(true)}
+                      disabled={loading}
+                      className="px-5 py-4 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-950 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-xs disabled:opacity-50"
+                    >
+                      <RotateCw className="size-3.5" />
+                      Réanalyser
+                    </button>
+
+                    <button 
+                      onClick={handleCopy}
+                      className={`px-5 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${copied ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white hover:bg-indigo-600 shadow-xl'}`}
+                    >
+                      {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                      {copied ? 'Copié' : 'Copier'}
+                    </button>
+                  </div>
+                </div>
               </div>
               
               <div className="p-10 bg-slate-50 rounded-[32px] text-slate-700 text-lg leading-relaxed whitespace-pre-wrap font-medium border border-slate-100">
