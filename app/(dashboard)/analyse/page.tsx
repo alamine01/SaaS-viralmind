@@ -32,6 +32,7 @@ export default function AnalysePage() {
   const [followers, setFollowers] = useState("")
   const [loading, setLoading] = useState(false)
   const [selectedAnalysis, setSelectedAnalysis] = useState<any | null>(null)
+  const [analysisError, setAnalysisError] = useState<{ code: string; message: string } | null>(null)
   const [showTranscript, setShowTranscript] = useState(false)
   const [modalLang, setModalLang] = useState<'original' | 'french'>('original')
   const [showPsychologyModal, setShowPsychologyModal] = useState(false)
@@ -76,6 +77,7 @@ export default function AnalysePage() {
     const activeUrl = targetUrl || url;
     if (!activeUrl) return
     setLoading(true)
+    setAnalysisError(null)
     try {
       const { data: { user } } = await supabase.auth.getUser()
       const res = await fetch("/api/analyse", {
@@ -92,6 +94,13 @@ export default function AnalysePage() {
         })
       })
       const data = await res.json()
+      
+      // Erreur spéciale : transcription indisponible (quota épuisé)
+      if (data.error === "TRANSCRIPT_UNAVAILABLE") {
+        setAnalysisError({ code: data.error, message: data.message })
+        return
+      }
+      
       if (data.error) throw new Error(data.error)
       
       setSelectedAnalysis(data)
@@ -321,10 +330,47 @@ export default function AnalysePage() {
          </div>
       </section>
 
+      {/* ERROR CARD : quota / transcription indisponible */}
+      {analysisError && !selectedAnalysis && (
+        <div className="animate-in slide-in-from-bottom-6 duration-500">
+          <div className="rounded-[32px] border border-red-100 bg-gradient-to-br from-red-50 to-orange-50 p-10 md:p-14 text-center space-y-6 shadow-sm">
+            <div className="flex items-center justify-center">
+              <div className="size-16 rounded-2xl bg-red-100 flex items-center justify-center">
+                <svg className="size-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+              </div>
+            </div>
+            <div className="space-y-3 max-w-lg mx-auto">
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">Analyse temporairement indisponible</h3>
+              <p className="text-sm font-medium text-slate-600 leading-relaxed">
+                {analysisError.message}
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => { setAnalysisError(null); handleAnalyse(); }}
+                disabled={loading}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-700 disabled:opacity-50 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-md"
+              >
+                <RotateCw className="size-3.5" /> Réessayer
+              </button>
+              <a
+                href="mailto:support@viralmind.fr"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-sm"
+              >
+                Contacter le support
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 2. RESULTS */}
       <main className="w-full">
          {selectedAnalysis ? (
             <div className="space-y-10 animate-in slide-in-from-bottom-8 duration-700">
+
                
                <div className="grid lg:grid-cols-12 gap-8">
                   {/* Left Column: Visual & Stats */}
@@ -425,6 +471,52 @@ export default function AnalysePage() {
                               <div className="p-8 bg-slate-50 rounded-[24px] border border-slate-100 text-slate-800 font-bold text-xl md:text-2xl leading-tight">
                                  "{selectedAnalysis.hook}"
                               </div>
+                           </section>
+
+                           <section className="space-y-6">
+                              <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                                 <Sparkles className="size-4 text-indigo-500" /> Analyse Profonde & Plan d'Action
+                              </h3>
+                              
+                              {selectedAnalysis.structure?.summary ? (
+                                 <div className="p-8 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-[28px] border border-indigo-100/50 space-y-6 animate-in fade-in duration-300">
+                                    <div className="space-y-3">
+                                       <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Résumé Stratégique</h4>
+                                       <p className="text-sm font-semibold text-slate-700 leading-relaxed bg-white p-6 rounded-[20px] border border-slate-100/80 shadow-xs">
+                                          {selectedAnalysis.structure.summary}
+                                       </p>
+                                    </div>
+
+                                    {selectedAnalysis.structure?.action_plan && selectedAnalysis.structure.action_plan.length > 0 && (
+                                       <div className="space-y-4">
+                                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Comment s'en inspirer (Plan d'Action)</h4>
+                                          <div className="space-y-3">
+                                             {selectedAnalysis.structure.action_plan.map((step: string, idx: number) => (
+                                                <div key={idx} className="flex gap-4 p-5 bg-white rounded-[20px] border border-slate-100/80 shadow-xs transition-all hover:border-indigo-100">
+                                                   <div className="size-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-black shrink-0 mt-0.5 shadow-inner">
+                                                      {idx + 1}
+                                                   </div>
+                                                   <p className="text-xs font-bold text-slate-700 leading-relaxed">{step}</p>
+                                                </div>
+                                             ))}
+                                          </div>
+                                       </div>
+                                    )}
+                                 </div>
+                              ) : (
+                                 <div className="p-8 bg-slate-50/50 rounded-[28px] border border-slate-100 border-dashed text-center space-y-4">
+                                    <p className="text-xs font-bold text-slate-500 leading-relaxed max-w-md mx-auto">
+                                       Cette analyse provient d'un scan précédent et ne possède pas encore l'Analyse Profonde ni le Plan d'Action stratégique de notre IA.
+                                    </p>
+                                    <button
+                                      onClick={() => handleAnalyse(selectedAnalysis?.url || url, true)}
+                                      disabled={loading}
+                                      className="inline-flex h-10 px-6 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all items-center gap-2 shadow-md"
+                                    >
+                                       {loading ? <Loader2 className="size-3.5 animate-spin" /> : <><RotateCw className="size-3.5" /> Générer l'Analyse Profonde</>}
+                                    </button>
+                                 </div>
+                              )}
                            </section>
 
                            <div className="flex flex-col gap-4">
@@ -551,14 +643,14 @@ export default function AnalysePage() {
                  </button>
               </div>
               <div className="p-10 space-y-4 max-h-[60vh] overflow-y-auto">
-                 <div className="space-y-4">
-                    {Object.entries(selectedAnalysis.structure || {}).map(([key, value]: [string, any]) => (
-                       <div key={key} className="p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
-                          <div className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{key}</div>
-                          <p className="text-slate-700 font-bold leading-relaxed">{value}</p>
-                       </div>
-                    ))}
-                 </div>
+                 {Object.entries(selectedAnalysis.structure || {})
+                   .filter(([key]) => key !== "summary" && key !== "action_plan")
+                   .map(([key, value]: [string, any]) => (
+                      <div key={key} className="p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                         <div className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{key}</div>
+                         <p className="text-slate-700 font-bold leading-relaxed">{value}</p>
+                      </div>
+                 ))}
               </div>
               <div className="p-8 bg-slate-50/50 border-t border-slate-50 flex justify-end">
                  <button onClick={() => setShowRetentionModal(false)} className="px-8 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-bold uppercase tracking-widest">Fermer</button>

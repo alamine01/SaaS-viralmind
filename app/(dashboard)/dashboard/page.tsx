@@ -251,7 +251,7 @@ export default function DashboardPage() {
          
          {/* Left Column: Recent Scans */}
          <div className="lg:col-span-8 space-y-6">
-            <div className="flex items-center justify-between px-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-2">
                <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Derniers Scans Radar</h3>
                <Link href="/feed" className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">
                   Voir tout le flux <ArrowRight className="size-3" />
@@ -261,12 +261,25 @@ export default function DashboardPage() {
             <div className="space-y-4">
                {stats.recentActivity.map((item, i) => (
                   <Card key={i} className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.02)] rounded-[24px] bg-white group hover:bg-slate-50 transition-all border border-slate-50 overflow-hidden">
-                     <CardContent className="p-6 flex items-center gap-6">
-                        <div className="size-16 rounded-2xl bg-slate-900 flex flex-col items-center justify-center text-white shrink-0 shadow-lg">
-                           <span className="text-xl font-black italic">{Math.round(item.viral_score)}</span>
-                           <span className="text-[7px] font-black uppercase opacity-50">Score</span>
+                     <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                        <div className="flex items-center gap-4 sm:gap-0 w-full sm:w-auto">
+                           <div className="size-14 sm:size-16 rounded-2xl bg-slate-900 flex flex-col items-center justify-center text-white shrink-0 shadow-lg">
+                              <span className="text-lg sm:text-xl font-black italic">{Math.round(item.viral_score)}</span>
+                              <span className="text-[7px] font-black uppercase opacity-50">Score</span>
+                           </div>
+                           <div className="flex-1 min-w-0 sm:hidden">
+                              <h4 className="text-sm font-bold text-slate-900 truncate mb-1">{item.title}</h4>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                 <span className="text-[10px] font-black text-indigo-500 uppercase tracking-tighter">{item.platform}</span>
+                                 <span className="text-[10px] font-black text-slate-300 uppercase tracking-tighter">•</span>
+                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{item.niche}</span>
+                              </div>
+                           </div>
+                           <Link href={`/analyse?id=${item.id}`} className="size-10 sm:hidden rounded-xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all shrink-0">
+                              <ArrowRight className="size-4" />
+                           </Link>
                         </div>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 hidden sm:block">
                            <h4 className="text-[15px] font-bold text-slate-900 truncate mb-1">{item.title}</h4>
                            <div className="flex items-center gap-3">
                               <span className="text-[10px] font-black text-indigo-500 uppercase tracking-tighter">{item.platform}</span>
@@ -274,7 +287,7 @@ export default function DashboardPage() {
                               <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{item.niche}</span>
                            </div>
                         </div>
-                        <Link href={`/analyse?id=${item.id}`} className="size-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                        <Link href={`/analyse?id=${item.id}`} className="hidden sm:flex size-12 rounded-xl bg-slate-50 items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all shrink-0">
                            <ArrowRight className="size-5" />
                         </Link>
                      </CardContent>

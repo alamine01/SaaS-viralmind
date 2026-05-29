@@ -86,10 +86,25 @@ export async function POST(req: Request) {
     const outlierScore = effectiveFollowers > 0 ? (views / effectiveFollowers).toFixed(1) : "0";
 
     // 2. ANALYSE IA : Analyser la transcription réelle ou l'audio
+    const transcriptQuotaExhausted = (scrapedData as any).transcriptQuotaExhausted === true;
+    const cleanTranscript = (scrapedData.transcript || "").trim();
+
+    // BLOCAGE : si le quota de l'API de transcription est explicitement épuisé,
+    // on n'appelle PAS l'IA pour éviter qu'elle invente des données.
+    if (transcriptQuotaExhausted) {
+      return NextResponse.json(
+        {
+          error: "TRANSCRIPT_UNAVAILABLE",
+          message: "La transcription de cette vidéo n'est pas disponible pour le moment (quota journalier de l'API atteint). Veuillez réessayer ultérieurement ou contacter le support si le problème persiste."
+        },
+        { status: 503 }
+      );
+    }
+
     const isYT = url.includes("youtube.com") || url.includes("youtu.be");
     const isIG = url.includes("instagram.com");
     const platform = isYT ? "youtube" : (isIG ? "instagram" : "tiktok");
-    const analysis = await analyzeVideo(url, scrapedData.transcript, (scrapedData as any).audioUrl);
+    const analysis = await analyzeVideo(url, scrapedData.title || "Vidéo Virale", cleanTranscript, (scrapedData as any).audioUrl);
 
     // Normalisation des patterns pour Supabase (doit être un tableau)
     let patterns = analysis.patterns;
@@ -103,6 +118,16 @@ export async function POST(req: Request) {
     let structure = analysis.structure;
     if (typeof structure === 'string') {
       structure = { Hook: structure }; // Fallback si l'IA renvoie une chaîne
+    } else if (!structure || typeof structure !== 'object') {
+      structure = {};
+    }
+
+    // Injection du résumé stratégique et du plan d'action de l'IA pour la persistance JSONB
+    if (analysis.summary) {
+      structure.summary = analysis.summary;
+    }
+    if (analysis.action_plan) {
+      structure.action_plan = analysis.action_plan;
     }
 
     // 3. SAUVEGARDE : Upsert dans Supabase

@@ -80,7 +80,8 @@ export async function scrapeVideoData(url: string) {
       }
 
       // 3. Transcription (Avec secours si quota 100% épuisé)
-      let transcript = "Transcription non disponible.";
+      let transcript = "";
+      let transcriptQuotaExhausted = false;
       try {
         const transRes = await fetch(`https://${transHost}/transcript?video_id=${videoId}`, {
           headers: { 'X-RapidAPI-Key': apiKey || "", 'X-RapidAPI-Host': transHost }
@@ -92,16 +93,18 @@ export async function scrapeVideoData(url: string) {
         }
 
         const v = Array.isArray(transData) ? transData[0] : transData;
-        transcript = v.transcriptionAsText || v.transcript || transcript;
-      } catch (e) {
+        transcript = v.transcriptionAsText || v.transcript || "";
+      } catch (e: any) {
         console.log("DEBUG: [YOUTUBE] Quota Transcriptor épuisé, passage au secours...");
-        // Secours oEmbed ou Scraping simple pour le titre au moins
-        transcript = "Le quota de transcription est épuisé pour aujourd'hui. L'analyse se basera sur le titre et la description.";
+        // On marque explicitement que c'est un épuisement de quota API
+        transcriptQuotaExhausted = true;
+        transcript = "";
       }
 
       return {
         title,
         transcript,
+        transcriptQuotaExhausted,
         thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
         niche,
         views,
@@ -109,53 +112,90 @@ export async function scrapeVideoData(url: string) {
         followers,
         videoId
       };
-    }
- else if (isInstagram) {
-      console.log("DEBUG: Lancement du scan Instagram via RapidAPI...");
-      const instaHost = "instagram-scraper-stable-api.p.rapidapi.com";
-      const instaUrl = `https://${instaHost}/get_media_data.php?reel_post_code_or_url=${encodeURIComponent(url)}&type=reel`;
-
-      const response = await fetch(instaUrl, {
-        method: 'GET',
-        headers: {
-          'X-RapidAPI-Key': apiKey || "",
-          'X-RapidAPI-Host': instaHost
+    } else if (isInstagram) {
+      console.log("DEBUG: Lancement du scan Instagram avec Double API Failover...");
+      
+      let item: any = null;
+      let hostUsed = "instagram-public-bulk-scraper.p.rapidapi.com";
+      
+      try {
+        // Tentative avec l'API A (instagram-public-bulk-scraper)
+        const infoUrl = `https://instagram-public-bulk-scraper.p.rapidapi.com/v1/post/info?shortcode_or_url=${encodeURIComponent(url)}`;
+        const response = await fetch(infoUrl, {
+          method: 'GET',
+          headers: {
+            'X-RapidAPI-Key': apiKey || "",
+            'X-RapidAPI-Host': "instagram-public-bulk-scraper.p.rapidapi.com"
+          }
+        });
+        if (response.ok) {
+          const result = await response.json();
+          item = result.data || result.body || result;
+          hostUsed = "instagram-public-bulk-scraper.p.rapidapi.com";
+        } else {
+          throw new Error(`API A non-ok: ${response.statusText}`);
         }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Instagram API Error: ${response.statusText}`);
+      } catch (errorA) {
+        console.warn("DEBUG: API Instagram A (Bulk Scraper) échouée, tentative avec API B (Stable API)...", errorA);
+        try {
+          // Tentative avec l'API B (instagram-scraper-stable-api)
+          const infoUrl = `https://instagram-scraper-stable-api.p.rapidapi.com/get_media_data.php?reel_post_code_or_url=${encodeURIComponent(url)}&type=reel`;
+          const response = await fetch(infoUrl, {
+            method: 'GET',
+            headers: {
+              'X-RapidAPI-Key': apiKey || "",
+              'X-RapidAPI-Host': "instagram-scraper-stable-api.p.rapidapi.com"
+            }
+          });
+          if (response.ok) {
+            const result = await response.json();
+            item = result.data || result.body || result;
+            hostUsed = "instagram-scraper-stable-api.p.rapidapi.com";
+          } else {
+            throw new Error(`API B non-ok: ${response.statusText}`);
+          }
+        } catch (errorB) {
+          console.error("DEBUG: Les deux API Instagram A et B ont échoué", errorB);
+          throw new Error("Impossible de récupérer les données Instagram : les deux serveurs Scraper ont échoué.");
+        }
       }
 
-      const result = await response.json();
-      const item = result.data || result.body || result;
-      
+      if (!item) {
+        throw new Error("Données de média Instagram non récupérées.");
+      }
+
       const owner = item.owner || item.user || {};
       const username = owner.username || owner.user_name;
-      console.log("DEBUG: Owner Keys found:", Object.keys(owner).join(", "));
+      console.log("DEBUG: Instagram Owner trouvé :", username);
       
       const videoId = item.shortcode || item.id || url.split("/").filter(Boolean).pop();
       const caption = item.edge_media_to_caption?.edges?.[0]?.node?.text || item.caption?.text || "";
 
       let followers = owner.follower_count || owner.followers || owner.edge_followed_by?.count || 0;
-      console.log(`DEBUG: Followers dans 1er appel: ${followers}`);
+      console.log(`DEBUG: Followers dans 1er appel Instagram: ${followers}`);
 
       if (!followers && username) {
         try {
           console.log(`DEBUG: Tentative fallback abonnés pour @${username}...`);
-          const userUrl = `https://${instaHost}/get_ig_user_about.php?username_or_url=${username}`;
+          let userUrl = `https://instagram-scraper-stable-api.p.rapidapi.com/get_ig_user_about.php?username_or_url=${username}`;
+          let fallbackHost = "instagram-scraper-stable-api.p.rapidapi.com";
+          
+          if (hostUsed === "instagram-public-bulk-scraper.p.rapidapi.com") {
+            userUrl = `https://instagram-public-bulk-scraper.p.rapidapi.com/v1/user/info?username_or_id=${username}`;
+            fallbackHost = "instagram-public-bulk-scraper.p.rapidapi.com";
+          }
+
           const userRes = await fetch(userUrl, {
-            headers: { 'X-RapidAPI-Key': apiKey || "", 'X-RapidAPI-Host': instaHost }
+            headers: { 'X-RapidAPI-Key': apiKey || "", 'X-RapidAPI-Host': fallbackHost }
           });
           if (userRes.ok) {
             const userData = await userRes.json();
-            console.log("DEBUG: Instagram User Response:", JSON.stringify(userData).substring(0, 500));
             const u = userData.data || userData.user || userData;
             followers = u.follower_count || u.followers || u.edge_followed_by?.count || u.stats?.followers || 0;
-            console.log(`DEBUG: Followers trouvés via fallback: ${followers}`);
+            console.log(`DEBUG: Followers trouvés via fallback Instagram: ${followers}`);
           }
         } catch (e) {
-          console.error("DEBUG: Erreur fallback followers:", e);
+          console.error("DEBUG: Erreur fallback followers Instagram:", e);
         }
       }
 
@@ -164,7 +204,7 @@ export async function scrapeVideoData(url: string) {
         transcript: caption || "Analyse basée sur le contenu visuel.",
         thumbnail: item.display_url || item.thumbnail_src || "",
         niche: username || "Instagram Content",
-        views: item.video_play_count || item.video_view_count || 0,
+        views: item.video_play_count || item.play_count || item.video_view_count || 0,
         likes: item.edge_media_preview_like?.count || item.like_count || 0,
         comments: item.edge_media_to_parent_comment?.count || item.comment_count || 0,
         followers: followers,
@@ -172,7 +212,6 @@ export async function scrapeVideoData(url: string) {
         finalUrl: url,
         audioUrl: item.video_url
       };
-
     } else {
       // TikTok Logic - Restauration de la logique complète
       const host = "tiktok-video-no-watermark2.p.rapidapi.com";

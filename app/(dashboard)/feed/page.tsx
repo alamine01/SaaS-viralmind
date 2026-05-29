@@ -1,215 +1,414 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card } from "@/components/ui/card"
-import { supabase } from "@/lib/supabase"
-import { Search, Play, Plus, Eye, Zap, Loader2, VideoOff, Heart, ArrowRight } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Card, CardContent } from "@/components/ui/card"
+import { 
+  Search, 
+  Play, 
+  Zap, 
+  TrendingUp, 
+  Loader2, 
+  ExternalLink, 
+  X, 
+  Users, 
+  Eye, 
+  ThumbsUp,
+  ArrowUpDown,
+  Sparkles,
+  ChevronDown,
+  Flame,
+  Globe,
+  MonitorPlay
+} from "lucide-react"
+
+// YouTube icon (lucide doesn't have one)
+const YoutubeIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+)
+
+// TikTok icon
+const TikTokIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.52-4.06-1.39v7.76c-.05 2.42-1.34 4.78-3.58 5.76-2.24.98-5-.02-6.11-2.18-1.12-2.16-.5-5.07 1.48-6.52 1.5-1.11 3.56-1.2 5.05-.37V8.96c-1.89-.66-3.83-.81-5.83-.4-.96.2-1.92.59-2.73 1.2-.81.61-1.47 1.43-1.84 2.39-.37.96-.46 2.03-.31 3.07.15 1.04.59 2.04 1.25 2.87.66.83 1.54 1.49 2.53 1.89s2.08.52 3.16.41c1.08-.11 2.12-.51 3.01-1.13.89-.62 1.59-1.48 2.03-2.48V8.96c-1.5-.04-3-.55-4.14-1.57-1.14-1.02-1.78-2.5-1.93-4.04H12.53z"/>
+  </svg>
+)
+
+// Instagram icon
+const InstagramIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+  </svg>
+)
+
+import Link from "next/link"
+
+const NICHES = [
+  { id: "all", label: "Tout", icon: Globe },
+  { id: "motivation", label: "Motivation", icon: Flame },
+  { id: "business", label: "Business", icon: TrendingUp },
+  { id: "tech", label: "Tech", icon: Zap },
+  { id: "lifestyle", label: "Lifestyle", icon: Sparkles },
+  { id: "fitness", label: "Fitness", icon: Users },
+  { id: "finance", label: "Finance", icon: TrendingUp },
+  { id: "comedy", label: "Com\u00e9die", icon: Sparkles },
+  { id: "education", label: "\u00c9ducation", icon: Sparkles },
+  { id: "food", label: "Food", icon: Sparkles },
+  { id: "gaming", label: "Gaming", icon: Sparkles },
+]
+
+const SORTS = [
+  { id: "score", label: "Score Viral" },
+  { id: "views", label: "Vues" },
+  { id: "recent", label: "R\u00e9cent" },
+]
 
 export default function ViralFeedPage() {
-  const [videos, setVideos] = useState<any[]>([])
+  const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("community") // "community" or "favorites"
-  const [activeFilter, setActiveFilter] = useState("Récents")
-  const filters = ["Récents", "Populaire", "La plus ancienne"]
-  
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
-    return num.toString()
-  }
+  const [activeNiche, setActiveNiche] = useState("all")
+  const [activeSort, setActiveSort] = useState("score")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [previewVideo, setPreviewVideo] = useState<any | null>(null)
+  const [showSortDropdown, setShowSortDropdown] = useState(false)
+  const [visibleCount, setVisibleCount] = useState(24)
+  const sortRef = useRef<HTMLDivElement>(null)
 
-  const [favorites, setFavorites] = useState<string[]>([])
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        setShowSortDropdown(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [])
 
-  const toggleFavorite = async (videoId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return alert("Veuillez vous connecter pour sauvegarder des favoris.")
-
-    if (favorites.includes(videoId)) {
-      // Remove
-      const { error } = await supabase
-        .from("saved_items")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("video_id", videoId)
-      
-      if (!error) setFavorites(prev => prev.filter(id => id !== videoId))
-    } else {
-      // Add
-      const { error } = await supabase
-        .from("saved_items")
-        .insert([{ user_id: user.id, video_id: videoId, type: "video" }])
-      
-      if (!error) setFavorites(prev => [...prev, videoId])
+  const fetchFeed = async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({
+        niche: activeNiche,
+        source: "all",
+        sort: activeSort,
+        limit: "100", // Request a larger pool of 100 cached videos
+      })
+      const res = await fetch(`/api/feed?${params}`)
+      const data = await res.json()
+      if (!data.error) {
+        // Shuffle the pool of 100 videos and display 24 of them randomly
+        // to create a feeling of dynamic freshness on every refresh/action
+        const shuffled = (data.items || []).sort(() => Math.random() - 0.5)
+        setItems(shuffled)
+        setVisibleCount(24) // Reset visible count on fresh load
+      }
+    } catch (e) {
+      console.error("Feed fetch error:", e)
+    } finally {
+      setLoading(false)
     }
-  }
-
-  const getSortedVideos = () => {
-    let filtered = [...videos]
-    if (activeTab === "favorites") {
-      filtered = filtered.filter(v => favorites.includes(v.id))
-    }
-    
-    if (activeFilter === "Populaire") {
-      return filtered.sort((a, b) => (b.viral_score || 0) - (a.viral_score || 0))
-    }
-    if (activeFilter === "La plus ancienne") {
-      return filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-    }
-    return filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   }
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser()
-        
-        // Fetch community videos
-        const res = await fetch("/api/videos")
-        const data = await res.json()
-        if (!data.error) setVideos(data)
+    fetchFeed()
+  }, [activeNiche, activeSort])
 
-        // Fetch user favorites if logged in
-        if (user) {
-          const { data: favs } = await supabase
-            .from("saved_items")
-            .select("video_id")
-            .eq("user_id", user.id)
-            .eq("type", "video")
-          
-          if (favs) setFavorites(favs.map(f => f.video_id))
-        }
-      } catch (err) {
-        console.error("Failed to fetch data", err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchData()
-  }, [])
+  const filteredItems = searchQuery.trim()
+    ? items.filter(item =>
+        item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.niche?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : items
+
+  const visibleItems = filteredItems.slice(0, visibleCount)
+
+  const getScoreColor = (score: number) => {
+    if (score >= 90) return "bg-emerald-500 text-white"
+    if (score >= 70) return "bg-amber-500 text-white"
+    if (score >= 50) return "bg-orange-500 text-white"
+    return "bg-slate-400 text-white"
+  }
+
+  const getScoreLabel = (score: number) => {
+    if (score >= 90) return "Explosif"
+    if (score >= 70) return "Viral"
+    if (score >= 50) return "Tendance"
+    return "Normal"
+  }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
-      {/* Header Tabs */}
-      <div className="flex items-center justify-between border-b border-slate-100 mb-2">
-         <div className="flex gap-8">
-            <button 
-              onClick={() => setActiveTab("community")}
-              className={`px-0 py-3 border-b-2 text-[15px] font-semibold transition-all ${activeTab === "community" ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-500'}`}
+    <div className="space-y-6 md:space-y-8 animate-in fade-in duration-700 pb-20 max-w-7xl mx-auto px-4 md:px-0">
+      
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-rose-50 text-rose-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-rose-100">
+            <Flame className="size-3" /> Flux en direct
+          </div>
+          <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-none">
+            Flux <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-orange-500">Viral</span>
+          </h1>
+          <p className="text-slate-500 font-medium text-xs md:text-sm max-w-lg">
+            D&eacute;couvrez les vid&eacute;os qui explosent en ce moment. Filtrez par niche, analysez les patterns gagnants.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 w-full lg:w-auto">
+          <div className="relative flex-1 lg:w-72">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Rechercher..."
+              className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs md:text-sm font-medium focus:border-indigo-500/50 outline-hidden shadow-sm transition-all"
+            />
+          </div>
+
+          <div className="relative" ref={sortRef}>
+            <button
+              onClick={() => setShowSortDropdown(!showSortDropdown)}
+              className="h-10 px-3.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 flex items-center gap-2 hover:border-slate-300 transition-all shadow-sm whitespace-nowrap"
             >
-              Vidéos de la communauté
+              <ArrowUpDown className="size-3.5" />
+              <span className="hidden sm:inline">{SORTS.find(s => s.id === activeSort)?.label}</span>
+              <ChevronDown className="size-3" />
             </button>
-            <button 
-              onClick={() => setActiveTab("favorites")}
-              className={`px-0 py-3 border-b-2 text-[15px] font-semibold transition-all ${activeTab === "favorites" ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-500'}`}
-            >
-              Mes favoris
-            </button>
-         </div>
+            {showSortDropdown && (
+              <div className="absolute right-0 top-12 z-50 bg-white border border-slate-100 rounded-xl shadow-xl p-1.5 min-w-[140px] animate-in fade-in zoom-in-95 duration-200">
+                {SORTS.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => { setActiveSort(s.id); setShowSortDropdown(false) }}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-all ${activeSort === s.id ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
+
+      {/* Niche Filters */}
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 md:mx-0 md:px-0">
+        {NICHES.map(niche => (
+          <button
+            key={niche.id}
+            onClick={() => setActiveNiche(niche.id)}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-bold transition-all whitespace-nowrap border ${
+              activeNiche === niche.id
+                ? 'bg-gradient-to-r from-rose-500 to-orange-500 text-white border-transparent shadow-lg shadow-rose-100'
+                : 'bg-white text-slate-500 border-slate-100 hover:border-slate-200 hover:text-slate-900 shadow-sm'
+            }`}
+          >
+            <niche.icon className={`size-3.5 ${activeNiche === niche.id ? 'text-white' : 'text-slate-400'}`} />
+            {niche.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Feed Grid */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-           <Loader2 className="size-10 text-indigo-500 animate-spin" />
-           <p className="text-slate-400 font-medium">Chargement du flux viral...</p>
+        <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <div className="relative">
+            <Loader2 className="size-10 text-rose-500 animate-spin" />
+            <div className="absolute inset-0 bg-rose-500/10 blur-xl rounded-full" />
+          </div>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Chargement du flux viral...</p>
         </div>
-      ) : videos.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-6 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
-           <div className="size-20 rounded-full bg-slate-100 flex items-center justify-center text-slate-300">
-              <VideoOff className="size-10" />
-           </div>
-           <div className="space-y-2">
-              <h3 className="text-xl font-bold text-slate-900">Aucune vidéo analysée pour le moment</h3>
-              <p className="text-slate-400 max-w-sm font-medium">Soyez le premier à analyser une vidéo pour alimenter le flux de la communauté.</p>
-           </div>
-           <button onClick={() => window.location.href = '/analyse'} className="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-bold text-sm shadow-xl shadow-indigo-100 flex items-center gap-2">
-              Lancer ma première analyse <Zap className="size-4" />
-           </button>
-        </div>
-      ) : getSortedVideos().length === 0 && activeTab === "favorites" ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-6 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
-           <div className="size-20 rounded-full bg-rose-50 flex items-center justify-center text-rose-300">
-              <Heart className="size-10" />
-           </div>
-           <div className="space-y-2">
-              <h3 className="text-xl font-bold text-slate-900">Aucun favori pour le moment</h3>
-              <p className="text-slate-400 max-w-sm font-medium">Cliquez sur le cœur d'une vidéo de la communauté pour la retrouver ici.</p>
-           </div>
-           <button onClick={() => setActiveTab("community")} className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold text-sm shadow-xl flex items-center gap-2 transition-transform hover:scale-105">
-              Explorer la communauté <ArrowRight className="size-4" />
-           </button>
+      ) : filteredItems.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <div className="size-16 rounded-3xl bg-slate-100 flex items-center justify-center text-slate-300">
+            <Search className="size-8" />
+          </div>
+          <p className="text-sm font-bold text-slate-500">Aucune vid&eacute;o trouv&eacute;e pour ce filtre</p>
+          <button onClick={() => { setActiveNiche("all"); setSearchQuery("") }} className="text-xs font-bold text-indigo-600 hover:underline">
+            R&eacute;initialiser les filtres
+          </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {getSortedVideos().map((item) => (
-            <div 
-              key={item.id} 
-              onClick={() => window.open(item.url, '_blank')}
-              className="relative aspect-[3/4] bg-slate-100 rounded-2xl overflow-hidden group cursor-pointer shadow-xs hover:shadow-xl transition-all duration-500 border border-slate-100"
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {visibleItems.map((item) => (
+            <Card
+              key={item.id}
+              className="group border border-slate-100 shadow-sm rounded-[20px] overflow-hidden bg-white hover:shadow-xl hover:border-slate-200 transition-all duration-300 cursor-pointer flex flex-col"
+              onClick={() => setPreviewVideo(item)}
             >
-              {/* Premium Gradient Background Fallback */}
-              <div className={`absolute inset-0 flex flex-col items-center justify-center p-4 text-center transition-transform duration-500 group-hover:scale-105 ${
-                item.platform === 'instagram' 
-                  ? 'bg-gradient-to-tr from-purple-600 via-pink-500 to-orange-400' 
-                  : item.platform === 'tiktok' 
-                  ? 'bg-gradient-to-tr from-slate-950 via-cyan-900 to-slate-900' 
-                  : 'bg-gradient-to-tr from-slate-950 via-red-950 to-slate-900'
-              }`}>
-                <div className="size-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-xl mb-2">
-                   {item.platform === 'instagram' && (
-                     <svg className="size-6 text-white fill-current" viewBox="0 0 24 24">
-                       <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                     </svg>
-                   )}
-                   {item.platform === 'tiktok' && (
-                     <svg className="size-6 text-white fill-current" viewBox="0 0 24 24">
-                       <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.6-4.12-1.31a6.33 6.33 0 0 1-1.87-1.7c-.02 3.18-.03 6.35-.03 9.53 0 1.14-.24 2.26-.7 3.3-.8 1.82-2.62 3.19-4.6 3.4-2.1.23-4.3-.34-5.93-1.71-1.81-1.51-2.65-4.02-2.1-6.29.39-1.56 1.45-2.97 2.9-3.67 1.13-.54 2.45-.74 3.69-.53V10.9a3.71 3.71 0 0 0-1.39.28c-1.46.62-2.43 2.13-2.39 3.73.03 1.46.76 2.87 2 3.61 1.41.81 3.29.73 4.6-.22.86-.63 1.37-1.63 1.35-2.7-.01-4.49-.01-8.99-.01-13.48-.12-.02-.2-.04-.26-.05z"/>
-                     </svg>
-                   )}
-                   {item.platform === 'youtube' && (
-                     <svg className="size-6 text-white fill-current" viewBox="0 0 24 24">
-                       <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                     </svg>
-                   )}
+              {/* Thumbnail */}
+              <div className="relative aspect-video bg-slate-100 overflow-hidden">
+                {item.thumbnail ? (
+                  <img
+                    src={item.thumbnail}
+                    alt={item.title}
+                    className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="size-full bg-gradient-to-br from-slate-200 to-slate-100 flex items-center justify-center">
+                    <Play className="size-10 text-slate-300" />
+                  </div>
+                )}
+
+                <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  <div className="size-14 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-xl">
+                    <Play className="size-6 text-slate-900 ml-0.5" />
+                  </div>
                 </div>
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/50">{item.platform}</span>
+
+                <div className={`absolute top-3 left-3 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 ${getScoreColor(item.viral_score)}`}>
+                  <Zap className="size-3" />
+                  {item.viral_score}%
+                </div>
+
+
+                <div className="absolute bottom-3 left-3 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[9px] font-bold text-white uppercase tracking-wider">
+                  {getScoreLabel(item.viral_score)}
+                </div>
               </div>
 
-              {item.thumbnail && (
-                <img 
-                  src={item.thumbnail} 
-                  alt={item.title} 
-                  className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-105 z-10" 
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              )}
-              <div className="absolute top-2 left-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                 <button 
-                   onClick={(e) => toggleFavorite(item.id, e)}
-                   className={`p-2 rounded-lg backdrop-blur-md shadow-lg transition-all transform hover:scale-110 ${favorites.includes(item.id) ? 'bg-rose-500 text-white' : 'bg-white/20 text-white hover:bg-white/40'}`}
-                 >
-                    <Heart className={`size-3.5 ${favorites.includes(item.id) ? 'fill-current' : ''}`} />
-                 </button>
-              </div>
+              <CardContent className="p-4 flex-1 flex flex-col justify-between gap-3">
+                <div className="space-y-2">
+                  <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                    {item.title}
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider truncate">{item.author}</span>
+                    <span className="text-slate-200">&bull;</span>
+                    <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">{item.time_ago}</span>
+                  </div>
+                </div>
 
-              <div className="absolute top-2 right-2 bg-indigo-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-lg">
-                 {item.viral_score}%
-              </div>
-
-              <div className="absolute inset-x-0 bottom-0 p-3 bg-linear-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end gap-1">
-                 <p className="text-[11px] text-white font-bold truncate">{item.title}</p>
-                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-white/80">
-                       <Play className="size-3 fill-current" />
-                       <span className="text-[10px] font-bold uppercase tracking-widest">{formatNumber(item.views || 0)} v.</span>
+                <div className="flex items-center justify-between pt-2 border-t border-slate-50">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1.5">
+                      <Eye className="size-3 text-slate-400" />
+                      <span className="text-[11px] font-bold text-slate-600">{item.views_formatted}</span>
                     </div>
-                    <Zap className="size-3.5 text-indigo-400 fill-current opacity-0 group-hover:opacity-100 transition-opacity" />
-                 </div>
+                    {item.likes > 0 && (
+                      <div className="flex items-center gap-1.5">
+                        <ThumbsUp className="size-3 text-slate-400" />
+                        <span className="text-[11px] font-bold text-slate-600">
+                          {item.likes >= 1000 ? `${(item.likes / 1000).toFixed(1)}K` : item.likes}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${
+                    item.niche === "trending" ? "bg-rose-50 text-rose-500" : "bg-indigo-50 text-indigo-500"
+                  }`}>
+                    {item.niche}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+          </div>
+
+          {/* Voir plus button */}
+          {filteredItems.length > visibleCount && (
+            <div className="flex justify-center pt-4">
+              <button
+                onClick={() => setVisibleCount(prev => Math.min(prev + 12, filteredItems.length))}
+                className="h-11 px-6 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm hover:shadow flex items-center justify-center gap-2"
+              >
+                Voir plus de vid&eacute;os
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Video Preview Modal */}
+      {previewVideo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-md" onClick={() => setPreviewVideo(null)} />
+          <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-300">
+            <button 
+              onClick={() => setPreviewVideo(null)} 
+              className="absolute top-4 right-4 z-10 size-9 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center text-slate-500 hover:text-slate-900 transition-colors shadow-md"
+            >
+              <X className="size-5" />
+            </button>
+
+            <div className="aspect-video bg-black">
+              {previewVideo.embed_url ? (
+                <iframe
+                  src={`${previewVideo.embed_url}?autoplay=1`}
+                  className="size-full"
+                  allow="autoplay; encrypted-media"
+                  allowFullScreen
+                />
+              ) : (
+                <div className="size-full flex items-center justify-center text-slate-400">
+                  <Play className="size-16" />
+                </div>
+              )}
+            </div>
+
+            <div className="p-5 sm:p-6 space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-base sm:text-lg font-black text-slate-900 leading-snug">{previewVideo.title}</h2>
+                  <p className="text-xs font-bold text-slate-400 mt-1">{previewVideo.author} &bull; {previewVideo.time_ago}</p>
+                </div>
+                <div className={`shrink-0 px-3 py-1.5 rounded-xl text-sm font-black ${getScoreColor(previewVideo.viral_score)}`}>
+                  {previewVideo.viral_score}%
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 sm:gap-6 py-3 border-y border-slate-100 overflow-x-auto">
+                <div className="flex items-center gap-2 shrink-0">
+                  <Eye className="size-4 text-slate-400" />
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Vues</p>
+                    <p className="text-sm font-bold text-slate-900">{previewVideo.views_formatted}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Zap className="size-4 text-amber-500" />
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Score</p>
+                    <p className="text-sm font-bold text-slate-900">{previewVideo.viral_score}%</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <TrendingUp className="size-4 text-emerald-500" />
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tendance</p>
+                    <p className="text-sm font-bold text-slate-900">{getScoreLabel(previewVideo.viral_score)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {previewVideo.hook && (
+                <div className="bg-indigo-50/50 border border-indigo-100/50 rounded-2xl p-4">
+                  <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1">Accroche d&eacute;tect&eacute;e</p>
+                  <p className="text-xs font-bold text-slate-800 italic leading-relaxed">&ldquo;{previewVideo.hook}&rdquo;</p>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <Link
+                  href={`/analyse?url=${encodeURIComponent(previewVideo.url)}`}
+                  className="flex-1 h-11 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                >
+                  <Zap className="size-4" /> Analyser avec le Radar
+                </Link>
+                <a
+                  href={previewVideo.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 h-11 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                >
+                  <ExternalLink className="size-4" /> Voir sur {previewVideo.platform}
+                </a>
               </div>
             </div>
-          ))}
+          </div>
         </div>
       )}
     </div>

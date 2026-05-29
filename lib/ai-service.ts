@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-export const analyzeVideo = async (videoUrl: string, transcript: string, audioUrl?: string) => {
+export const analyzeVideo = async (videoUrl: string, title: string, transcript: string, audioUrl?: string) => {
   console.log("DEBUG: GEMINI_API_KEY présent ?", !!process.env.GEMINI_API_KEY);
   
   const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
@@ -40,30 +40,47 @@ export const analyzeVideo = async (videoUrl: string, transcript: string, audioUr
   }
 
   const prompt = `
-    Analyse cette vidéo (URL: ${videoUrl}). 
-    ${audioUrl ? "Je t'ai fourni le fichier vidéo complet pour l'analyse visuelle et sonore." : ""}
-    ${transcript ? `Voici la transcription textuelle de la vidéo : "${transcript}"` : ""}
+    Tu es un expert en analyse de contenu viral et en stratégie marketing de contenu court.
     
-    INSTRUCTIONS STRICTES : 
-    1. UTILISE la transcription fournie ci-dessus pour ton analyse et pour le champ "full_transcript".
-    2. RÉPONDS EXCLUSIVEMENT EN FRANÇAIS (sauf pour le champ "original_transcript" qui doit être dans la langue d'origine parlée dans la vidéo).
-    3. REGARDE les textes incrustés si une vidéo est fournie.
-    4. NE RIEN INVENTER. Si tu n'as ni vidéo ni transcription, réponds {"error": "Aucune donnée reçue"}.
+    Analyse cette vidéo virale en te basant UNIQUEMENT sur les données réelles fournies ci-dessous.
+    NE RIEN INVENTER. NE PAS DÉDUIRE. NE PAS EXTRAPOLER au-delà de ce qui est dit dans la transcription.
     
-    Donne-moi une analyse complète au format JSON :
-    0. "visual_description": Une phrase décrivant précisément ce que tu vois à l'image (en français).
-    1. "hook": Le hook utilisé (les mots exacts PARLÉS EN FRANÇAIS).
-    2. "whyItWorks": Pourquoi la vidéo marche (en français).
-    3. "structure": La structure détaillée (Hook, Développement, Conclusion) (en français).
-    4. "emotion": L'émotion principale (en français).
-    5. "patterns": Les patterns viraux détectés (en français).
-    6. "viral_score": Score 0-100.
-    7. "full_transcript": Transcription intégrale mot à mot EN FRANÇAIS de tout ce qui est dit dans la vidéo. RÈGLES CRUCIALES pour cette transcription : utilise des points de suspension "..." pour marquer les pauses, les hésitations et les silences du créateur. Reste fidèle au rythme parlé et au ton oral de la vidéo (ne réécris pas, ne reformule pas, ne littérarise pas). Traduis naturellement en français parlé courant mais GARDE la structure exacte de ce qui est dit, phrase par phrase, pause par pause.
-    8. "original_transcript": Transcription textuelle mot à mot intégrale dans la LANGUE ORIGINALE parlée dans la vidéo (par exemple, la transcription exacte en anglais de ses paroles si le créateur parle anglais, sans traduction ni modification). Utilise aussi "..." pour marquer les pauses et hésitations.
+    Données de la vidéo :
+    - URL : ${videoUrl}
+    - Titre : "${title}"
+    - Transcription réelle mot à mot : "${transcript}"
+    ${audioUrl ? "- Un fichier vidéo a également été joint pour l'analyse visuelle." : ""}
     
-    IMPORTANT : Si tu n'as pas reçu de fichier vidéo ou si le fichier est corrompu, réponds simplement {"error": "Fichier vidéo non reçu par l'IA"}. NE RIEN INVENTER.
+    INSTRUCTIONS STRICTES :
+    1. RÉPONDS EXCLUSIVEMENT EN FRANÇAIS (sauf pour le champ "original_transcript").
+    2. BASE-TOI UNIQUEMENT sur la transcription fournie. Ne complète pas, n'invente pas.
+    3. Si un fichier vidéo est joint, analyse les textes incrustés et le style visuel SANS inventer de dialogue.
+    4. Tous les champs doivent être remplis avec des données extraites de la transcription réelle.
     
-    Réponds UNIQUEMENT avec le JSON.
+    Réponds au format JSON strict :
+    {
+      "visual_description": "Description du style visuel observé ou déduit du titre (1 phrase).",
+      "hook": "L'accroche EXACTE telle qu'elle apparaît dans la transcription (premières secondes).",
+      "whyItWorks": "Pourquoi cette vidéo fonctionne — basé sur la transcription (en français).",
+      "structure": {
+        "Hook": "...",
+        "Développement": "...",
+        "Conclusion": "..."
+      },
+      "summary": "Résumé stratégique de 3-4 phrases décrivant le message, le positionnement, le ton et l'audience cible.",
+      "action_plan": [
+        "Étape 1 : ...",
+        "Étape 2 : ...",
+        "Étape 3 : ..."
+      ],
+      "emotion": "L'émotion principale déclenchée chez le spectateur.",
+      "patterns": ["pattern 1", "pattern 2", "pattern 3"],
+      "viral_score": 0,
+      "full_transcript": "Transcription intégrale mot à mot EN FRANÇAIS avec \"...\" pour les pauses.",
+      "original_transcript": "Transcription mot à mot dans la langue originale avec \"...\" pour les pauses."
+    }
+    
+    Réponds UNIQUEMENT avec le JSON brut valide, sans markdown.
   `;
   
   promptParts.push(prompt);

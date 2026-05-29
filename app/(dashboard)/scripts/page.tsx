@@ -752,7 +752,7 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                              {/* SCRIPT BLOCK EMBEDDED */}
                              {!isUser && m.script_data && (
                                <Card className="border-none shadow-xl shadow-indigo-100/40 rounded-3xl overflow-hidden border border-slate-100/50 bg-white">
-                                  <CardContent className="p-6 space-y-6">
+                                  <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                                      
                                      {/* Jauge du score viral */}
                                      <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
@@ -793,13 +793,13 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                                      )}
 
                                      {/* Commandes Storyboard, Visualiser, Prompteur */}
-                                     <div className="grid grid-cols-3 gap-2 pt-2">
+                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
                                         <button
                                           onClick={() => {
                                             setModalBlocks(m.script_data.script || [])
                                             setOpenModal("full")
                                           }}
-                                          className="h-10 px-3 bg-slate-900 text-white rounded-xl font-bold text-[9px] uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-1 shadow-xs"
+                                          className="h-10 px-3 bg-slate-900 text-white rounded-xl font-bold text-[9px] uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-1.5 shadow-xs"
                                         >
                                            <Layout className="size-3" /> Visualiser
                                         </button>
@@ -809,7 +809,7 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                                             setModalBlocks(m.script_data.script || [])
                                             setOpenModal("tech")
                                           }}
-                                          className="h-10 px-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-[9px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-1 shadow-xs"
+                                          className="h-10 px-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-[9px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-1.5 shadow-xs"
                                         >
                                            <Video className="size-3 text-amber-500" /> Storyboard
                                         </button>
@@ -817,14 +817,10 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                                         <button
                                           onClick={() => {
                                              setModalBlocks(m.script_data.script || [])
-                                             // Open fully to prompter by setting state, wait: the prompter is triggered inside ScriptModals directly !
-                                             // We can open visualizer full mode, then the user clicks "Mode Prompteur" or we can pass a trigger.
-                                             // Let's set openModal to "full" and let them use the beautiful prompter button at the top right of the modal !
-                                             setModalBlocks(m.script_data.script || [])
                                              setOpenModal("full")
                                              toast.info("Cliquez sur 'Mode Prompteur' en haut à droite du modal pour démarrer !");
                                           }}
-                                          className="h-10 px-3 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-xl font-bold text-[9px] uppercase tracking-widest hover:bg-indigo-100 transition-all flex items-center justify-center gap-1 shadow-xs"
+                                          className="h-10 px-3 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-xl font-bold text-[9px] uppercase tracking-widest hover:bg-indigo-100 transition-all flex items-center justify-center gap-1.5 shadow-xs"
                                         >
                                            <Zap className="size-3 text-indigo-500" /> Prompteur
                                         </button>
@@ -872,15 +868,15 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                  className="flex gap-3 bg-slate-50/80 border border-slate-100 p-2 pr-2.5 rounded-2xl shadow-inner focus-within:bg-white focus-within:border-indigo-500/30 transition-all items-center"
                >
                   {isRecording ? (
-                    <div className="flex-1 flex items-center justify-between px-4 py-2 bg-rose-50 border border-rose-100 rounded-xl animate-pulse">
+                    <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-2 bg-rose-50 border border-rose-100 rounded-xl">
                       <div className="flex items-center gap-3 text-rose-600 font-bold text-xs">
-                        <span className="size-2.5 rounded-full bg-rose-600 animate-ping" />
-                        <span>Enregistrement en cours ({formatTime(recordingTime)})...</span>
+                        <span className="size-2.5 rounded-full bg-rose-600 animate-ping shrink-0" />
+                        <span className="truncate">Enregistrement ({formatTime(recordingTime)})...</span>
                       </div>
                       <button 
                         type="button" 
                         onClick={stopRecording}
-                        className="h-8 px-4 bg-rose-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg hover:bg-rose-700 transition-all flex items-center gap-1.5"
+                        className="h-9 sm:h-8 px-4 bg-rose-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg hover:bg-rose-700 transition-all flex items-center justify-center gap-1.5 shrink-0"
                       >
                         <Square className="size-3" /> Arrêter
                       </button>
@@ -889,9 +885,9 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                     <input 
                       value={inputMessage}
                       onChange={(e) => setInputMessage(e.target.value)}
-                      placeholder={submittingMessage ? "L'IA réfléchit..." : transcribing ? "Transcription en cours..." : "Demandez une modification (ou parlez au micro)..."}
+                      placeholder={submittingMessage ? "L'IA réfléchit..." : transcribing ? "Transcription..." : "Votre message..."}
                       disabled={submittingMessage || transcribing}
-                      className="flex-1 bg-transparent border-0 px-3 py-3 text-xs md:text-sm font-medium text-slate-900 focus:ring-0 outline-hidden placeholder:text-slate-300"
+                      className="flex-1 min-w-0 bg-transparent border-0 px-3 py-3 text-xs md:text-sm font-medium text-slate-900 focus:ring-0 outline-hidden placeholder:text-slate-300"
                     />
                   )}
                   
