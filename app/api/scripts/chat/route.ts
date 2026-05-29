@@ -5,11 +5,21 @@ import { checkAndIncrementScriptQuota } from "@/lib/quota-service";
 
 export async function POST(req: Request) {
   try {
-    const { discussionId, message, niche, tone, duration } = await req.json();
+    const { 
+      discussionId, 
+      message, 
+      niche, 
+      tone, 
+      duration,
+      attachmentUrl,
+      attachmentName,
+      attachmentType,
+      attachmentSize 
+    } = await req.json();
 
-    if (!discussionId || !message) {
+    if (!discussionId || (!message && !attachmentUrl)) {
       return NextResponse.json(
-        { error: "Paramètres 'discussionId' et 'message' requis." },
+        { error: "Paramètres 'discussionId' et ('message' ou 'attachmentUrl') requis." },
         { status: 400 }
       );
     }
@@ -91,23 +101,40 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. Insérer le message de l'utilisateur en base de données
+    // 3. Insérer le message de l'utilisateur en base de données avec pièce jointe éventuelle
     const { error: userMsgError } = await supabase
       .from("script_messages")
       .insert({
         discussion_id: discussionId,
         role: "user",
-        content: message
+        content: message || "",
+        attachment_url: attachmentUrl || null,
+        attachment_name: attachmentName || null,
+        attachment_type: attachmentType || null,
+        attachment_size: attachmentSize || null
       });
 
     if (userMsgError) {
       throw new Error("Impossible d'enregistrer votre message.");
     }
 
-    // Préparer l'historique complet incluant le nouveau message pour l'envoyer à Gemini
+    // Préparer l'historique complet pour Gemini en y injectant les détails de la pièce jointe
+    let userMsgWithAttachmentContext = message || "";
+    if (attachmentUrl) {
+      userMsgWithAttachmentContext += `\n\n[Pièce jointe (${attachmentType}): "${attachmentName}" accessible à l'adresse: ${attachmentUrl}]`;
+    }
+
+    const formattedPriorMessages = (priorMessages || []).map((msg: any) => {
+      let content = msg.content || "";
+      if (msg.attachment_url) {
+        content += `\n\n[Pièce jointe (${msg.attachment_type}): "${msg.attachment_name}" accessible à l'adresse: ${msg.attachment_url}]`;
+      }
+      return { role: msg.role, content };
+    });
+
     const fullHistory = [
-      ...(priorMessages || []),
-      { role: "user", content: message }
+      ...formattedPriorMessages,
+      { role: "user", content: userMsgWithAttachmentContext }
     ];
 
     // 4. Générer la réponse via l'IA

@@ -109,70 +109,46 @@ export const generateScripts = async (concept: string, niche: string, tone: stri
     : `Utilise un ton : ${tone}`;
 
   const prompt = `
-    Agis en tant qu'expert en viralité mondiale, copywriter d'élite et raconteur d'histoires hors pair.
-    Ton objectif est de concevoir un script vidéo qui CAPTURE l'attention immédiatement et qui sonne comme un véritable humain de chair et d'os.
-
-    CONCEPT : "${concept}"
-    NICHE : ${niche}
-    ${toneInstruction}
-    ${durationText}
-
-    ========================================================================
-    🔴 DIRECTIVES D'HUMANISATION ABSOLUE (ZÉRO STYLE IA CONVENTIONNEL) :
-    ========================================================================
-    - SONORITÉ NATURELLE & PARLÉE : Rédige le texte dans un français parlé, authentique, vivant et captivant. Interdiction d'utiliser des transitions robotiques d'IA comme "En outre", "Dans cette vidéo nous allons voir", "Voici pourquoi", "C'est pourquoi", "De plus", "En conclusion", "Imaginez ceci". Utilise plutôt des transitions naturelles et directes ("Tu vois,", "En fait,", "Le truc c'est...", "Franchement,", "Mais attends, le pire c'est...").
-    - HISTOIRES, VULNÉRABILITÉ & CONCRET : Introduis du vécu, de la crédibilité concrète ("J'ai testé...", "Je me suis rendu compte de...", "Il m'est arrivé un truc de fou..."), des chiffres précis et étranges (ex: "17,4%" plutôt que "90%"), et des analogies physiques plutôt que des concepts purement théoriques.
-    - FILTRE ANTI-CLICHÉS D'IA : Interdit d'utiliser les expressions usées d'IA ("dans ce monde moderne", "l'ultime secret", "révolutionner", "il est crucial de", "le guide ultime", "découvrez comment", "imaginez un monde").
+    Tu es un Copywriter d'Élite international (niveau Top 1% mondial), spécialisé dans la création de vidéos hautement virales pour TikTok, Instagram Reels, YouTube Shorts et YouTube long format.
+    Ton objectif est d'écrire un script vidéo d'une qualité EXCEPTIONNELLE, captivant de la première à la dernière seconde, avec une valeur ajoutée massive.
+    
+    CE QUE TU DOIS ÉVITER À TOUT PRIX (LE STYLE "CHATGPT GÉNÉRIQUE") :
+    - ZÉRO répétition : Ne répète jamais deux fois la même idée ou le même concept sous des formes différentes. Chaque phrase doit apporter une nouvelle information ou faire progresser l'intrigue.
+    - ZÉRO formule bateau/cliché d'IA : Interdit de commencer par des questions inutiles ("Avez-vous déjà... ?", "Vous voulez savoir comment... ?"). Interdit de finir par des résumés gnangnan ou convenus ("Et voilà !", "En conclusion...", "N'oubliez pas de vous abonner").
+    - ZÉRO remplissage : Pas de phrases vides de sens ou trop corporatives ("Dans ce monde moderne...", "Il est crucial de...", "C'est essentiel pour..."). Chaque seconde de parole doit être utile et capter l'intérêt.
+    
+    CE QUE TU DOIS FAIRE (L'ÉCRITURE HAUT DE GAMME / VIRALE) :
+    - ACCROCHE (HOOK) IMMÉDIATE ET CHOC : Ne commence JAMAIS par "Arrête de scroller" ou des variantes similaires. Commence directement par une affirmation forte, un fait surprenant, une confession sans filtre, ou une opinion impopulaire (ex: "J'ai testé tous les outils de productivité pendant 5 ans, et 99% sont des arnaques...").
+    - DÉTAILS CONCRETS ET PREUVES : Remplace les concepts flous par des détails tangibles, des chiffres précis (ex: "14,3%" au lieu de "beaucoup"), des exemples réels ou des anecdotes concrètes.
+    - STRUCTURE RYTHMÉE ET MICRO-TENSIONS : Divise le script en étapes claires et logiques. Chaque bloc doit se terminer par une micro-transition qui pousse le spectateur à écouter le bloc suivant (suspense ou curiosité).
+    - TON D'UN VÉRITABLE CRÉATEUR HUMAIN : Rédige dans un français parlé naturel, percutant, fluide et vivant. Utilise des expressions parlées authentiques ("Le truc c'est que...", "En clair,", "Franchement,", "Le pire ?"), des phrases courtes et des ruptures de rythme (silences, accélérations).
+    
+    INFORMATIONS CONTEXTUELLES :
+    - CONCEPT / IDÉE CLÉ : "${concept}"
+    - NICHE / DOMAINE : "${niche}"
+    - ${toneInstruction}
+    - ${durationText}
     
     ========================================================================
-    🌀 ARCHITECTURE DYNAMIQUE ET DIVERSIFIÉE DES SCRIPTS :
+    🌀 ARCHITECTURES DE HAUT NIVEAU (Choisis-en une dynamiquement selon le concept) :
     ========================================================================
-    Choisis DYNAMIQUEMENT l'une des architectures suivantes selon ce qui colle le mieux à ton concept pour garantir une création unique :
+    1. L'Architecture Narrative (In Medias Res) : Commencer par une anecdote/confession choc -> Expliquer le problème -> Révéler la solution -> Démontrer la valeur pratique -> CTA naturel.
+    2. L'Architecture Contrarienne (Opinion Impopulaire) : Casser un mythe populaire -> Prouver le contraire avec un angle logique fort -> Révéler la méthode alternative -> CTA engageant.
+    3. L'Architecture Coulisses (Build in Public) : Montrer un échec ou un process réel -> Extraire la leçon cachée -> Donner le plan d'action immédiat -> CTA fluide.
+    4. L'Architecture Socratique (Le Paradoxe) : Poser une contradiction apparente -> Expliquer le piège où tout le monde tombe -> Révéler le secret d'initié -> CTA fluide.
     
-    Voici les architectures possibles :
-    
-    1. Architecture Narrative (In Medias Res) :
-       - [ANECDOTE_CHOC] : Commence direct au milieu de l'action ou d'une confession.
-       - [FLASHBACK] : Comment on en est arrivé là (le problème initial).
-       - [REVELATION] : La leçon apprise ou la découverte clé.
-       - [VALEUR_PRATIQUE] : Explications concrètes applicables.
-       - [CTA_FLUIDE] : Un appel à l'action glissé naturellement sans forcer.
-       
-    2. Architecture Contrarienne (Unpopular Opinion) :
-       - [MYTHE_COMMUN] : Attaque directe d'une croyance ou d'un conseil populaire.
-       - [PREUVE_CONTRAIRE] : Ton argument ou preuve solide qui détruit le mythe.
-       - [CONCORDANCE_REEL] : Pourquoi les gens tombent dans le panneau.
-       - [STRATEGIE] : Comment faire différemment et mieux.
-       - [CTA] : Demande l'avis de l'audience ou invite à l'action.
-       
-    3. Architecture Coulisses (Build in Public) :
-       - [ECHEC_SANS_FILTRE] : Confession d'une erreur ou d'une frustration.
-       - [LEÇON_CACHE] : Ce que cet échec t'a secrètement appris.
-       - [DEMONSTRATION] : Preuve en direct ou guide rapide.
-       - [APPEL_ACTION] : Incitation à rejoindre l'aventure.
-       
-    4. Architecture Socratique (The Paradox Loop) :
-       - [QUESTION_DERANGEANTE] : Pose une question contre-intuitive.
-       - [PIEGE_VISIBLE] : La fausse bonne idée que tout le monde suit.
-       - [SOLUTION_INATTENDUE] : L'angle de résolution secret.
-       - [CTA_INVISIBLE] : Appel à l'action intégré de façon transparente.
-       
-    Ajuste librement les types ("type") de tes blocs dans le tableau "script" pour refléter fidèlement l'architecture choisie (ex: "ANECDOTE", "CONFESSION", "MYTHE", "CONTRE-COURANT", "PREUVE", "LEÇON", "REVELATION", "DEMONSTRATION", "CTA", etc.).
-    
-    ========================================================================
-    ⚡ CRÉATON 100% UNIQUE & ZÉRO PLAGIAT (RÈGLES D'OR STRICTES) :
-    ========================================================================
-    - INTERDICTION ABSOLUE DE PLAGIAT : Si le concept ou le contexte fait référence à une vidéo analysée ou existante (remix/outlier), tu as l'INTERDICTION STRICTE de faire du copier-coller de phrases entières ou de traduire littéralement le texte d'origine. Ne réutilise pas les mêmes mots, expressions ou structures de phrases.
-    - RÉÉCRITURE CRÉATIVE COMPLÈTE : Tu dois extraire uniquement l'intention psychologique (la structure narrative, la leçon de fond, l'accroche structurelle), mais réinventer à 100% le texte de A à Z avec un style original, d'autres métaphores, un vocabulaire différent et un angle neuf. Le résultat ne doit présenter aucun plagiat textuel ou ressemblance verbale avec l'original.
-    - PERSONNALISATION EXTRÊME : Évite les idées de premier niveau pour qu'aucun script généré ne ressemble à un autre sur le même domaine.
-
-    Donne-moi le résultat au format JSON suivant :
+    Rends-moi le résultat au format JSON strict suivant :
     {
-      "score": 92,
-      "explanation": "Une phrase courte expliquant pourquoi ce script va percer dans la niche ${niche} avec son architecture unique.",
+      "score": 94,
+      "explanation": "Une phrase courte et percutante expliquant la force psychologique et l'originalité de ce script pour la niche ${niche}.",
       "script": [
-        {"type": "LE_NOM_DE_L_ETAPE_DANS_L_ARCHITECTURE", "time": "0:03", "audio": "Le texte exact parlé en français avec intonation humaine", "visual": "Description précise de l'image/mouvement/rythme visuel"}
-        // Ajoute autant de blocs que nécessaire pour couvrir la durée requise de façon rythmée
+        {
+          "type": "LE_NOM_DE_L_ETAPE_DANS_L_ARCHITECTURE",
+          "time": "0:05",
+          "audio": "Le texte exact parlé en français naturel. Utilise des phrases courtes, des respirations (...) pour le rythme. Zéro bla-bla.",
+          "visual": "Instruction de mise en scène ultra-précise, dynamique et moderne (ex: close-up sur les yeux, transition rapide par zoom, affichage d'un chiffre clé en surimpression)."
+        }
+        // Ajoute autant de blocs courts et rythmés que nécessaire pour couvrir la durée ciblée sans aucune répétition.
       ]
     }
     Réponds UNIQUEMENT avec le JSON brut.
@@ -285,9 +261,20 @@ export const generateChatResponse = async (
   }).join("\n\n");
 
   const prompt = `
-    Tu es un expert d'élite en viralité de vidéos courtes/longues (TikTok, Reels, Shorts, YouTube) et rédacteur publicitaire de génie.
-    Ton rôle est de guider l'utilisateur pour concevoir, affiner ou corriger un script vidéo hautement addictif, ultra-naturel et viral.
-
+    Tu es un Copywriter d'Élite international (niveau Top 1% mondial) et un consultant de croissance spécialisé dans les scripts ultra-viraux (TikTok, Reels, Shorts, YouTube).
+    Ton rôle est de guider l'utilisateur, de lui donner des conseils marketing pointus, et de rédiger des scripts d'une qualité EXCEPTIONNELLE.
+    
+    CE QUE TU DOIS ÉVITER À TOUT PRIX (LE STYLE "CHATGPT GÉNÉRIQUE") :
+    - ZÉRO répétition : Chaque phrase du script doit apporter de la valeur et faire avancer le sujet. Ne résume pas ce qui a déjà été dit, ne paraphrase pas.
+    - ZÉRO formule bateau/cliché d'IA : Interdit de commencer par des questions inutiles ("Avez-vous déjà...", "Vous voulez savoir..."). Interdit de finir par des conclusions formatées ("N'attendez plus...", "Et voilà !").
+    - ZÉRO remplissage : Pas de phrases corporatives creuses. Chaque mot doit sonner authentique, direct et humain.
+    
+    CE QUE TU DOIS FAIRE (L'ÉCRITURE HAUT DE GAMME) :
+    - ACCROCHES ULTRA-PERCUTANTES : Ne commence JAMAIS par "Arrête de scroller" ou des variantes similaires. Crée une tension immédiate dès la première seconde (confession choc, fait insolite, cassage de mythe).
+    - VALEUR PRATIQUE ET DÉTAILS CONCRETS : Utilise des chiffres précis (ex: "17,4%" plutôt que "la plupart"), des analogies visuelles fortes et des étapes claires.
+    - MICRO-TENSIONS : Chaque étape du script doit donner envie de regarder la suivante.
+    - TON ULTRA-HUMAIN : Rédige dans un français parlé naturel, énergique et direct (ex: "Le truc c'est...", "Franchement,", "En fait,", "Le pire ?").
+    
     CONTRÔLES DU SCRIPT ACTUELS :
     - Niche / Domaine : "${niche || "Général"}"
     - Ton visé : "${tone || "Viral"}"
@@ -295,76 +282,33 @@ export const generateChatResponse = async (
     - Style de la marque : ${toneInstruction}
 
     ========================================================================
-    🔴 DIRECTIVES D'HUMANISATION ABSOLUE (ZÉRO STYLE IA CONVENTIONNEL) :
+    🌀 ARCHITECTURES DE HAUT NIVEAU (Applique l'une d'elles pour tout script généré) :
     ========================================================================
-    - SONORITÉ NATURELLE & PARLÉE : Rédige le texte dans un français parlé, authentique, vivant et captivant. Interdiction d'utiliser des transitions robotiques d'IA comme "En outre", "Dans cette vidéo nous allons voir", "Voici pourquoi", "C'est pourquoi", "De plus", "En conclusion", "Imaginez ceci". Utilise plutôt des transitions naturelles et directes ("Tu vois,", "En fait,", "Le truc c'est...", "Franchement,", "Mais attends, le pire c'est...").
-    - HISTOIRES, VULNÉRABILITÉ & CONCRET : Introduis du vécu, de la crédibilité concrète ("J'ai testé...", "Je me suis rendu compte de...", "Il m'est arrivé un truc de fou..."), des chiffres précis et étranges (ex: "17,4%" plutôt que "90%"), et des analogies physiques plutôt que des concepts purement théoriques.
-    - FILTRE ANTI-CLICHÉS D'IA : Interdit d'utiliser les expressions usées d'IA ("dans ce monde moderne", "l'ultime secret", "révolutionner", "il est crucial de", "le guide ultime", "découvrez comment", "imaginez un monde").
-    
-    ========================================================================
-    🌀 ARCHITECTURE DYNAMIQUE ET DIVERSIFIÉE DES SCRIPTS :
-    ========================================================================
-    Choisis DYNAMIQUEMENT l'une des architectures suivantes selon ce qui colle le mieux à ton concept pour garantir une création unique :
-    
-    Voici les architectures possibles :
-    
-    1. Architecture Narrative (In Medias Res) :
-       - [ANECDOTE_CHOC] : Commence direct au milieu de l'action ou d'une confession.
-       - [FLASHBACK] : Comment on en est arrivé là (le problème initial).
-       - [REVELATION] : La leçon apprise ou la découverte clé.
-       - [VALEUR_PRATIQUE] : Explications concrètes applicables.
-       - [CTA_FLUIDE] : Un appel à l'action glissé naturellement sans forcer.
-       
-    2. Architecture Contrarienne (Unpopular Opinion) :
-       - [MYTHE_COMMUN] : Attaque directe d'une croyance ou d'un conseil populaire.
-       - [PREUVE_CONTRAIRE] : Ton argument ou preuve solide qui détruit le mythe.
-       - [CONCORDANCE_REEL] : Pourquoi les gens tombent dans le panneau.
-       - [STRATEGIE] : Comment faire différemment et mieux.
-       - [CTA] : Demande l'avis de l'audience ou invite à l'action.
-       
-    3. Architecture Coulisses (Build in Public) :
-       - [ECHEC_SANS_FILTRE] : Confession d'une erreur ou d'une frustration.
-       - [LEÇON_CACHE] : Ce que cet échec t'a secrètement appris.
-       - [DEMONSTRATION] : Preuve en direct ou guide rapide.
-       - [APPEL_ACTION] : Incitation à rejoindre l'aventure.
-       
-    4. Architecture Socratique (The Paradox Loop) :
-       - [QUESTION_DERANGEANTE] : Pose une question contre-intuitive.
-       - [PIEGE_VISIBLE] : La fausse bonne idée que tout le monde suit.
-       - [SOLUTION_INATTENDUE] : L'angle de résolution secret.
-       - [CTA_INVISIBLE] : Appel à l'action intégré de façon transparente.
+    1. L'Architecture Narrative (In Medias Res) : Commencer par une anecdote/confession choc -> Expliquer le problème -> Révéler la solution -> Démontrer la valeur pratique -> CTA naturel.
+    2. L'Architecture Contrarienne (Opinion Impopulaire) : Casser un mythe populaire -> Prouver le contraire avec un angle logique fort -> Révéler la méthode alternative -> CTA engageant.
+    3. L'Architecture Coulisses (Build in Public) : Montrer un échec ou un process réel -> Extraire la leçon cachée -> Donner le plan d'action immédiat -> CTA fluide.
+    4. L'Architecture Socratique (Le Paradoxe) : Poser une contradiction apparente -> Expliquer le piège où tout le monde tombe -> Révéler le secret d'initié -> CTA fluide.
 
-    Ajuste librement les types ("type") de tes blocs dans le tableau "script" pour refléter fidèlement l'architecture choisie (ex: "ANECDOTE", "CONFESSION", "MYTHE", "CONTRE-COURANT", "PREUVE", "LEÇON", "REVELATION", "DEMONSTRATION", "CTA", etc.).
-    
-    ========================================================================
-    ⚡ CRÉATON 100% UNIQUE & ZÉRO PLAGIAT (RÈGLES D'OR STRICTES) :
-    ========================================================================
-    - INTERDICTION ABSOLUE DE PLAGIAT : Si l'utilisateur fait référence à une vidéo analysée, existante, à une transcription ou à un remix dans l'historique ou dans sa demande, tu as l'INTERDICTION STRICTE de faire du copier-coller de phrases entières ou de traduire littéralement le texte d'origine. Ne réutilise pas les mêmes mots, expressions ou structures de phrases.
-    - RÉÉCRITURE CRÉATIVE COMPLÈTE : Tu dois extraire uniquement l'intention psychologique (la structure narrative, la leçon de fond, l'accroche structurelle), mais réinventer à 100% le texte de A à Z avec un style original, d'autres métaphores, un vocabulaire différent et un angle neuf. Le résultat ne doit présenter aucun plagiat textuel ou ressemblance verbale avec l'original.
-    - PERSONNALISATION EXTRÊME : Évite les idées de premier niveau pour qu'aucun script généré ne ressemble à un autre sur le même domaine.
-
-    RÈGLES DE CONVERSATION :
-    1. Si l'utilisateur dit simplement bonjour, te salue ou si son idée/concept n'est pas encore claire : **sois accueillant et pose-lui 1 ou 2 questions simples** en français pour comprendre son objectif, son idée de vidéo, ou ce qu'il vend/présente. Ne génère pas de script immédiatement.
-    2. Si le concept de l'utilisateur est clair, s'il a répondu à tes questions ou si il te demande explicitement un script : **RÉDIGE LE SCRIPT** au format JSON structuré ci-dessous.
-    3. Si un script a déjà été généré précédemment (inclus dans l'historique ci-dessous) et que l'utilisateur te demande des changements (ex: "raccourcis-le", "change l'accroche", "rends-le plus dynamique", "modifie le visuel 3") : **GÉNÈRE À NOUVEAU LE SCRIPT ENTIER EN APPLIQUANT LES MODIFICATIONS**, toujours au format JSON strict ci-dessous.
+    RÈGLES DE CONVERSATION ET FORMATAGE :
+    1. Si l'utilisateur salue ou si son idée/concept n'est pas encore claire : **sois accueillant et pose-lui 1 ou 2 questions pertinentes** pour cerner son objectif, son audience et son produit. Ne génère pas de script générique prématuré.
+    2. Si le concept est clair, s'il a répondu à tes questions ou s'il te demande explicitement un script : **RÉDIGE LE SCRIPT** au format JSON structuré ci-dessous.
+    3. Si un script a déjà été généré précédemment et que l'utilisateur te demande des modifications (ex: "raccourcis-le", "change l'accroche", "rends-le plus agressif") : **GÉNÈRE À NOUVEAU LE SCRIPT ENTIER EN APPLIQUANT LES MODIFICATIONS**, toujours au format JSON strict ci-dessous.
     4. Réponds toujours en français.
 
-    DIRECTIVES DU HOOK (Accroche) :
-    - Ne commence JAMAIS par "Arrête de scroller" ou des variantes similaires.
-    - Utilise des angles psychologiques forts (curiosité extrême, question directe, contre-courant, résultat immédiat, négatif/peur).
-
-    ---
     FORMAT DE RÉPONSE JSON OBLIGATOIRE (Uniquement si tu rédiges ou modifies un script) :
     {
-      "score": 92,
-      "explanation": "Une phrase courte expliquant pourquoi ce script va cartonner dans la niche ${niche} avec son architecture unique.",
+      "score": 94,
+      "explanation": "Une phrase courte et percutante expliquant pourquoi ce script va cartonner dans la niche ${niche} avec son architecture unique.",
       "script": [
-        {"type": "LE_NOM_DE_L_ETAPE_DANS_L_ARCHITECTURE", "time": "0:03", "audio": "Texte exact parlé en français avec intonation humaine", "visual": "Description précise de l'image, des gestes et du rythme visuel"}
-        // Ajoute autant de blocs que nécessaire pour couvrir la durée requise de façon rythmée
+        {
+          "type": "LE_NOM_DE_L_ETAPE_DANS_L_ARCHITECTURE",
+          "time": "0:05",
+          "audio": "Le texte exact parlé en français naturel. Utilise des phrases courtes, des respirations (...) pour le rythme. Zéro bla-bla.",
+          "visual": "Instruction de mise en scène ultra-précise, dynamique et moderne (ex: close-up sur les yeux, transition rapide par zoom, affichage d'un chiffre clé en surimpression)."
+        }
       ]
     }
     IMPORTANT : Si tu génères un script, réponds UNIQUEMENT avec le JSON brut. Pas de texte explicatif avant ou après.
-
     Si tu es dans une phase de discussion ou de guidage (sans générer de script), réponds par du texte français naturel, engageant et motivant (pas de format JSON).
 
     ---
@@ -375,7 +319,84 @@ export const generateChatResponse = async (
     USER: ${messages[messages.length - 1].content}
   `;
 
-  const result = await model.generateContent(prompt);
+  const promptParts: any[] = [];
+
+  const lastMessage = messages[messages.length - 1] || { content: "" };
+  const lastMessageContent = lastMessage.content || "";
+
+  // Regex to detect and parse attachments
+  const attachmentRegex = /\[Pièce jointe \(([^)]+)\): "([^"]+)" accessible à l'adresse: ([^\]]+)\]/;
+  const match = lastMessageContent.match(attachmentRegex);
+
+  if (match) {
+    const attachmentType = match[1];
+    const attachmentName = match[2];
+    const attachmentUrl = match[3].trim();
+
+    console.log(`AI Service: Detected attachment in last message - Type: ${attachmentType}, Name: ${attachmentName}`);
+
+    try {
+      if (attachmentType === "image") {
+        if (attachmentUrl.startsWith("data:image/")) {
+          const parts = attachmentUrl.split(";base64,");
+          const mimeType = parts[0].split("data:").pop() || "image/jpeg";
+          const base64Data = parts[1];
+          promptParts.push({
+            inlineData: {
+              data: base64Data,
+              mimeType: mimeType
+            }
+          });
+          console.log("AI Service: Successfully parsed base64 image data URL.");
+        } else {
+          const resp = await fetch(attachmentUrl);
+          if (resp.ok) {
+            const arrayBuffer = await resp.arrayBuffer();
+            const base64 = Buffer.from(arrayBuffer).toString("base64");
+            const mimeType = resp.headers.get("content-type") || "image/jpeg";
+            promptParts.push({
+              inlineData: {
+                data: base64,
+                mimeType: mimeType
+              }
+            });
+            console.log("AI Service: Successfully fetched and converted remote image to base64.");
+          }
+        }
+      } else if (attachmentType === "doc") {
+        // If it's a PDF, we can pass it as application/pdf inlineData
+        if (attachmentUrl.endsWith(".pdf") || attachmentUrl.includes("pdf")) {
+          const resp = await fetch(attachmentUrl);
+          if (resp.ok) {
+            const arrayBuffer = await resp.arrayBuffer();
+            const base64 = Buffer.from(arrayBuffer).toString("base64");
+            promptParts.push({
+              inlineData: {
+                data: base64,
+                mimeType: "application/pdf"
+              }
+            });
+            console.log("AI Service: Successfully fetched and parsed PDF document.");
+          }
+        } else {
+          // Plain text document
+          const resp = await fetch(attachmentUrl);
+          if (resp.ok) {
+            const docText = await resp.text();
+            console.log("AI Service: Successfully read plain text document contents.");
+            // Append doc text directly into the prompt to provide full context
+            promptParts.push(`CONTENU DU DOCUMENT ATTACHÉ ("${attachmentName}") :\n\n${docText}\n\n`);
+          }
+        }
+      }
+    } catch (e: any) {
+      console.error("AI Service: Failed to fetch/parse attachment for multimodal Gemini API:", e.message);
+    }
+  }
+
+  promptParts.push(prompt);
+
+  const result = await model.generateContent(promptParts);
   const response = await result.response;
   const text = response.text();
 

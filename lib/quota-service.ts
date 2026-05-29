@@ -157,3 +157,73 @@ export async function checkAndIncrementAnalysisQuota(supabase: any, userId: stri
     plan: quotas.plan
   };
 }
+
+export const UPLOAD_LIMITS: Record<string, number> = {
+  free: 3,
+  pro: 10,
+  visionary: 25,
+  titan: 100
+};
+
+export async function checkAndIncrementUploadQuota(supabase: any, userId: string) {
+  let { data: profile, error } = await supabase
+    .from("profiles")
+    .select("plan, daily_upload_count, last_upload_reset")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error || !profile) {
+    return {
+      allowed: true,
+      remaining: 3,
+      limit: 3,
+      plan: "free"
+    };
+  }
+
+  const plan = (profile.plan || "free").toLowerCase();
+  const limit = UPLOAD_LIMITS[plan] || UPLOAD_LIMITS.free;
+
+  let currentCount = profile.daily_upload_count || 0;
+  let lastReset = profile.last_upload_reset;
+  const now = new Date();
+
+  // Reset quotidien (24h)
+  const resetDate = lastReset ? new Date(lastReset) : new Date(0);
+  if (now.getTime() - resetDate.getTime() >= 24 * 60 * 60 * 1000) {
+    currentCount = 0;
+    await supabase
+      .from("profiles")
+      .update({
+        daily_upload_count: 0,
+        last_upload_reset: now.toISOString()
+      })
+      .eq("id", userId);
+  }
+
+  if (currentCount >= limit) {
+    return {
+      allowed: false,
+      remaining: 0,
+      limit,
+      plan
+    };
+  }
+
+  const newCount = currentCount + 1;
+  await supabase
+    .from("profiles")
+    .update({
+      daily_upload_count: newCount,
+      last_upload_reset: lastReset ? lastReset : now.toISOString()
+    })
+    .eq("id", userId);
+
+  return {
+    allowed: true,
+    remaining: limit - newCount,
+    limit,
+    plan
+  };
+}
+

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { AuthForm } from "@/components/auth-form"
 import { Card, CardContent } from "@/components/ui/card"
+import { MarkdownRenderer } from "@/components/markdown-renderer"
 import { 
   Plus, 
   Copy, 
@@ -25,7 +26,16 @@ import {
   Send,
   Play,
   Mic,
-  Square
+  Square,
+  Paperclip,
+  Link2,
+  File,
+  Download,
+  FileAudio,
+  FileVideo,
+  ExternalLink,
+  Globe,
+  Image as ImageIcon
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useWorkspace } from "@/lib/workspace-context"
@@ -40,6 +50,12 @@ export default function ScriptsPage() {
   const [activeDiscussionId, setActiveDiscussionId] = useState<string | null>(null)
   const [messages, setMessages] = useState<any[]>([])
   const [inputMessage, setInputMessage] = useState("")
+
+  // File Upload & Link Attachment States
+  const [uploadingFile, setUploadingFile] = useState(false)
+  const [attachedFile, setAttachedFile] = useState<{ url: string; name: string; type: string; size: number } | null>(null)
+  const [showLinkInput, setShowLinkInput] = useState(false)
+  const [linkInputVal, setLinkInputVal] = useState("")
   
   // Custom script controls for the active chat
   const [niche, setNiche] = useState("Dynamique & Viral (Style TikTok)")
@@ -156,6 +172,83 @@ export default function ScriptsPage() {
     } finally {
       setTranscribing(false)
     }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const fileType = file.type || ""
+    const fileSize = file.size
+
+    // Client-side validation limits
+    const maxImageSize = 5 * 1024 * 1024
+    const maxOtherSize = 10 * 1024 * 1024
+    const isImage = fileType.startsWith("image/")
+
+    if (isImage && fileSize > maxImageSize) {
+      toast.error("Les images sont limitées à 5 Mo.")
+      return
+    } else if (!isImage && fileSize > maxOtherSize) {
+      toast.error("Les fichiers sont limités à 10 Mo.")
+      return
+    }
+
+    setUploadingFile(true)
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      const res = await fetch("/api/scripts/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = await res.json()
+      if (res.status === 403) {
+        toast.error(data.error)
+        return
+      }
+
+      if (data.error) throw new Error(data.error)
+
+      setAttachedFile({
+        url: data.url,
+        name: data.name,
+        type: data.type,
+        size: data.size,
+      })
+
+      if (data.isSimulation) {
+        toast.success("Média attaché en mode simulation !")
+      } else {
+        toast.success("Média attaché avec succès !")
+      }
+      
+      fetchQuotas()
+    } catch (err: any) {
+      toast.error("Erreur d'upload : " + err.message)
+    } finally {
+      setUploadingFile(false)
+    }
+  }
+
+  const handleAttachLink = () => {
+    if (!linkInputVal.trim()) return
+    let url = linkInputVal.trim()
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = "https://" + url
+    }
+
+    setAttachedFile({
+      url: url,
+      name: linkInputVal.trim(),
+      type: "link",
+      size: 0
+    })
+    setLinkInputVal("")
+    setShowLinkInput(false)
+    toast.success("Lien attaché !")
   }
 
   const fetchQuotas = async () => {
@@ -386,7 +479,7 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
   const handleSendMessage = async (conceptOverride?: string, discussionIdOverride?: string) => {
     const textToSend = conceptOverride || inputMessage;
     const targetDiscussionId = discussionIdOverride || activeDiscussionId;
-    if (!textToSend.trim() || !targetDiscussionId) return;
+    if ((!textToSend.trim() && !attachedFile) || !targetDiscussionId) return;
 
     if (!user) {
       setShowAuthModal(true)
@@ -397,8 +490,20 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
     setInputMessage("")
     
     // Add user message locally for instant UI update
-    const tempUserMsg = { id: Date.now().toString(), role: "user", content: textToSend }
+    const tempUserMsg = { 
+      id: Date.now().toString(), 
+      role: "user", 
+      content: textToSend,
+      attachment_url: attachedFile?.url || null,
+      attachment_name: attachedFile?.name || null,
+      attachment_type: attachedFile?.type || null,
+      attachment_size: attachedFile?.size || null
+    }
     setMessages(prev => [...prev, tempUserMsg])
+    
+    // Backup attachment and clear attached file state
+    const savedAttachment = attachedFile
+    setAttachedFile(null)
 
     try {
       const res = await fetch("/api/scripts/chat", {
@@ -409,7 +514,11 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
           message: textToSend,
           niche,
           tone: niche,
-          duration
+          duration,
+          attachmentUrl: savedAttachment?.url || null,
+          attachmentName: savedAttachment?.name || null,
+          attachmentType: savedAttachment?.type || null,
+          attachmentSize: savedAttachment?.size || null
         })
       })
       
@@ -427,7 +536,7 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
       // Auto-rename discussion if it was default
       const activeDisc = discussions.find(d => d.id === targetDiscussionId)
       if (activeDisc && activeDisc.title === "Nouveau Script") {
-        const shortenedTitle = textToSend.slice(0, 24) + (textToSend.length > 24 ? "..." : "")
+        const shortenedTitle = textToSend ? (textToSend.slice(0, 24) + (textToSend.length > 24 ? "..." : "")) : (savedAttachment ? savedAttachment.name : "Nouveau Script")
         // Silent rename
         fetch("/api/scripts/discussions", {
           method: "PUT",
@@ -444,6 +553,8 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
       window.dispatchEvent(new Event("quota-updated"))
     } catch (e: any) {
       toast.error("Erreur : " + e.message)
+      // Restore attachment in input on error so user doesn't lose it
+      setAttachedFile(savedAttachment)
     } finally {
       setSubmittingMessage(false)
     }
@@ -740,13 +851,104 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                             </div>
                           )}
                           
-                          <div className="max-w-[80%] space-y-3">
+                          <div className={`max-w-[80%] space-y-3 ${isUser ? 'items-end' : ''}`}>
                              <div className={`p-4 rounded-2xl text-sm font-medium leading-relaxed ${
                                isUser 
                                  ? 'bg-slate-900 text-white rounded-tr-xs shadow-md' 
                                  : 'bg-slate-100/60 border border-slate-100 text-slate-800 rounded-tl-xs'
                              }`}>
-                                {m.content}
+                                 {m.content && (
+                                   isUser ? (
+                                     <p className="whitespace-pre-wrap">{m.content}</p>
+                                   ) : (
+                                     <MarkdownRenderer content={m.content} />
+                                   )
+                                 )}
+
+                                 {/* ATTACHMENT RENDERING */}
+                                 {m.attachment_url && (
+                                   <div className={`mt-3 p-3 rounded-xl border flex flex-col gap-2 ${isUser ? 'bg-slate-800/80 border-slate-700/60 text-slate-100' : 'bg-white border-slate-200 text-slate-800 shadow-xs'}`}>
+                                     {m.attachment_type === "image" && (
+                                       <div className="relative group max-w-sm rounded-lg overflow-hidden border border-slate-700/30">
+                                         <img 
+                                           src={m.attachment_url} 
+                                           alt={m.attachment_name} 
+                                           className="max-h-60 w-auto object-contain cursor-zoom-in hover:scale-102 transition-transform duration-300"
+                                           onClick={() => window.open(m.attachment_url, "_blank")}
+                                         />
+                                         <div className="p-2 bg-black/40 text-[10px] text-white flex items-center justify-between">
+                                           <span className="truncate max-w-[200px] font-bold">{m.attachment_name}</span>
+                                           <a href={m.attachment_url} download target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-white/20 rounded-md transition-colors"><Download className="size-3.5" /></a>
+                                         </div>
+                                       </div>
+                                     )}
+
+                                     {m.attachment_type === "video" && (
+                                       <div className="flex flex-col gap-2 max-w-sm rounded-lg overflow-hidden border border-slate-700/30">
+                                         <video src={m.attachment_url} controls className="max-h-60 w-full" />
+                                         <div className="p-2 bg-slate-900/5 text-[10px] flex items-center justify-between font-bold border-t">
+                                           <span className="truncate max-w-[200px]">{m.attachment_name}</span>
+                                           <a href={m.attachment_url} download target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-slate-950/10 rounded-md transition-colors"><Download className="size-3.5" /></a>
+                                         </div>
+                                       </div>
+                                     )}
+
+                                     {m.attachment_type === "audio" && (
+                                       <div className="flex flex-col gap-2 w-full max-w-xs">
+                                         <audio src={m.attachment_url} controls className="w-full h-8" />
+                                         <div className="text-[10px] flex items-center gap-1 opacity-75 font-bold">
+                                           <FileAudio className="size-3.5" />
+                                           <span className="truncate">{m.attachment_name}</span>
+                                         </div>
+                                       </div>
+                                     )}
+
+                                     {m.attachment_type === "doc" && (
+                                       <div className="flex items-center justify-between gap-4 py-1.5 px-1">
+                                         <div className="flex items-center gap-3 min-w-0">
+                                           <div className={`size-9 rounded-lg flex items-center justify-center shrink-0 ${isUser ? 'bg-slate-700 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+                                             <File className="size-5" />
+                                           </div>
+                                           <div className="min-w-0">
+                                             <p className="text-xs font-black truncate max-w-[180px]">{m.attachment_name}</p>
+                                             <p className="text-[10px] opacity-75 font-bold">
+                                               {m.attachment_size ? `${(m.attachment_size / 1024).toFixed(1)} Ko` : 'Document'}
+                                             </p>
+                                           </div>
+                                         </div>
+                                         <a 
+                                           href={m.attachment_url} 
+                                           download 
+                                           target="_blank" 
+                                           rel="noopener noreferrer"
+                                           className={`p-2 rounded-lg border transition-colors shrink-0 ${isUser ? 'bg-slate-700/50 hover:bg-slate-700 border-slate-600 text-white' : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'}`}
+                                         >
+                                           <Download className="size-4" />
+                                         </a>
+                                       </div>
+                                     )}
+
+                                     {m.attachment_type === "link" && (
+                                       <a 
+                                         href={m.attachment_url} 
+                                         target="_blank" 
+                                         rel="noopener noreferrer"
+                                         className={`flex items-center justify-between gap-4 py-1.5 px-2 rounded-lg border transition-all ${isUser ? 'bg-slate-700/50 hover:bg-slate-700 border-slate-600 text-white' : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 hover:shadow-xs'}`}
+                                       >
+                                         <div className="flex items-center gap-3 min-w-0">
+                                           <div className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${isUser ? 'bg-slate-800 text-teal-400' : 'bg-teal-50 text-teal-600'}`}>
+                                             <Globe className="size-4.5" />
+                                           </div>
+                                           <div className="min-w-0">
+                                             <p className="text-xs font-black truncate max-w-[200px]">{m.attachment_name}</p>
+                                             <p className="text-[9px] opacity-75 truncate max-w-[200px] font-bold">{m.attachment_url}</p>
+                                           </div>
+                                         </div>
+                                         <ExternalLink className="size-3.5 shrink-0 opacity-70" />
+                                       </a>
+                                     )}
+                                   </div>
+                                 )}
                              </div>
 
                              {/* SCRIPT BLOCK EMBEDDED */}
@@ -859,13 +1061,76 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
 
           {/* Saisie de message et envoi (Bas) */}
           {activeDiscussionId && (
-            <div className="p-4 border-t border-slate-100 bg-white sticky bottom-0 z-10">
+            <div className="p-4 border-t border-slate-100 bg-white sticky bottom-0 z-10 space-y-3">
+               
+               {/* 1. Attachment Preview Panel */}
+               {attachedFile && (
+                 <div className="flex items-center justify-between gap-3 p-3 bg-indigo-50/50 border border-indigo-100/40 rounded-2xl animate-in slide-in-from-bottom-2 duration-300">
+                   <div className="flex items-center gap-3 min-w-0">
+                     <div className="size-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                       {attachedFile.type === "image" && <ImageIcon className="size-4" />}
+                       {attachedFile.type === "video" && <FileVideo className="size-4" />}
+                       {attachedFile.type === "audio" && <FileAudio className="size-4" />}
+                       {attachedFile.type === "doc" && <File className="size-4" />}
+                       {attachedFile.type === "link" && <Globe className="size-4" />}
+                     </div>
+                     <div className="min-w-0">
+                       <p className="text-xs font-black truncate max-w-[300px] sm:max-w-[450px] text-slate-800">{attachedFile.name}</p>
+                       <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider">
+                         {attachedFile.type === "link" ? "Lien internet rattaché" : `Fichier ${attachedFile.type} (${(attachedFile.size / (1024 * 1024)).toFixed(2)} Mo)`}
+                       </p>
+                     </div>
+                   </div>
+                   <button 
+                     type="button"
+                     onClick={() => setAttachedFile(null)}
+                     className="p-1.5 hover:bg-slate-200/50 text-slate-400 hover:text-slate-600 rounded-xl transition-colors shrink-0"
+                     title="Supprimer la pièce jointe"
+                   >
+                     <X className="size-4" />
+                   </button>
+                 </div>
+               )}
+
+               {/* 2. Link Paste Popover Input */}
+               {showLinkInput && (
+                 <div className="flex gap-2 p-2 bg-slate-50 border border-slate-100 rounded-2xl animate-in slide-in-from-bottom-2 duration-300">
+                   <input 
+                     value={linkInputVal}
+                     onChange={(e) => setLinkInputVal(e.target.value)}
+                     placeholder="Collez ou tapez votre URL (ex: holaluxe.com)..."
+                     onKeyDown={(e) => {
+                       if (e.key === 'Enter') {
+                         e.preventDefault();
+                         handleAttachLink();
+                       }
+                     }}
+                     className="flex-1 bg-transparent border-0 px-3 py-2 text-xs font-medium text-slate-800 outline-hidden"
+                     autoFocus
+                   />
+                   <button
+                     type="button"
+                     onClick={handleAttachLink}
+                     className="px-4 py-2 bg-indigo-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all shadow-sm shadow-indigo-100"
+                   >
+                     Attacher
+                   </button>
+                   <button
+                     type="button"
+                     onClick={() => { setShowLinkInput(false); setLinkInputVal(""); }}
+                     className="p-2 text-slate-400 hover:text-slate-600 rounded-xl"
+                   >
+                     <X className="size-4" />
+                   </button>
+                 </div>
+               )}
+
                <form 
                  onSubmit={(e) => {
                    e.preventDefault()
                    handleSendMessage()
                  }}
-                 className="flex gap-3 bg-slate-50/80 border border-slate-100 p-2 pr-2.5 rounded-2xl shadow-inner focus-within:bg-white focus-within:border-indigo-500/30 transition-all items-center"
+                 className="flex gap-2.5 bg-slate-50/80 border border-slate-100 p-2 pr-2.5 rounded-2xl shadow-inner focus-within:bg-white focus-within:border-indigo-500/30 transition-all items-center"
                >
                   {isRecording ? (
                     <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-2 bg-rose-50 border border-rose-100 rounded-xl">
@@ -885,33 +1150,74 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                     <input 
                       value={inputMessage}
                       onChange={(e) => setInputMessage(e.target.value)}
-                      placeholder={submittingMessage ? "L'IA réfléchit..." : transcribing ? "Transcription..." : "Votre message..."}
-                      disabled={submittingMessage || transcribing}
+                      placeholder={
+                        uploadingFile 
+                          ? "Chargement du fichier..." 
+                          : submittingMessage 
+                          ? "L'IA réfléchit..." 
+                          : transcribing 
+                          ? "Transcription..." 
+                          : "Décrivez votre concept, ou attachez un fichier/lien..."
+                      }
+                      disabled={submittingMessage || transcribing || uploadingFile}
                       className="flex-1 min-w-0 bg-transparent border-0 px-3 py-3 text-xs md:text-sm font-medium text-slate-900 focus:ring-0 outline-hidden placeholder:text-slate-300"
                     />
                   )}
                   
-                  {/* Microphone Button */}
+                  {/* File Upload Hidden Input Trigger */}
                   {!isRecording && (
-                    <button 
-                      type="button"
-                      onClick={startRecording}
-                      disabled={submittingMessage || transcribing}
-                      className={`h-10 w-10 shrink-0 border border-slate-200 hover:border-indigo-500/20 rounded-xl flex items-center justify-center transition-all cursor-pointer ${transcribing ? 'bg-indigo-50 text-indigo-600' : 'bg-white text-slate-500 hover:text-slate-900'}`}
-                      title="Enregistrer un message vocal"
-                    >
-                      {transcribing ? (
-                        <Loader2 className="size-4 animate-spin text-indigo-600" />
-                      ) : (
-                        <Mic className="size-4" />
-                      )}
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <input 
+                        type="file" 
+                        id="chat-file-upload" 
+                        className="hidden" 
+                        onChange={handleFileUpload}
+                        disabled={submittingMessage || transcribing || uploadingFile}
+                      />
+                      <label 
+                        htmlFor="chat-file-upload"
+                        className={`h-10 w-10 shrink-0 border border-slate-200 hover:border-indigo-500/20 rounded-xl flex items-center justify-center transition-all cursor-pointer ${uploadingFile ? 'bg-indigo-50 text-indigo-600 animate-pulse' : 'bg-white text-slate-500 hover:text-slate-900'}`}
+                        title="Importer un fichier (image < 5Mo, autre < 10Mo)"
+                      >
+                        {uploadingFile ? (
+                          <Loader2 className="size-4 animate-spin text-indigo-600" />
+                        ) : (
+                          <Paperclip className="size-4" />
+                        )}
+                      </label>
+
+                      {/* Paste Link Button Trigger */}
+                      <button 
+                        type="button"
+                        onClick={() => setShowLinkInput(!showLinkInput)}
+                        disabled={submittingMessage || transcribing || uploadingFile}
+                        className={`h-10 w-10 shrink-0 border border-slate-200 hover:border-indigo-500/20 rounded-xl flex items-center justify-center transition-all cursor-pointer ${showLinkInput ? 'bg-indigo-50 text-indigo-600' : 'bg-white text-slate-500 hover:text-slate-900'}`}
+                        title="Attacher un lien internet"
+                      >
+                        <Link2 className="size-4" />
+                      </button>
+                      
+                      {/* Microphone Button */}
+                      <button 
+                        type="button"
+                        onClick={startRecording}
+                        disabled={submittingMessage || transcribing || uploadingFile}
+                        className={`h-10 w-10 shrink-0 border border-slate-200 hover:border-indigo-500/20 rounded-xl flex items-center justify-center transition-all cursor-pointer ${transcribing ? 'bg-indigo-50 text-indigo-600' : 'bg-white text-slate-500 hover:text-slate-900'}`}
+                        title="Enregistrer un message vocal"
+                      >
+                        {transcribing ? (
+                          <Loader2 className="size-4 animate-spin text-indigo-600" />
+                        ) : (
+                          <Mic className="size-4" />
+                        )}
+                      </button>
+                    </div>
                   )}
                   
                   <button 
                     type="submit"
-                    disabled={submittingMessage || transcribing || !inputMessage.trim()}
-                    className="h-10 w-10 shrink-0 bg-slate-900 hover:bg-indigo-600 disabled:bg-slate-100 disabled:text-slate-300 text-white rounded-xl flex items-center justify-center transition-all cursor-pointer"
+                    disabled={submittingMessage || transcribing || uploadingFile || (!inputMessage.trim() && !attachedFile)}
+                    className="h-10 w-10 shrink-0 bg-slate-900 hover:bg-indigo-600 disabled:bg-slate-100 disabled:text-slate-300 text-white rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-md"
                   >
                      <Send className="size-4" />
                   </button>
@@ -992,7 +1298,9 @@ function ScriptModals({ isOpen, onClose, blocks }: any) {
            <div className="space-y-20 pb-[80vh]">
               {blocks.map((block: any, i: number) => (
                 <div key={i} className="space-y-6">
-                   <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em]">{block.type}</div>
+                   <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em]">
+                      {(block.type || '').replace(/_/g, ' ')}
+                   </div>
                    <p className="text-4xl md:text-6xl font-bold leading-tight">
                       {block.audio}
                    </p>
@@ -1045,7 +1353,9 @@ function ScriptModals({ isOpen, onClose, blocks }: any) {
                <div className="space-y-8 max-w-2xl mx-auto">
                   {blocks.map((block: any, i: number) => (
                      <div key={i} className="space-y-3">
-                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{block.type}</span>
+                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+                           {(block.type || '').replace(/_/g, ' ')}
+                        </span>
                         <p className="text-lg md:text-xl font-medium text-slate-800 leading-relaxed">
                            {block.audio}
                         </p>
@@ -1057,11 +1367,13 @@ function ScriptModals({ isOpen, onClose, blocks }: any) {
                   {blocks.map((block: any, i: number) => (
                      <Card key={i} className="border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
                         <CardContent className="p-6 md:p-8 flex flex-col md:flex-row gap-8">
-                           <div className="w-full md:w-24 shrink-0 flex flex-row md:flex-col items-center md:items-start gap-3">
-                              <div className={`size-12 rounded-xl ${block.type === 'HOOK' ? 'bg-indigo-600' : 'bg-slate-900'} flex items-center justify-center text-white`}>
+                           <div className="w-full md:w-36 shrink-0 flex flex-row md:flex-col items-center md:items-start gap-3">
+                              <div className={`size-12 rounded-xl ${block.type === 'HOOK' ? 'bg-indigo-600' : 'bg-slate-900'} flex items-center justify-center text-white shrink-0`}>
                                  {block.type === 'HOOK' ? <Zap className="size-5" /> : <Play className="size-5" />}
                               </div>
-                              <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{block.type}</span>
+                              <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest break-words max-w-full leading-normal">
+                                 {(block.type || '').replace(/_/g, ' ')}
+                              </span>
                            </div>
                            <div className="flex-1 grid md:grid-cols-2 gap-8">
                               <div className="space-y-3">

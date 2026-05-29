@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useWorkspace } from "@/lib/workspace-context"
+import { MarkdownRenderer } from "@/components/markdown-renderer"
 
 export default function AnalysePage() {
   const router = useRouter()
@@ -482,9 +483,9 @@ export default function AnalysePage() {
                                  <div className="p-8 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-[28px] border border-indigo-100/50 space-y-6 animate-in fade-in duration-300">
                                     <div className="space-y-3">
                                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Résumé Stratégique</h4>
-                                       <p className="text-sm font-semibold text-slate-700 leading-relaxed bg-white p-6 rounded-[20px] border border-slate-100/80 shadow-xs">
-                                          {selectedAnalysis.structure.summary}
-                                       </p>
+                                       <div className="bg-white p-6 rounded-[20px] border border-slate-100/80 shadow-xs">
+                                          <MarkdownRenderer content={selectedAnalysis.structure.summary} />
+                                       </div>
                                     </div>
 
                                     {selectedAnalysis.structure?.action_plan && selectedAnalysis.structure.action_plan.length > 0 && (
@@ -496,7 +497,9 @@ export default function AnalysePage() {
                                                    <div className="size-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-black shrink-0 mt-0.5 shadow-inner">
                                                       {idx + 1}
                                                    </div>
-                                                   <p className="text-xs font-bold text-slate-700 leading-relaxed">{step}</p>
+                                                   <div className="flex-1">
+                                                      <MarkdownRenderer content={step} />
+                                                   </div>
                                                 </div>
                                              ))}
                                           </div>
@@ -648,7 +651,9 @@ export default function AnalysePage() {
                    .map(([key, value]: [string, any]) => (
                       <div key={key} className="p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
                          <div className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{key}</div>
-                         <p className="text-slate-700 font-bold leading-relaxed">{value}</p>
+                         <div className="text-slate-700 leading-relaxed">
+                            <MarkdownRenderer content={typeof value === 'string' ? value : JSON.stringify(value)} />
+                         </div>
                       </div>
                  ))}
               </div>
