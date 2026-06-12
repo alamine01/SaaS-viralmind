@@ -42,6 +42,141 @@ const InstagramIcon = ({ className }: { className?: string }) => (
   </svg>
 )
 
+const getScoreColor = (score: number) => {
+  if (score >= 90) return "bg-emerald-500 text-white"
+  if (score >= 70) return "bg-amber-500 text-white"
+  if (score >= 50) return "bg-orange-500 text-white"
+  return "bg-slate-400 text-white"
+}
+
+const getScoreLabel = (score: number) => {
+  if (score >= 90) return "Explosif"
+  if (score >= 70) return "Viral"
+  if (score >= 50) return "Tendance"
+  return "Normal"
+}
+
+function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
+  const [imageError, setImageError] = useState(false)
+  const [thumbnailSrc, setThumbnailSrc] = useState(item.thumbnail || "")
+
+  useEffect(() => {
+    setImageError(false)
+    setThumbnailSrc(item.thumbnail || "")
+  }, [item])
+
+  const handleImageError = () => {
+    if (imageError) return
+
+    // Try YouTube fallback first if it is a YouTube video
+    if (item.url?.includes("youtube.com") || item.url?.includes("youtu.be")) {
+      const ytMatch = item.url.match(/(?:v=|\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+      if (ytMatch && thumbnailSrc !== `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`) {
+        setThumbnailSrc(`https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`)
+        return
+      }
+    }
+    setImageError(true)
+  }
+
+  const getFallbackGradient = () => {
+    const isYt = item.url?.includes("youtube.com") || item.url?.includes("youtu.be") || item.platform?.toLowerCase() === "youtube"
+    const isInsta = item.url?.includes("instagram.com") || item.platform?.toLowerCase() === "instagram"
+
+    if (isYt) {
+      return {
+        className: "bg-gradient-to-br from-rose-600 to-red-500",
+        icon: <YoutubeIcon className="size-12 text-white/95" />
+      }
+    } else if (isInsta) {
+      return {
+        className: "bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400",
+        icon: <InstagramIcon className="size-12 text-white/95" />
+      }
+    } else {
+      return {
+        className: "bg-gradient-to-br from-zinc-900 via-slate-800 to-zinc-950",
+        icon: <TikTokIcon className="size-12 text-white/95" />
+      }
+    }
+  }
+
+  const fallback = getFallbackGradient()
+
+  return (
+    <Card
+      className="group border border-slate-100 shadow-sm rounded-[20px] overflow-hidden bg-white hover:shadow-xl hover:border-slate-200 transition-all duration-300 cursor-pointer flex flex-col"
+      onClick={onClick}
+    >
+      <div className="relative aspect-video bg-slate-100 overflow-hidden">
+        {thumbnailSrc && !imageError ? (
+          <img
+            src={thumbnailSrc}
+            alt={item.title}
+            onError={handleImageError}
+            className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className={`size-full flex flex-col items-center justify-center p-4 text-center ${fallback.className}`}>
+            {fallback.icon}
+            <span className="text-[10px] font-bold text-white/80 mt-2 line-clamp-1">{item.author}</span>
+          </div>
+        )}
+
+        <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+          <div className="size-14 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-xl">
+            <Play className="size-6 text-slate-900 ml-0.5" />
+          </div>
+        </div>
+
+        <div className={`absolute top-3 left-3 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 ${getScoreColor(item.viral_score)}`}>
+          <Zap className="size-3" />
+          {item.viral_score}%
+        </div>
+
+        <div className="absolute bottom-3 left-3 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[9px] font-bold text-white uppercase tracking-wider">
+          {getScoreLabel(item.viral_score)}
+        </div>
+      </div>
+
+      <CardContent className="p-4 flex-1 flex flex-col justify-between gap-3">
+        <div className="space-y-2">
+          <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2 group-hover:text-indigo-600 transition-colors">
+            {item.title}
+          </h3>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider truncate">{item.author}</span>
+            <span className="text-slate-200">&bull;</span>
+            <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">{item.time_ago}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-2 border-t border-slate-50">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <Eye className="size-3 text-slate-400" />
+              <span className="text-[11px] font-bold text-slate-600">{item.views_formatted}</span>
+            </div>
+            {item.likes > 0 && (
+              <div className="flex items-center gap-1.5">
+                <ThumbsUp className="size-3 text-slate-400" />
+                <span className="text-[11px] font-bold text-slate-600">
+                  {item.likes >= 1000 ? `${(item.likes / 1000).toFixed(1)}K` : item.likes}
+                </span>
+              </div>
+            )}
+          </div>
+          <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${
+            item.niche === "trending" ? "bg-rose-50 text-rose-500" : "bg-indigo-50 text-indigo-500"
+          }`}>
+            {item.niche}
+          </span>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 import Link from "next/link"
 
 const NICHES = [
@@ -97,9 +232,8 @@ export default function ViralFeedPage() {
       const res = await fetch(`/api/feed?${params}`)
       const data = await res.json()
       if (!data.error) {
-        // Shuffle the pool of 100 videos and display 24 of them randomly
-        // to create a feeling of dynamic freshness on every refresh/action
-        const shuffled = (data.items || []).sort(() => Math.random() - 0.5)
+        const rawItems = data.items || []
+        const shuffled = [...rawItems].sort(() => Math.random() - 0.5)
         setItems(shuffled)
         setVisibleCount(24) // Reset visible count on fresh load
       }
@@ -114,29 +248,20 @@ export default function ViralFeedPage() {
     fetchFeed()
   }, [activeNiche, activeSort])
 
-  const filteredItems = searchQuery.trim()
-    ? items.filter(item =>
+  const filteredItems = items.filter(item => {
+    if (searchQuery.trim()) {
+      return (
         item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.niche?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : items
+      );
+    }
+    return true;
+  })
 
   const visibleItems = filteredItems.slice(0, visibleCount)
 
-  const getScoreColor = (score: number) => {
-    if (score >= 90) return "bg-emerald-500 text-white"
-    if (score >= 70) return "bg-amber-500 text-white"
-    if (score >= 50) return "bg-orange-500 text-white"
-    return "bg-slate-400 text-white"
-  }
 
-  const getScoreLabel = (score: number) => {
-    if (score >= 90) return "Explosif"
-    if (score >= 70) return "Viral"
-    if (score >= 50) return "Tendance"
-    return "Normal"
-  }
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-700 pb-20 max-w-7xl mx-auto px-4 md:px-0">
@@ -234,78 +359,12 @@ export default function ViralFeedPage() {
         <div className="space-y-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {visibleItems.map((item) => (
-            <Card
-              key={item.id}
-              className="group border border-slate-100 shadow-sm rounded-[20px] overflow-hidden bg-white hover:shadow-xl hover:border-slate-200 transition-all duration-300 cursor-pointer flex flex-col"
-              onClick={() => setPreviewVideo(item)}
-            >
-              {/* Thumbnail */}
-              <div className="relative aspect-video bg-slate-100 overflow-hidden">
-                {item.thumbnail ? (
-                  <img
-                    src={item.thumbnail}
-                    alt={item.title}
-                    className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                ) : (
-                  <div className="size-full bg-gradient-to-br from-slate-200 to-slate-100 flex items-center justify-center">
-                    <Play className="size-10 text-slate-300" />
-                  </div>
-                )}
-
-                <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <div className="size-14 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-xl">
-                    <Play className="size-6 text-slate-900 ml-0.5" />
-                  </div>
-                </div>
-
-                <div className={`absolute top-3 left-3 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 ${getScoreColor(item.viral_score)}`}>
-                  <Zap className="size-3" />
-                  {item.viral_score}%
-                </div>
-
-
-                <div className="absolute bottom-3 left-3 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[9px] font-bold text-white uppercase tracking-wider">
-                  {getScoreLabel(item.viral_score)}
-                </div>
-              </div>
-
-              <CardContent className="p-4 flex-1 flex flex-col justify-between gap-3">
-                <div className="space-y-2">
-                  <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2 group-hover:text-indigo-600 transition-colors">
-                    {item.title}
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider truncate">{item.author}</span>
-                    <span className="text-slate-200">&bull;</span>
-                    <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">{item.time_ago}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-slate-50">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1.5">
-                      <Eye className="size-3 text-slate-400" />
-                      <span className="text-[11px] font-bold text-slate-600">{item.views_formatted}</span>
-                    </div>
-                    {item.likes > 0 && (
-                      <div className="flex items-center gap-1.5">
-                        <ThumbsUp className="size-3 text-slate-400" />
-                        <span className="text-[11px] font-bold text-slate-600">
-                          {item.likes >= 1000 ? `${(item.likes / 1000).toFixed(1)}K` : item.likes}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${
-                    item.niche === "trending" ? "bg-rose-50 text-rose-500" : "bg-indigo-50 text-indigo-500"
-                  }`}>
-                    {item.niche}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+              <VideoCard
+                key={item.id}
+                item={item}
+                onClick={() => setPreviewVideo(item)}
+              />
+            ))}
           </div>
 
           {/* Voir plus button */}

@@ -103,6 +103,7 @@ export async function getUserQuotas(supabase: any, userId: string) {
     monthly_analysis_count: currentAnalysisCount,
     last_script_reset: updates.last_script_reset || lastScriptReset,
     last_analysis_reset: updates.last_analysis_reset || lastAnalysisReset,
+    role: profile.role || 'user',
   };
 }
 

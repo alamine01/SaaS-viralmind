@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
-import { Menu, ChevronDown } from "lucide-react"
+import { Menu, ChevronDown, ArrowLeft, ShieldCheck } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { WorkspaceProvider, useWorkspace } from "@/lib/workspace-context"
 import { Suspense } from "react"
+import Link from "next/link"
 
 import { CreateWorkspaceModal } from "@/components/create-workspace-modal"
 
@@ -17,6 +18,34 @@ function DashboardContainer({ children }: { children: React.ReactNode }) {
   const [authLoading, setAuthLoading] = useState(true)
   const pathname = usePathname()
   const router = useRouter()
+
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [quotas, setQuotas] = useState<any>(null)
+
+  const fetchQuotas = async () => {
+    try {
+      const res = await fetch("/api/user/quotas")
+      const data = await res.json()
+      if (!data.error) {
+        setQuotas(data)
+      }
+    } catch (e) {
+      console.error("Error fetching quotas in layout:", e)
+    }
+  }
+
+  useEffect(() => {
+    const saved = localStorage.getItem("sidebar_collapsed")
+    if (saved === "true") {
+      setIsSidebarCollapsed(true)
+    }
+  }, [])
+
+  const toggleSidebarCollapse = () => {
+    const newVal = !isSidebarCollapsed
+    setIsSidebarCollapsed(newVal)
+    localStorage.setItem("sidebar_collapsed", String(newVal))
+  }
 
   useEffect(() => {
     const checkUser = async () => {
@@ -30,7 +59,19 @@ function DashboardContainer({ children }: { children: React.ReactNode }) {
       setAuthLoading(false)
     }
     checkUser()
+    fetchQuotas()
+
+    // Listen for real-time quota changes
+    window.addEventListener("quota-updated", fetchQuotas)
+    return () => {
+      window.removeEventListener("quota-updated", fetchQuotas)
+    }
   }, [router])
+
+  // Re-fetch quotas when pathname changes to ensure role check is fresh
+  useEffect(() => {
+    fetchQuotas()
+  }, [pathname])
 
   if (authLoading) {
     return (
@@ -56,10 +97,16 @@ function DashboardContainer({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-100 transform transition-transform duration-200 ease-out lg:static lg:translate-x-0
-        ${sidebarOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'}
+        fixed inset-y-0 left-0 z-50 bg-white border-r border-slate-100 transform transition-[width,transform] duration-300 ease-in-out lg:static lg:translate-x-0 lg:relative shrink-0
+        ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}
+        w-64
+        ${sidebarOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <AppSidebar onClose={() => setSidebarOpen(false)} />
+        <AppSidebar 
+          onClose={() => setSidebarOpen(false)} 
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={toggleSidebarCollapse}
+        />
       </div>
 
       {/* Content area */}
@@ -89,6 +136,27 @@ function DashboardContainer({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="flex items-center gap-4">
+              {/* Admin Access Button */}
+              {quotas?.role === "admin" && (
+                pathname.startsWith("/admin") ? (
+                  <Link 
+                    href="/dashboard"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 rounded-xl text-xs font-bold transition-all border border-slate-200 shadow-xs"
+                  >
+                    <ArrowLeft className="size-3.5" />
+                    <span className="hidden sm:inline">Retour App</span>
+                  </Link>
+                ) : (
+                  <Link 
+                    href="/admin"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-100"
+                  >
+                    <ShieldCheck className="size-3.5 animate-pulse" />
+                    <span>Espace Admin</span>
+                  </Link>
+                )
+              )}
+
               <button className="flex items-center gap-2.5 pl-2 py-1 group">
                  <div className="size-7 rounded-full bg-slate-100 border border-slate-200 overflow-hidden">
                     <img src={`https://ui-avatars.com/api/?name=${userName}&background=f1f5f9&color=64748b&bold=true`} alt="User" className="size-full object-cover" />

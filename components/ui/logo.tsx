@@ -1,9 +1,9 @@
 import Link from "next/link";
 
-export default function Logo() {
+export default function Logo({ showText = true }: { showText?: boolean }) {
   return (
     <Link href="/" className="inline-flex items-center gap-2" aria-label="ViralMind">
-      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" className="shrink-0">
         <path
           className="fill-blue-600"
           fillRule="evenodd"
@@ -17,7 +17,11 @@ export default function Logo() {
           clipRule="evenodd"
         />
       </svg>
-      <span className="font-bold text-xl tracking-tight text-blue-600 block">ViralMind</span>
+      <span className={`font-bold text-xl tracking-tight text-blue-600 transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden ${
+        showText ? "opacity-100 max-w-[150px] translate-x-0" : "opacity-0 max-w-0 -translate-x-4 pointer-events-none"
+      }`}>
+        ViralMind
+      </span>
     </Link>
   );
 }
