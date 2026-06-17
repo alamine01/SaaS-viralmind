@@ -2,19 +2,30 @@ import { NextResponse } from "next/server";
 import { scrapeVideoData, getUniqueVideoId } from "@/lib/scraper";
 
 const COBALT_INSTANCES = [
+  "https://nuko-c.meowing.de",
+  "https://cobalt.alpha.wolfy.love",
+  "https://cobalt.omega.wolfy.love",
+  "https://grapefruit.clxxped.lol",
+  "https://apicobalt.mgytr.top",
+  "https://cobaltapi.squair.xyz",
   "https://api.cobalt.blackcat.sweeux.org",
   "https://cobaltapi.kittycat.boo",
   "https://dog.kittycat.boo",
+  "https://lime.clxxped.lol",
+  "https://melon.clxxped.lol",
   "https://fox.kittycat.boo",
-  "https://api.cobalt.liubquanti.click",
-  "https://rue-cobalt.xenon.zone",
-  "https://cobaltapi.cjs.nz"
+  "https://api.qwkuns.me"
 ];
 
 const INVIDIOUS_INSTANCES = [
+  "https://inv.nadeko.net",
+  "https://invidious.nerdvpn.de",
   "https://iv.melmac.space",
   "https://invidious.projectsegfau.lt",
-  "https://yewtu.be"
+  "https://yewtu.be",
+  "https://invidious.privacydev.net",
+  "https://invidious.lunar.icu",
+  "https://invidious.no-logs.com"
 ];
 
 export async function POST(req: Request) {
@@ -75,39 +86,43 @@ export async function POST(req: Request) {
         }
       }
 
-      // En prod Vercel ou en local si youtube-dl-exec a échoué : utiliser les instances Invidious (Turnstile-free)
+      // En prod Vercel ou en local si youtube-dl-exec a échoué : utiliser les instances Invidious (en parallèle pour la rapidité)
       if (!directUrl) {
         console.log(`[DOWNLOAD] Extraction YouTube via instances Invidious pour : ${url}`);
         const videoId = getUniqueVideoId(url);
         if (videoId) {
-          for (const uri of INVIDIOUS_INSTANCES) {
+          const invidiousPromises = INVIDIOUS_INSTANCES.map(async (uri) => {
             try {
               const vidRes = await fetch(`${uri}/api/v1/videos/${videoId}`, {
-                signal: AbortSignal.timeout(6000)
+                signal: AbortSignal.timeout(3000)
               });
               if (vidRes.ok) {
                 const videoData = await vidRes.json();
                 const streams = videoData.formatStreams || [];
                 if (streams.length > 0) {
                   const stream = streams.find((s: any) => s.quality === "720p") || streams[0];
-                  directUrl = `${uri}/latest_version?id=${videoId}&itag=${stream.itag}&local=true`;
-                  console.log(`[DOWNLOAD] Succès avec Invidious : ${uri}`);
-                  break;
+                  return `${uri}/latest_version?id=${videoId}&itag=${stream.itag}&local=true`;
                 }
               }
-            } catch (err: any) {
-              console.warn(`[DOWNLOAD] Échec Invidious ${uri} :`, err.message);
-            }
+            } catch (err) {}
+            throw new Error("failed");
+          });
+
+          try {
+            directUrl = await Promise.any(invidiousPromises);
+            console.log(`[DOWNLOAD] Succès d'Invidious en parallèle : ${directUrl}`);
+          } catch (e) {
+            console.warn("[DOWNLOAD] Toutes les instances Invidious ont échoué.");
           }
         }
       }
     }
 
-    // 2. Si non résolu, tenter Cobalt (marche pour TikTok, Instagram, YouTube)
+    // 2. Si non résolu, tenter Cobalt (marche pour TikTok, Instagram, YouTube) en parallèle
     if (!directUrl) {
-      for (const instance of COBALT_INSTANCES) {
+      console.log(`[DOWNLOAD] Tentative Cobalt en parallèle pour : ${url}`);
+      const cobaltPromises = COBALT_INSTANCES.map(async (instance) => {
         try {
-          console.log(`[DOWNLOAD] Tentative Cobalt sur : ${instance}`);
           const res = await fetch(instance, {
             method: "POST",
             headers: {
@@ -116,20 +131,24 @@ export async function POST(req: Request) {
               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             },
             body: JSON.stringify({ url, filenamePattern: "basic" }),
-            signal: AbortSignal.timeout(6000)
+            signal: AbortSignal.timeout(3500)
           });
           
           if (res.ok) {
             const data = await res.json();
             if (data.url) {
-              directUrl = data.url;
-              console.log(`[DOWNLOAD] Succès avec Cobalt : ${instance}`);
-              break;
+              return data.url;
             }
           }
-        } catch (err: any) {
-          console.warn(`[DOWNLOAD] Échec de l'instance Cobalt ${instance} :`, err.message);
-        }
+        } catch (err) {}
+        throw new Error("failed");
+      });
+
+      try {
+        directUrl = await Promise.any(cobaltPromises);
+        console.log(`[DOWNLOAD] Succès Cobalt en parallèle : ${directUrl}`);
+      } catch (e) {
+        console.warn("[DOWNLOAD] Toutes les instances Cobalt ont échoué.");
       }
     }
 

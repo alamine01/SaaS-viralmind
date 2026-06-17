@@ -76,24 +76,80 @@ export default function TranscriptionPage() {
     if (!url) return
     setDownloadLoading(true)
     try {
+      // 1. Tenter d'abord la résolution via le backend
       const res = await fetch("/api/download-video", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url })
       })
       const data = await res.json()
-      if (data.error) throw new Error(data.error)
       
-      if (data.downloadUrl) {
+      let downloadUrl = data.downloadUrl
+      let filename = data.filename || "video.mp4"
+      
+      // 2. Si le backend échoue (ex: Vercel bloqué), tenter l'extraction Cobalt en direct depuis le navigateur (en parallèle)
+      if (data.error || !downloadUrl) {
+        console.warn("Échec serveur (Vercel bloqué ?). Passage à l'extraction directe depuis le navigateur...");
+        const COBALT_INSTANCES = [
+          "https://nuko-c.meowing.de",
+          "https://cobalt.alpha.wolfy.love",
+          "https://cobalt.omega.wolfy.love",
+          "https://grapefruit.clxxped.lol",
+          "https://apicobalt.mgytr.top",
+          "https://cobaltapi.squair.xyz",
+          "https://api.cobalt.blackcat.sweeux.org",
+          "https://cobaltapi.kittycat.boo",
+          "https://dog.kittycat.boo",
+          "https://lime.clxxped.lol",
+          "https://melon.clxxped.lol",
+          "https://fox.kittycat.boo",
+          "https://api.qwkuns.me"
+        ];
+        
+        let resolvedUrl = "";
+        const promises = COBALT_INSTANCES.map(async (instance) => {
+          try {
+            const cobRes = await fetch(instance, {
+              method: "POST",
+              headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({ url, filenamePattern: "basic" })
+            });
+            if (cobRes.ok) {
+              const cobData = await cobRes.json();
+              if (cobData.url) {
+                return { url: cobData.url, filename: cobData.filename };
+              }
+            }
+          } catch (e) {}
+          throw new Error("failed");
+        });
+
+        try {
+          const result = await Promise.any(promises);
+          resolvedUrl = result.url;
+          if (result.filename) filename = result.filename;
+        } catch (e) {
+          console.error("Toutes les requêtes Cobalt du navigateur ont échoué.");
+        }
+        
+        if (resolvedUrl) {
+          downloadUrl = resolvedUrl;
+        } else {
+          throw new Error(data.error || "Impossible de récupérer le lien de la vidéo.");
+        }
+      }
+      
+      if (downloadUrl) {
         const link = document.createElement("a")
-        link.href = data.downloadUrl
-        link.setAttribute("download", data.filename || "video.mp4")
+        link.href = downloadUrl
+        link.setAttribute("download", filename)
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
         toast.success("Téléchargement lancé !")
-      } else {
-        throw new Error("Lien de téléchargement indisponible.")
       }
     } catch (error: any) {
       toast.error("Erreur lors du téléchargement : " + error.message)
