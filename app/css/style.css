@@ -26,17 +26,44 @@
   --color-gray-900: #111827;
   --color-gray-950: #030712;
 
-  --color-violet-50: #f1eeff;
-  --color-violet-100: #e6e1ff;
-  --color-violet-200: #d2cbff;
-  --color-violet-300: #b7acff;
-  --color-violet-400: #9c8cff;
-  --color-violet-500: #8470ff;
-  --color-violet-600: #755ff8;
-  --color-violet-700: #5d47de;
-  --color-violet-800: #4634b1;
-  --color-violet-900: #2f227c;
-  --color-violet-950: #1c1357;
+  /* Royal / Electric Blue overrides for Violet classes */
+  --color-violet-50: #eff6ff;
+  --color-violet-100: #dbeafe;
+  --color-violet-200: #bfdbfe;
+  --color-violet-300: #93c5fd;
+  --color-violet-400: #60a5fa;
+  --color-violet-500: #3b82f6;
+  --color-violet-600: #2563eb;
+  --color-violet-700: #1d4ed8;
+  --color-violet-800: #1e40af;
+  --color-violet-900: #1e3a8a;
+  --color-violet-950: #172554;
+
+  /* Sky / Ocean Blue overrides for Indigo classes */
+  --color-indigo-50: #f0f9ff;
+  --color-indigo-100: #e0f2fe;
+  --color-indigo-200: #bae6fd;
+  --color-indigo-300: #7dd3fc;
+  --color-indigo-400: #38bdf8;
+  --color-indigo-500: #0ea5e9;
+  --color-indigo-600: #0284c7;
+  --color-indigo-700: #0369a1;
+  --color-indigo-800: #075985;
+  --color-indigo-900: #0c4a6e;
+  --color-indigo-950: #082f49;
+
+  /* Cyan / Teal Blue overrides for Purple classes */
+  --color-purple-50: #ecfeff;
+  --color-purple-100: #cffafe;
+  --color-purple-200: #a5f3fc;
+  --color-purple-300: #67e8f9;
+  --color-purple-400: #22d3ee;
+  --color-purple-500: #06b6d4;
+  --color-purple-600: #0891b2;
+  --color-purple-700: #0e7490;
+  --color-purple-800: #155e75;
+  --color-purple-900: #164e63;
+  --color-purple-950: #083344;
 
   --color-sky-50: #e3f3ff;
   --color-sky-100: #d1ecff;
