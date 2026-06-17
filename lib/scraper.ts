@@ -1,4 +1,14 @@
 // Pas d'import de soi-même
+import { create as createYoutubeDl } from "youtube-dl-exec";
+import path from "path";
+import os from "os";
+
+const getLocalYtdlp = () => {
+  const isWindows = os.platform() === "win32";
+  const binaryFilename = isWindows ? "yt-dlp.exe" : "yt-dlp";
+  const ytDlpPath = path.join(process.cwd(), "node_modules", "youtube-dl-exec", "bin", binaryFilename);
+  return createYoutubeDl(ytDlpPath);
+};
 
 export async function scrapeVideoData(url: string) {
   try {
@@ -157,7 +167,7 @@ export async function scrapeVideoData(url: string) {
         } catch (errorB) {
           console.warn("DEBUG: API Instagram B (Stable API) également échouée. Passage au secours local youtube-dl-exec...", errorB);
           try {
-            const youtubedl = require("youtube-dl-exec");
+            const youtubedl = getLocalYtdlp();
             const output = await youtubedl(url, {
               dumpSingleJson: true,
               noWarnings: true,
@@ -305,7 +315,7 @@ export async function scrapeVideoData(url: string) {
       } catch (err: any) {
         console.warn("DEBUG: API TikTok échouée. Passage au secours local youtube-dl-exec...", err.message);
         try {
-          const youtubedl = require("youtube-dl-exec");
+          const youtubedl = getLocalYtdlp();
           const output = await youtubedl(finalUrl, {
             dumpSingleJson: true,
             noWarnings: true,

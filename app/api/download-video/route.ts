@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { scrapeVideoData } from "@/lib/scraper";
-import youtubedl from "youtube-dl-exec";
+import { create as createYoutubeDl } from "youtube-dl-exec";
+import path from "path";
+import os from "os";
+
+const isWindows = os.platform() === "win32";
+const binaryFilename = isWindows ? "yt-dlp.exe" : "yt-dlp";
+const ytDlpPath = path.join(process.cwd(), "node_modules", "youtube-dl-exec", "bin", binaryFilename);
+const youtubedl = createYoutubeDl(ytDlpPath);
 
 const COBALT_INSTANCES = [
   "https://api.cobalt.blackcat.sweeux.org",
@@ -57,6 +64,10 @@ export async function POST(req: Request) {
         }
       } catch (err: any) {
         console.error("[DOWNLOAD] Échec d'extraction locale youtube-dl-exec :", err.message);
+        try {
+          const fs = require("fs");
+          fs.writeFileSync("c:/Users/bahmo/Desktop/Saas community manager/viralmind/scratch/api-error.log", `YT-DLP Error: ${err.message}\nStack: ${err.stack}\n`);
+        } catch (fsErr) {}
       }
     }
 
