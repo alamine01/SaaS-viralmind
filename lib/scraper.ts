@@ -1,9 +1,13 @@
 // Pas d'import de soi-même
-import { create as createYoutubeDl } from "youtube-dl-exec";
-import path from "path";
-import os from "os";
 
 const getLocalYtdlp = () => {
+  const isVercel = process.env.VERCEL === "1";
+  if (isVercel) {
+    throw new Error("Local yt-dlp is not supported in Vercel serverless environment.");
+  }
+  const { create: createYoutubeDl } = require("youtube-dl-exec");
+  const path = require("path");
+  const os = require("os");
   const isWindows = os.platform() === "win32";
   const binaryFilename = isWindows ? "yt-dlp.exe" : "yt-dlp";
   const ytDlpPath = path.join(process.cwd(), "node_modules", "youtube-dl-exec", "bin", binaryFilename);
