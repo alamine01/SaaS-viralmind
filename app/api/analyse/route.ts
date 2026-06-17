@@ -3,10 +3,13 @@ import { analyzeVideo } from "@/lib/ai-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { scrapeVideoData, getUniqueVideoId } from "@/lib/scraper";
 import { checkAndIncrementAnalysisQuota } from "@/lib/quota-service";
+import { getCleanVideoUrl } from "@/lib/url-utils";
 
 export async function POST(req: Request) {
   try {
-    const { url, followers, userId, collectionName, forceRefresh } = await req.json();
+    const { url: rawUrl, followers, userId, collectionName, forceRefresh } = await req.json();
+  const { cleanUrl, platform: detectedPlatform } = getCleanVideoUrl(rawUrl);
+  const url = cleanUrl;
 
     if (!url) {
       return NextResponse.json({ error: "URL manquante" }, { status: 400 });
@@ -15,11 +18,11 @@ export async function POST(req: Request) {
     const supabase = await createSupabaseServerClient();
 
     // 0. VÉRIFICATION DU CACHE : charger l'analyse si déjà existante pour économiser les quotas
-    const cleanUrl = url.trim();
+    const trimmedUrl = url.trim();
     const { data: existingVideo } = await supabase
       .from("videos")
       .select("*")
-      .eq("url", cleanUrl)
+      .eq("url", trimmedUrl)
       .maybeSingle();
 
     if (existingVideo && !forceRefresh) {
@@ -52,7 +55,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         ...existingVideo,
-        video_id: existingVideo.video_id || getUniqueVideoId(cleanUrl),
+        video_id: existingVideo.video_id || getUniqueVideoId(trimmedUrl),
         cached: true
       });
     }
@@ -103,7 +106,7 @@ export async function POST(req: Request) {
 
     const isYT = url.includes("youtube.com") || url.includes("youtu.be");
     const isIG = url.includes("instagram.com");
-    const platform = isYT ? "youtube" : (isIG ? "instagram" : "tiktok");
+    const platform = detectedPlatform !== "unknown" ? detectedPlatform : (isYT ? "youtube" : (isIG ? "instagram" : "tiktok"));
     const analysis = await analyzeVideo(url, scrapedData.title || "Vidéo Virale", cleanTranscript, (scrapedData as any).audioUrl);
 
     // Normalisation des patterns pour Supabase (doit être un tableau)

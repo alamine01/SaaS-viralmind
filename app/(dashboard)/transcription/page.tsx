@@ -15,6 +15,7 @@ import {
   Download
 } from "lucide-react"
 import { toast } from "sonner"
+import { getCleanVideoUrl } from "@/lib/url-utils";
 export default function TranscriptionPage() {
   const [url, setUrl] = useState("")
   const [loading, setLoading] = useState(false)
@@ -28,16 +29,19 @@ export default function TranscriptionPage() {
   })
   const [activeLang, setActiveLang] = useState<'original' | 'french'>('original')
 
+
+
   const handleTranscribe = async (forceRefresh = false) => {
     if (!url) return
     setLoading(true)
     setTranscript("")
     setBilingual({ original: "", french: "", isBilingual: false })
     try {
+      const cleaned = getCleanVideoUrl(url);
       const res = await fetch("/api/analyse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, forceRefresh })
+        body: JSON.stringify({ url: cleaned.cleanUrl, platform: cleaned.platform, forceRefresh })
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
@@ -77,10 +81,11 @@ export default function TranscriptionPage() {
     setDownloadLoading(true)
     try {
       // 1. Tenter d'abord la résolution via le backend
+      const cleaned = getCleanVideoUrl(url);
       const res = await fetch("/api/download-video", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url })
+        body: JSON.stringify({ url: cleaned.cleanUrl })
       })
       const data = await res.json()
       
@@ -142,13 +147,35 @@ export default function TranscriptionPage() {
       }
       
       if (downloadUrl) {
-        const link = document.createElement("a")
-        link.href = downloadUrl
-        link.setAttribute("download", filename)
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        toast.success("Téléchargement lancé !")
+        try {
+          // Detect iOS Safari – download attribute often ignored, use direct navigation
+          const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+          if (isIOS) {
+            // Open the video URL directly; user can long‑press to save
+            window.location.href = downloadUrl;
+            toast.success('Ouverture du lien vidéo dans le navigateur. Effectuez un appui long pour enregistrer.', { id: 'dl-toast' });
+          } else {
+            // Standard blob download for desktop browsers
+            toast.loading('Récupération du fichier...', { id: 'dl-toast' });
+            const blobRes = await fetch(downloadUrl);
+            if (!blobRes.ok) throw new Error('Blob fetch failed: ' + blobRes.status);
+            const blob = await blobRes.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+            toast.success('Téléchargement lancé !', { id: 'dl-toast' });
+          }
+        } catch (blobErr) {
+          // Fallback: open in new tab for any error
+          console.warn('[CLIENT-DOWNLOAD] Blob fetch échoué, ouverture directe:', blobErr);
+          window.open(downloadUrl, '_blank');
+          toast.success('Vidéo ouverte dans un nouvel onglet (clic droit → Enregistrer sous)', { id: 'dl-toast' });
+        }
       }
     } catch (error: any) {
       toast.error("Erreur lors du téléchargement : " + error.message)
