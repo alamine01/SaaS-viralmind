@@ -90,6 +90,7 @@ export default function TranscriptionPage() {
       // 2. Si le backend échoue (ex: Vercel bloqué), tenter l'extraction Cobalt en direct depuis le navigateur (en parallèle)
       if (data.error || !downloadUrl) {
         console.warn("Échec serveur (Vercel bloqué ?). Passage à l'extraction directe depuis le navigateur...");
+        const targetUrl = data.cleanUrl || url;
         const COBALT_INSTANCES = [
           "https://nuko-c.meowing.de",
           "https://cobalt.alpha.wolfy.love",
@@ -115,7 +116,7 @@ export default function TranscriptionPage() {
                 "Accept": "application/json",
                 "Content-Type": "application/json"
               },
-              body: JSON.stringify({ url, filenamePattern: "basic" })
+              body: JSON.stringify({ url: targetUrl, filenamePattern: "basic" })
             });
             if (cobRes.ok) {
               const cobData = await cobRes.json();
