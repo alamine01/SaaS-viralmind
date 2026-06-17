@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { AppSidebar } from "@/components/app-sidebar"
+import Sidebar from "@/components/dashboard/Sidebar"
+import Header from "@/components/dashboard/Header"
+import { ThemeProvider } from "@/components/dashboard/ThemeProvider"
 import { Menu, ChevronDown, ArrowLeft, ShieldCheck } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
@@ -75,106 +77,25 @@ function DashboardContainer({ children }: { children: React.ReactNode }) {
 
   if (authLoading) {
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-white gap-4">
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-white dark:bg-gray-900 gap-4">
         <div className="relative">
-           <div className="size-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+           <div className="size-12 border-4 border-violet-100 dark:border-violet-950 border-t-violet-600 dark:border-t-violet-500 rounded-full animate-spin" />
         </div>
-        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest animate-pulse">Vérification de l'accès...</p>
+        <p className="text-gray-400 dark:text-gray-500 font-bold text-xs uppercase tracking-widest animate-pulse">Vérification de l'accès...</p>
       </div>
     )
   }
 
   return (
-    <div className="flex h-screen bg-white font-sans antialiased text-slate-900">
-      
-      {/* Sidebar Overlay (mobile) */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-900/10 z-40 lg:hidden backdrop-blur-xs"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <div className={`
-        fixed inset-y-0 left-0 z-50 bg-white border-r border-slate-100 transform transition-[width,transform] duration-300 ease-in-out lg:static lg:translate-x-0 lg:relative shrink-0
-        ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}
-        w-64
-        ${sidebarOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        <AppSidebar 
-          onClose={() => setSidebarOpen(false)} 
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={toggleSidebarCollapse}
-        />
-      </div>
-
-      {/* Content area */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-slate-50/30">
-        
-        {/* Header - Strictly Minimal */}
-        <header className="h-16 bg-white border-b border-slate-100 flex items-center px-4 sm:px-8">
-          <div className="flex items-center justify-between w-full">
-            
-            <div className="flex items-center gap-4">
-              <button
-                className="text-slate-400 hover:text-slate-600 lg:hidden transition-colors"
-                onClick={() => setSidebarOpen(true)}
-              >
-                <Menu className="size-5" />
-              </button>
-              
-              <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-slate-400">
-                 <span className="hover:text-blue-600 cursor-pointer">ViralMind</span>
-                 <span className="text-slate-200">/</span>
-                 <span className="px-2 py-0.5 bg-slate-900 text-white rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm">
-                    {activeCollection}
-                 </span>
-                 <span className="text-slate-200">/</span>
-                 <span className="text-slate-600 font-semibold">{pathname.split('/').pop()?.replace(/-/g, ' ')}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              {/* Admin Access Button */}
-              {quotas?.role === "admin" && (
-                pathname.startsWith("/admin") ? (
-                  <Link 
-                    href="/dashboard"
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 rounded-xl text-xs font-bold transition-all border border-slate-200 shadow-xs"
-                  >
-                    <ArrowLeft className="size-3.5" />
-                    <span className="hidden sm:inline">Retour App</span>
-                  </Link>
-                ) : (
-                  <Link 
-                    href="/admin"
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-100"
-                  >
-                    <ShieldCheck className="size-3.5 animate-pulse" />
-                    <span>Espace Admin</span>
-                  </Link>
-                )
-              )}
-
-              <button className="flex items-center gap-2.5 pl-2 py-1 group">
-                 <div className="size-7 rounded-full bg-slate-100 border border-slate-200 overflow-hidden">
-                    <img src={`https://ui-avatars.com/api/?name=${userName}&background=f1f5f9&color=64748b&bold=true`} alt="User" className="size-full object-cover" />
-                 </div>
-                 <ChevronDown className="size-3.5 text-slate-300 group-hover:text-slate-600 transition-colors" />
-              </button>
-            </div>
-
+    <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-gray-900 text-slate-900 dark:text-gray-100 font-sans antialiased">
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        <main className="grow">
+          <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
+            {children}
           </div>
-        </header>
-
-        {/* Main View */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 sm:p-10">
-           <div className="max-w-6xl mx-auto">
-              {children}
-           </div>
         </main>
-
       </div>
       <CreateWorkspaceModal 
         isOpen={isCreateModalOpen} 
@@ -190,12 +111,14 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <Suspense fallback={<div className="h-screen w-full flex items-center justify-center bg-white">Chargement...</div>}>
-      <WorkspaceProvider>
-        <DashboardContainer>
-          {children}
-        </DashboardContainer>
-      </WorkspaceProvider>
-    </Suspense>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+      <Suspense fallback={<div className="h-screen w-full flex items-center justify-center bg-white dark:bg-gray-900">Chargement...</div>}>
+        <WorkspaceProvider>
+          <DashboardContainer>
+            {children}
+          </DashboardContainer>
+        </WorkspaceProvider>
+      </Suspense>
+    </ThemeProvider>
   )
 }

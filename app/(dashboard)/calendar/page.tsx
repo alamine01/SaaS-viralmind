@@ -62,23 +62,23 @@ interface CalendarTask {
 
 // Columns definition
 const COLUMNS: { id: TaskStatus; title: string; color: string; bg: string; border: string }[] = [
-  { id: 'ideas', title: 'Idées', color: 'text-amber-600', bg: 'bg-amber-50/50', border: 'border-amber-100/50' },
-  { id: 'writing', title: 'En Rédaction', color: 'text-indigo-600', bg: 'bg-indigo-50/50', border: 'border-indigo-100/50' },
-  { id: 'filming', title: 'À Filmer', color: 'text-rose-600', bg: 'bg-rose-50/50', border: 'border-rose-100/50' },
-  { id: 'published', title: 'Publié', color: 'text-emerald-600', bg: 'bg-emerald-50/50', border: 'border-emerald-100/50' }
+  { id: 'ideas', title: 'Idées', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50/50 dark:bg-amber-950/20', border: 'border-amber-100/50 dark:border-amber-900/30' },
+  { id: 'writing', title: 'En Rédaction', color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50/50 dark:bg-violet-950/20', border: 'border-violet-100/50 dark:border-violet-900/30' },
+  { id: 'filming', title: 'À Filmer', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50/50 dark:bg-rose-950/20', border: 'border-rose-100/50 dark:border-rose-900/30' },
+  { id: 'published', title: 'Publié', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50/50 dark:bg-emerald-950/20', border: 'border-emerald-100/50 dark:border-emerald-900/30' }
 ];
 
 // Column Header Icons Selector
 const ColumnHeaderIcon = ({ id, className = "size-4" }: { id: TaskStatus; className?: string }) => {
   switch (id) {
     case 'ideas':
-      return <Lightbulb className={`${className} text-amber-600`} />;
+      return <Lightbulb className={`${className} text-amber-600 dark:text-amber-400`} />;
     case 'writing':
-      return <Edit3 className={`${className} text-indigo-600`} />;
+      return <Edit3 className={`${className} text-violet-600 dark:text-violet-400`} />;
     case 'filming':
-      return <Video className={`${className} text-rose-600`} />;
+      return <Video className={`${className} text-rose-600 dark:text-rose-400`} />;
     case 'published':
-      return <CheckCircle2 className={`${className} text-emerald-600`} />;
+      return <CheckCircle2 className={`${className} text-emerald-600 dark:text-emerald-400`} />;
   }
 };
 
@@ -133,7 +133,7 @@ const PlatformIcon = ({ platform, className = "size-3.5" }: { platform: TaskPlat
     case "youtube":
       return <YoutubeIcon className={`${className} text-red-500`} />;
     default:
-      return <Sparkles className={`${className} text-indigo-500`} />;
+      return <Sparkles className={`${className} text-violet-500 dark:text-violet-400`} />;
   }
 };
 
@@ -155,9 +155,9 @@ function SortableCard({ task, onEdit, onDelete }: { task: CalendarTask; onEdit: 
   };
 
   const priorityColor = {
-    low: 'bg-blue-50 text-blue-600 border-blue-100',
-    medium: 'bg-amber-50 text-amber-600 border-amber-100',
-    high: 'bg-rose-50 text-rose-600 border-rose-100'
+    low: 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-450 border-blue-100 dark:border-blue-900/30',
+    medium: 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-450 border-amber-100 dark:border-amber-900/30',
+    high: 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-455 border-rose-100 dark:border-rose-900/30'
   }[task.priority || 'medium'];
 
   const priorityLabels = {
@@ -170,7 +170,7 @@ function SortableCard({ task, onEdit, onDelete }: { task: CalendarTask; onEdit: 
     <div
       ref={setNodeRef}
       style={style}
-      className={`group bg-white rounded-2xl border border-slate-100/80 p-3.5 hover:border-slate-200/80 hover:shadow-lg hover:shadow-slate-100/40 transition-all select-none relative duration-200`}
+      className={`group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700/60 p-3.5 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all select-none relative duration-200`}
     >
       {/* Drag handle button or mouse listeners */}
       <div 
@@ -182,10 +182,10 @@ function SortableCard({ task, onEdit, onDelete }: { task: CalendarTask; onEdit: 
       <div className="flex flex-col gap-2">
         {/* Top Indicators */}
         <div className="flex flex-wrap items-center justify-between gap-1.5 pointer-events-none">
-          <span className={`text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded border ${priorityColor} shrink-0`}>
+          <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border ${priorityColor} shrink-0`}>
             {priorityLabels[task.priority]}
           </span>
-          <div className="flex items-center gap-1 bg-slate-50 border border-slate-100/50 px-2 py-0.5 rounded text-[10px] font-bold text-slate-500 capitalize shrink-0 max-w-full overflow-hidden">
+          <div className="flex items-center gap-1 bg-gray-55 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700/60 px-2 py-0.5 rounded text-[10px] font-bold text-gray-500 dark:text-gray-400 capitalize shrink-0 max-w-full overflow-hidden">
             <PlatformIcon platform={task.platform} className="size-3 shrink-0" />
             <span className="truncate max-w-[85px]">{task.platform === 'other' ? 'Autre' : task.platform}</span>
           </div>
@@ -193,19 +193,19 @@ function SortableCard({ task, onEdit, onDelete }: { task: CalendarTask; onEdit: 
 
         {/* Title & Description */}
         <div>
-          <h4 className="text-[13px] font-black text-slate-900 leading-snug tracking-tight pr-6">
+          <h4 className="text-[13px] font-bold text-gray-900 dark:text-gray-100 leading-snug tracking-tight pr-6">
             {task.title}
           </h4>
           {task.description && (
-            <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">
               {task.description}
             </p>
           )}
         </div>
 
         {/* Footer info (date & actions) */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-50 pt-2 mt-0.5">
-          <div className="flex items-center gap-1 text-slate-400 shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 dark:border-gray-700/60 pt-2 mt-0.5">
+          <div className="flex items-center gap-1 text-gray-400 dark:text-gray-500 shrink-0">
             <CalendarIcon className="size-3 shrink-0" />
             <span className="text-[10px] font-bold truncate max-w-[90px]">
               {task.scheduled_date ? formatDate(task.scheduled_date) : "Non planifié"}
@@ -215,14 +215,14 @@ function SortableCard({ task, onEdit, onDelete }: { task: CalendarTask; onEdit: 
           <div className="flex items-center gap-0.5 shrink-0">
             <button 
               onClick={(e) => { e.stopPropagation(); onEdit(); }}
-              className="p-1 hover:bg-slate-50 rounded-md text-slate-400 hover:text-slate-900 transition-colors"
+              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-400 dark:text-gray-555 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
               title="Modifier"
             >
               <Edit3 className="size-3.5" />
             </button>
             <button 
               onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="p-1 hover:bg-rose-50 rounded-md text-slate-400 hover:text-rose-600 transition-colors"
+              className="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md text-gray-400 dark:text-gray-555 hover:text-rose-600 transition-colors"
               title="Supprimer"
             >
               <Trash2 className="size-3.5" />
@@ -237,9 +237,9 @@ function SortableCard({ task, onEdit, onDelete }: { task: CalendarTask; onEdit: 
 // --- Static Preview Card for DragOverlay ---
 function PreviewCard({ task }: { task: CalendarTask }) {
   const priorityColor = {
-    low: 'bg-blue-50 text-blue-600 border-blue-100',
-    medium: 'bg-amber-50 text-amber-600 border-amber-100',
-    high: 'bg-rose-50 text-rose-600 border-rose-100'
+    low: 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-450 border-blue-100 dark:border-blue-900/30',
+    medium: 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-450 border-amber-100 dark:border-amber-900/30',
+    high: 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-455 border-rose-100 dark:border-rose-900/30'
   }[task.priority || 'medium'];
 
   const priorityLabels = {
@@ -249,23 +249,23 @@ function PreviewCard({ task }: { task: CalendarTask }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl p-3.5 select-none w-[320px] pointer-events-none scale-105 rotate-1">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-750 shadow-2xl p-3.5 select-none w-[320px] pointer-events-none scale-105 rotate-1">
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-1.5">
-          <span className={`text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded border ${priorityColor} shrink-0`}>
+          <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border ${priorityColor} shrink-0`}>
             {priorityLabels[task.priority]}
           </span>
-          <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded text-[10px] font-bold text-slate-500 capitalize shrink-0 max-w-full overflow-hidden">
+          <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-750 border border-gray-200 dark:border-gray-700 px-2 py-0.5 rounded text-[10px] font-bold text-gray-500 dark:text-gray-400 capitalize shrink-0 max-w-full overflow-hidden">
             <PlatformIcon platform={task.platform} className="size-3 shrink-0" />
             <span className="truncate max-w-[85px]">{task.platform === 'other' ? 'Autre' : task.platform}</span>
           </div>
         </div>
         <div>
-          <h4 className="text-[13px] font-black text-slate-900 leading-snug tracking-tight">{task.title}</h4>
-          {task.description && <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">{task.description}</p>}
+          <h4 className="text-[13px] font-bold text-gray-900 dark:text-gray-100 leading-snug tracking-tight">{task.title}</h4>
+          {task.description && <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{task.description}</p>}
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-50 pt-2">
-          <div className="flex items-center gap-1 text-slate-400 shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 dark:border-gray-750/60 pt-2">
+          <div className="flex items-center gap-1 text-gray-400 dark:text-gray-555 shrink-0">
             <CalendarIcon className="size-3 shrink-0" />
             <span className="text-[10px] font-bold truncate max-w-[90px]">
               {task.scheduled_date ? formatDate(task.scheduled_date) : "Non planifié"}
@@ -281,7 +281,7 @@ function PreviewCard({ task }: { task: CalendarTask }) {
 function DroppableColumn({ id, children }: { id: string; children: React.ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   return (
-    <div ref={setNodeRef} className={`flex-1 flex flex-col min-h-0 transition-colors duration-200 rounded-2xl ${isOver ? 'bg-indigo-50/40' : ''}`}>
+    <div ref={setNodeRef} className={`flex-1 flex flex-col min-h-0 transition-colors duration-200 rounded-xl ${isOver ? 'bg-violet-50/40 dark:bg-violet-500/10' : ''}`}>
       {children}
     </div>
   );
@@ -557,23 +557,23 @@ export default function CalendarPage() {
   const activeTask = activeId ? tasks.find(t => t.id === activeId) : null;
 
   return (
-    <div className="space-y-10 py-6 max-w-[1550px] mx-auto px-4 md:px-6 font-sans antialiased text-slate-900">
+    <div className="space-y-10 py-6 max-w-[1550px] mx-auto px-4 md:px-6 font-sans antialiased text-gray-900 dark:text-gray-100">
       
       {/* Header section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div>
-          <h2 className="text-3xl font-black tracking-tight text-slate-900">
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
             Calendrier Éditorial
           </h2>
-          <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1.5 flex items-center gap-2">
+          <p className="text-gray-400 dark:text-gray-500 font-bold text-xs uppercase tracking-widest mt-1.5 flex items-center gap-2">
             <span>Workflow Kanban</span>
-            <ChevronRight className="size-3 text-slate-300" />
-            <span className="text-indigo-600">Drag & Drop</span>
+            <ChevronRight className="size-3 text-gray-300 dark:text-gray-600" />
+            <span className="text-violet-500 dark:text-violet-400">Drag & Drop</span>
           </p>
         </div>
         <button
           onClick={() => handleOpenCreateModal('ideas')}
-          className="px-6 py-4 bg-slate-900 text-white hover:bg-indigo-600 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-3 shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+          className="px-6 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-violet-600 dark:hover:bg-violet-500 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all flex items-center gap-3 shadow-sm hover:scale-[1.02] active:scale-[0.98]"
         >
           <Plus className="size-4" /> Nouvelle Carte
         </button>
@@ -583,10 +583,10 @@ export default function CalendarPage() {
       {loading ? (
         <div className="flex xl:grid xl:grid-cols-4 gap-6 overflow-x-auto pb-4 -mx-4 px-4 xl:mx-0 xl:px-0 scrollbar-thin">
           {COLUMNS.map((col) => (
-            <div key={col.id} className="bg-slate-50/50 rounded-3xl p-6 border border-slate-100/50 space-y-4 h-[530px] shrink-0 w-[310px] sm:w-[340px] xl:w-full">
-              <div className="h-6 bg-slate-200 rounded-full w-24 animate-pulse" />
-              <div className="h-28 bg-white rounded-2xl border border-slate-100 animate-pulse" />
-              <div className="h-28 bg-white rounded-2xl border border-slate-100 animate-pulse" />
+            <div key={col.id} className="bg-gray-55/50 dark:bg-gray-800/30 rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/30 space-y-4 h-[530px] shrink-0 w-[310px] sm:w-[340px] xl:w-full">
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-full w-24 animate-pulse" />
+              <div className="h-28 bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700/60 animate-pulse" />
+              <div className="h-28 bg-white dark:bg-gray-855 rounded-xl border border-gray-100 dark:border-gray-700/60 animate-pulse" />
             </div>
           ))}
         </div>
@@ -608,23 +608,23 @@ export default function CalendarPage() {
               return (
                 <div 
                   key={column.id} 
-                  className={`rounded-3xl p-6 border ${column.border} ${column.bg} transition-all duration-300 h-[530px] flex flex-col shrink-0 w-[310px] sm:w-[340px] xl:w-full`}
+                  className={`rounded-2xl p-6 border ${column.border} ${column.bg} transition-all duration-300 h-[530px] flex flex-col shrink-0 w-[310px] sm:w-[340px] xl:w-full`}
                 >
                   {/* Column Header */}
                   <div className="flex items-center justify-between mb-5 select-none">
                     <div className="flex items-center gap-2">
                       <ColumnHeaderIcon id={column.id} className="size-4 shrink-0" />
-                      <h3 className="text-[13px] font-black text-slate-800 uppercase tracking-wider">
+                      <h3 className="text-[13px] font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">
                         {column.title}
                       </h3>
-                      <span className="text-[10px] bg-white border border-slate-200/50 text-slate-400 font-extrabold px-2.5 py-0.5 rounded-full shadow-xs">
+                      <span className="text-[10px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 font-bold px-2.5 py-0.5 rounded-full shadow-sm">
                         {colTasks.length}
                       </span>
                     </div>
                     
                     <button 
                       onClick={() => handleOpenCreateModal(column.id)}
-                      className="p-1.5 bg-white border border-slate-200/50 text-slate-400 hover:text-slate-900 rounded-lg hover:shadow-xs transition-all"
+                      className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-400 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 rounded-md shadow-sm transition-all"
                       title={`Ajouter dans ${column.title}`}
                     >
                       <Plus className="size-3.5" />
@@ -646,11 +646,11 @@ export default function CalendarPage() {
 
                         {/* Fallback empty view placeholder */}
                         {colTasks.length === 0 && (
-                          <div className="flex-1 flex flex-col items-center justify-center border border-dashed border-slate-200/60 rounded-2xl py-10 px-4 bg-white/50 text-center select-none">
-                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                          <div className="flex-1 flex flex-col items-center justify-center border border-dashed border-gray-200 dark:border-gray-700/60 rounded-xl py-10 px-4 bg-white/50 dark:bg-gray-850/30 text-center select-none">
+                            <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
                               Déposer ici
                             </p>
-                            <p className="text-[10px] text-slate-400 mt-1 font-semibold">
+                            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 font-semibold">
                               Aucune carte planifiée
                             </p>
                           </div>
@@ -674,51 +674,51 @@ export default function CalendarPage() {
 
       {/* --- CREATE / EDIT DIALOG --- */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-950/40 dark:bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-gray-800 w-full max-w-lg rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden animate-in zoom-in-95 duration-300">
             
             {/* Modal Header */}
-            <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700/60 flex items-center justify-between bg-white dark:bg-gray-800">
               <div className="flex items-center gap-4">
-                <div className="size-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                  <CalendarIcon className="size-6" />
+                <div className="size-11 rounded-lg bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center border border-violet-100 dark:border-violet-500/20">
+                  <CalendarIcon className="size-5" />
                 </div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 tracking-tight">
                   {editingTask ? "Modifier la Carte" : "Nouvelle Carte Éditoriale"}
                 </h3>
               </div>
               <button 
                 onClick={() => setIsModalOpen(false)} 
-                className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
               >
-                <X className="size-6 text-slate-400" />
+                <X className="size-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-10 space-y-6 max-h-[60vh] overflow-y-auto">
+            <div className="p-6 space-y-5 max-h-[60vh] overflow-y-auto bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
               
               {/* Title field */}
-              <div className="space-y-2.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Titre du contenu</label>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Titre du contenu</label>
                 <input 
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Ex: 5 astuces secrètes pour percer sur TikTok..."
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 outline-hidden transition-all text-slate-800"
+                  className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-750 rounded-xl px-4 py-3 text-sm font-semibold focus:bg-white dark:focus:bg-gray-800 focus:ring-2 focus:ring-violet-500/10 focus:border-violet-500 outline-hidden transition-all text-gray-800 dark:text-gray-100"
                   autoFocus
                 />
               </div>
 
               {/* Description field */}
-              <div className="space-y-2.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Description / notes</label>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Description / notes</label>
                 <textarea 
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Écrivez le concept, les hooks ou des idées visuelles de la vidéo..."
                   rows={3}
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 outline-hidden transition-all text-slate-800 resize-none"
+                  className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-750 rounded-xl px-4 py-3 text-sm font-semibold focus:bg-white dark:focus:bg-gray-800 focus:ring-2 focus:ring-violet-500/10 focus:border-violet-500 outline-hidden transition-all text-gray-850 dark:text-gray-100 resize-none"
                 />
               </div>
 
@@ -726,12 +726,12 @@ export default function CalendarPage() {
               <div className="grid grid-cols-2 gap-4">
                 
                 {/* Platform */}
-                <div className="space-y-2.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plateforme</label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Plateforme</label>
                   <select 
                     value={platform}
                     onChange={(e) => setPlatform(e.target.value as TaskPlatform)}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold focus:bg-white outline-hidden transition-all cursor-pointer text-slate-700"
+                    className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-750 rounded-xl px-4 py-3.5 text-sm font-semibold focus:bg-white dark:focus:bg-gray-800 outline-hidden transition-all cursor-pointer text-gray-700 dark:text-gray-300"
                   >
                     <option value="tiktok">TikTok</option>
                     <option value="instagram">Instagram Reels</option>
@@ -741,12 +741,12 @@ export default function CalendarPage() {
                 </div>
 
                 {/* Priority */}
-                <div className="space-y-2.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Priorité</label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Priorité</label>
                   <select 
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold focus:bg-white outline-hidden transition-all cursor-pointer text-slate-700"
+                    className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-750 rounded-xl px-4 py-3.5 text-sm font-semibold focus:bg-white dark:focus:bg-gray-800 outline-hidden transition-all cursor-pointer text-gray-700 dark:text-gray-300"
                   >
                     <option value="low">Priorité Basse</option>
                     <option value="medium">Priorité Moyenne</option>
@@ -760,12 +760,12 @@ export default function CalendarPage() {
               <div className="grid grid-cols-2 gap-4">
                 
                 {/* Status Column */}
-                <div className="space-y-2.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Étape / Status</label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Étape / Status</label>
                   <select 
                     value={modalStatus}
                     onChange={(e) => setModalStatus(e.target.value as TaskStatus)}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold focus:bg-white outline-hidden transition-all cursor-pointer text-slate-700"
+                    className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-750 rounded-xl px-4 py-3.5 text-sm font-semibold focus:bg-white dark:focus:bg-gray-800 outline-hidden transition-all cursor-pointer text-gray-700 dark:text-gray-300"
                   >
                     {COLUMNS.map(col => (
                       <option key={col.id} value={col.id}>{col.title}</option>
@@ -774,13 +774,13 @@ export default function CalendarPage() {
                 </div>
 
                 {/* Scheduled Date */}
-                <div className="space-y-2.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date de publication</label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Date de publication</label>
                   <input 
                     type="date"
                     value={scheduledDate}
                     onChange={(e) => setScheduledDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold focus:bg-white outline-hidden transition-all text-slate-700"
+                    className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-750 rounded-xl px-4 py-3.5 text-sm font-semibold focus:bg-white dark:focus:bg-gray-800 outline-hidden transition-all text-gray-700 dark:text-gray-300"
                   />
                 </div>
 
@@ -789,16 +789,16 @@ export default function CalendarPage() {
             </div>
 
             {/* Modal Footer actions */}
-            <div className="p-8 bg-slate-50 border-t border-slate-50 flex gap-3">
+            <div className="p-6 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-700 flex gap-3">
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
+                className="flex-1 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all shadow-sm"
               >
                 Annuler
               </button>
               <button 
                 onClick={handleSaveTask}
-                className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-600 disabled:opacity-50 transition-all shadow-xl shadow-slate-200"
+                className="flex-1 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-violet-650 dark:hover:bg-violet-500 disabled:opacity-50 transition-all shadow-sm"
               >
                 {editingTask ? "Sauvegarder" : "Créer la Carte"}
               </button>

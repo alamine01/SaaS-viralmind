@@ -105,7 +105,7 @@ function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
 
   return (
     <Card
-      className="group border border-slate-100 shadow-sm rounded-[20px] overflow-hidden bg-white hover:shadow-xl hover:border-slate-200 transition-all duration-300 cursor-pointer flex flex-col"
+      className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col"
       onClick={onClick}
     >
       <div className="relative aspect-video bg-slate-100 overflow-hidden">
@@ -141,33 +141,33 @@ function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
 
       <CardContent className="p-4 flex-1 flex flex-col justify-between gap-3">
         <div className="space-y-2">
-          <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2 group-hover:text-indigo-600 transition-colors">
+          <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 leading-snug line-clamp-2 group-hover:text-violet-500 transition-colors">
             {item.title}
           </h3>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider truncate">{item.author}</span>
-            <span className="text-slate-200">&bull;</span>
-            <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">{item.time_ago}</span>
+            <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider truncate">{item.author}</span>
+            <span className="text-gray-300 dark:text-gray-600">&bull;</span>
+            <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap">{item.time_ago}</span>
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-slate-50">
+        <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700/60">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
-              <Eye className="size-3 text-slate-400" />
-              <span className="text-[11px] font-bold text-slate-600">{item.views_formatted}</span>
+               <Eye className="size-3 text-gray-400 dark:text-gray-500" />
+              <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">{item.views_formatted}</span>
             </div>
             {item.likes > 0 && (
               <div className="flex items-center gap-1.5">
-                <ThumbsUp className="size-3 text-slate-400" />
-                <span className="text-[11px] font-bold text-slate-600">
+                <ThumbsUp className="size-3 text-gray-400 dark:text-gray-500" />
+                <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">
                   {item.likes >= 1000 ? `${(item.likes / 1000).toFixed(1)}K` : item.likes}
                 </span>
               </div>
             )}
           </div>
-          <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${
-            item.niche === "trending" ? "bg-rose-50 text-rose-500" : "bg-indigo-50 text-indigo-500"
+          <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ${
+            item.niche === "trending" ? "bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400" : "bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400"
           }`}>
             {item.niche}
           </span>
@@ -269,44 +269,44 @@ export default function ViralFeedPage() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-rose-50 text-rose-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-rose-100">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-full text-[10px] font-bold uppercase tracking-widest border border-rose-200 dark:border-rose-500/30">
             <Flame className="size-3" /> Flux en direct
           </div>
-          <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-none">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100 tracking-tight leading-none">
             Flux <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-orange-500">Viral</span>
           </h1>
-          <p className="text-slate-500 font-medium text-xs md:text-sm max-w-lg">
+          <p className="text-gray-500 dark:text-gray-400 font-medium text-xs md:text-sm max-w-lg">
             D&eacute;couvrez les vid&eacute;os qui explosent en ce moment. Filtrez par niche, analysez les patterns gagnants.
           </p>
         </div>
 
         <div className="flex items-center gap-3 w-full lg:w-auto">
           <div className="relative flex-1 lg:w-72">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400 dark:text-gray-500" />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Rechercher..."
-              className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs md:text-sm font-medium focus:border-indigo-500/50 outline-hidden shadow-sm transition-all"
+              className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-xl pl-10 pr-4 py-2 text-sm font-medium focus:border-violet-500 outline-hidden shadow-sm transition-all text-gray-800 dark:text-gray-100"
             />
           </div>
 
           <div className="relative" ref={sortRef}>
             <button
               onClick={() => setShowSortDropdown(!showSortDropdown)}
-              className="h-10 px-3.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 flex items-center gap-2 hover:border-slate-300 transition-all shadow-sm whitespace-nowrap"
+              className="h-10 px-3.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-2 hover:border-gray-300 dark:hover:border-gray-600 transition-all shadow-sm whitespace-nowrap"
             >
-              <ArrowUpDown className="size-3.5" />
+              <ArrowUpDown className="size-3.5 text-gray-400" />
               <span className="hidden sm:inline">{SORTS.find(s => s.id === activeSort)?.label}</span>
-              <ChevronDown className="size-3" />
+              <ChevronDown className="size-3 text-gray-400" />
             </button>
             {showSortDropdown && (
-              <div className="absolute right-0 top-12 z-50 bg-white border border-slate-100 rounded-xl shadow-xl p-1.5 min-w-[140px] animate-in fade-in zoom-in-95 duration-200">
+              <div className="absolute right-0 top-12 z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-xl shadow-lg p-1.5 min-w-[140px] animate-in fade-in zoom-in-95 duration-200">
                 {SORTS.map(s => (
                   <button
                     key={s.id}
                     onClick={() => { setActiveSort(s.id); setShowSortDropdown(false) }}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-all ${activeSort === s.id ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all ${activeSort === s.id ? 'bg-violet-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
                   >
                     {s.label}
                   </button>
@@ -324,13 +324,13 @@ export default function ViralFeedPage() {
           <button
             key={niche.id}
             onClick={() => setActiveNiche(niche.id)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-bold transition-all whitespace-nowrap border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap border ${
               activeNiche === niche.id
-                ? 'bg-gradient-to-r from-rose-500 to-orange-500 text-white border-transparent shadow-lg shadow-rose-100'
-                : 'bg-white text-slate-500 border-slate-100 hover:border-slate-200 hover:text-slate-900 shadow-sm'
+                ? 'bg-violet-500 text-white border-transparent shadow-sm'
+                : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-900 dark:hover:text-gray-100 shadow-sm'
             }`}
           >
-            <niche.icon className={`size-3.5 ${activeNiche === niche.id ? 'text-white' : 'text-slate-400'}`} />
+            <niche.icon className={`size-3.5 ${activeNiche === niche.id ? 'text-white' : 'text-gray-400 dark:text-gray-500'}`} />
             {niche.label}
           </button>
         ))}
@@ -343,15 +343,15 @@ export default function ViralFeedPage() {
             <Loader2 className="size-10 text-rose-500 animate-spin" />
             <div className="absolute inset-0 bg-rose-500/10 blur-xl rounded-full" />
           </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Chargement du flux viral...</p>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest animate-pulse">Chargement du flux viral...</p>
         </div>
       ) : filteredItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <div className="size-16 rounded-3xl bg-slate-100 flex items-center justify-center text-slate-300">
+          <div className="size-16 rounded-3xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-300 dark:text-gray-600">
             <Search className="size-8" />
           </div>
-          <p className="text-sm font-bold text-slate-500">Aucune vid&eacute;o trouv&eacute;e pour ce filtre</p>
-          <button onClick={() => { setActiveNiche("all"); setSearchQuery("") }} className="text-xs font-bold text-indigo-600 hover:underline">
+          <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">Aucune vid&eacute;o trouv&eacute;e pour ce filtre</p>
+          <button onClick={() => { setActiveNiche("all"); setSearchQuery("") }} className="text-xs font-semibold text-violet-500 hover:text-violet-600 transition-colors">
             R&eacute;initialiser les filtres
           </button>
         </div>
@@ -384,13 +384,13 @@ export default function ViralFeedPage() {
       {/* Video Preview Modal */}
       {previewVideo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-md" onClick={() => setPreviewVideo(null)} />
-          <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-300">
+          <div className="absolute inset-0 bg-gray-900/70 backdrop-blur-sm" onClick={() => setPreviewVideo(null)} />
+          <div className="relative w-full max-w-3xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-300 border border-gray-200 dark:border-gray-700/60">
             <button 
               onClick={() => setPreviewVideo(null)} 
-              className="absolute top-4 right-4 z-10 size-9 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center text-slate-500 hover:text-slate-900 transition-colors shadow-md"
+              className="absolute top-4 right-4 z-10 size-8 rounded-full bg-white/90 dark:bg-gray-800/90 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 transition-colors shadow-sm"
             >
-              <X className="size-5" />
+              <X className="size-4" />
             </button>
 
             <div className="aspect-video bg-black">
@@ -402,7 +402,7 @@ export default function ViralFeedPage() {
                   allowFullScreen
                 />
               ) : (
-                <div className="size-full flex items-center justify-center text-slate-400">
+                <div className="size-full flex items-center justify-center text-gray-500">
                   <Play className="size-16" />
                 </div>
               )}
@@ -411,49 +411,49 @@ export default function ViralFeedPage() {
             <div className="p-5 sm:p-6 space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-base sm:text-lg font-black text-slate-900 leading-snug">{previewVideo.title}</h2>
-                  <p className="text-xs font-bold text-slate-400 mt-1">{previewVideo.author} &bull; {previewVideo.time_ago}</p>
+                  <h2 className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 leading-snug">{previewVideo.title}</h2>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1">{previewVideo.author} &bull; {previewVideo.time_ago}</p>
                 </div>
-                <div className={`shrink-0 px-3 py-1.5 rounded-xl text-sm font-black ${getScoreColor(previewVideo.viral_score)}`}>
+                <div className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-bold ${getScoreColor(previewVideo.viral_score)}`}>
                   {previewVideo.viral_score}%
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 sm:gap-6 py-3 border-y border-slate-100 overflow-x-auto">
+              <div className="flex items-center gap-4 sm:gap-6 py-3 border-y border-gray-100 dark:border-gray-700/60 overflow-x-auto">
                 <div className="flex items-center gap-2 shrink-0">
-                  <Eye className="size-4 text-slate-400" />
+                  <Eye className="size-4 text-gray-400 dark:text-gray-500" />
                   <div>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Vues</p>
-                    <p className="text-sm font-bold text-slate-900">{previewVideo.views_formatted}</p>
+                    <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Vues</p>
+                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{previewVideo.views_formatted}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Zap className="size-4 text-amber-500" />
                   <div>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Score</p>
-                    <p className="text-sm font-bold text-slate-900">{previewVideo.viral_score}%</p>
+                    <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Score</p>
+                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{previewVideo.viral_score}%</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <TrendingUp className="size-4 text-emerald-500" />
                   <div>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tendance</p>
-                    <p className="text-sm font-bold text-slate-900">{getScoreLabel(previewVideo.viral_score)}</p>
+                    <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Tendance</p>
+                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{getScoreLabel(previewVideo.viral_score)}</p>
                   </div>
                 </div>
               </div>
 
               {previewVideo.hook && (
-                <div className="bg-indigo-50/50 border border-indigo-100/50 rounded-2xl p-4">
-                  <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1">Accroche d&eacute;tect&eacute;e</p>
-                  <p className="text-xs font-bold text-slate-800 italic leading-relaxed">&ldquo;{previewVideo.hook}&rdquo;</p>
+                <div className="bg-violet-50 dark:bg-violet-500/10 border border-violet-100 dark:border-violet-500/20 rounded-xl p-4">
+                  <p className="text-[9px] font-bold text-violet-500 uppercase tracking-widest mb-1">Accroche d&eacute;tect&eacute;e</p>
+                  <p className="text-xs font-semibold text-gray-800 dark:text-gray-200 italic leading-relaxed">&ldquo;{previewVideo.hook}&rdquo;</p>
                 </div>
               )}
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <Link
                   href={`/analyse?url=${encodeURIComponent(previewVideo.url)}`}
-                  className="flex-1 h-11 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                  className="flex-1 h-10 bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
                 >
                   <Zap className="size-4" /> Analyser avec le Radar
                 </Link>
@@ -461,7 +461,7 @@ export default function ViralFeedPage() {
                   href={previewVideo.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 h-11 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                  className="flex-1 h-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
                 >
                   <ExternalLink className="size-4" /> Voir sur {previewVideo.platform}
                 </a>

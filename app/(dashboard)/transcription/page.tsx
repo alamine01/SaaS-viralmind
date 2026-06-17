@@ -88,34 +88,34 @@ export default function TranscriptionPage() {
       
       {/* Header */}
       <div className="text-center space-y-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-bold uppercase tracking-widest border border-indigo-100">
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 rounded-full text-[10px] font-bold uppercase tracking-widest border border-violet-200 dark:border-violet-500/30">
           <Mic2 className="size-3" />
           Intelligence Vocale
         </div>
-        <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight">
-          Transcription <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Instantanée</span>
+        <h1 className="text-3xl md:text-5xl font-bold text-gray-800 dark:text-gray-100 tracking-tight">
+          Transcription <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-purple-500">Instantanée</span>
         </h1>
-        <p className="text-slate-500 font-medium max-w-lg mx-auto text-sm md:text-base">
+        <p className="text-gray-500 dark:text-gray-400 font-medium max-w-lg mx-auto text-sm md:text-base">
           Récupérez le texte de n'importe quelle vidéo TikTok ou YouTube en un clic.
         </p>
       </div>
 
       {/* Input */}
-      <Card className="border-none shadow-2xl shadow-indigo-500/5 rounded-[32px] bg-white overflow-hidden p-2">
+      <Card className="border-none shadow-md rounded-2xl bg-white dark:bg-gray-800 overflow-hidden p-2 border border-gray-200 dark:border-gray-700/60">
         <CardContent className="p-4 md:p-6 flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 flex items-center gap-4 px-6 bg-slate-50 rounded-2xl border border-slate-100 focus-within:border-indigo-200 transition-colors">
-            <LinkIcon className="size-5 text-slate-400" />
+          <div className="flex-1 flex items-center gap-4 px-6 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-700 focus-within:border-violet-500 transition-colors">
+            <LinkIcon className="size-5 text-gray-400 dark:text-gray-500" />
             <input 
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="Collez le lien de la vidéo ici..." 
-              className="w-full bg-transparent py-5 text-sm font-bold text-slate-900 outline-hidden placeholder:text-slate-300"
+              className="w-full bg-transparent py-5 text-sm font-bold text-gray-800 dark:text-gray-100 outline-hidden placeholder:text-gray-400 dark:placeholder:text-gray-500"
             />
           </div>
           <button 
             onClick={() => handleTranscribe()}
             disabled={loading || !url}
-            className="px-10 h-16 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-indigo-600 transition-all flex items-center justify-center gap-3 shadow-xl disabled:opacity-50"
+            className="px-10 h-16 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-bold text-[11px] uppercase tracking-widest hover:bg-violet-600 transition-all flex items-center justify-center gap-3 shadow-sm disabled:opacity-50"
           >
             {loading ? <Loader2 className="size-5 animate-spin" /> : <><Sparkles className="size-4" /> Extraire le texte</>}
           </button>
@@ -126,39 +126,39 @@ export default function TranscriptionPage() {
       <div className="min-h-[400px]">
         {loading ? (
           <div className="h-full flex flex-col items-center justify-center py-20 space-y-6">
-            <div className="size-20 rounded-3xl bg-indigo-50 flex items-center justify-center text-indigo-600 animate-pulse">
+            <div className="size-20 rounded-2xl bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center text-violet-600 dark:text-violet-400 animate-pulse border border-violet-200 dark:border-violet-500/30">
               <Mic2 className="size-10" />
             </div>
-            <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] animate-bounce">IA en cours d'écoute...</p>
+            <p className="text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest text-[10px] animate-bounce">IA en cours d'écoute...</p>
           </div>
         ) : transcript ? (
-          <Card className="border-none shadow-2xl shadow-indigo-500/5 rounded-[40px] bg-white overflow-hidden border border-slate-50 animate-in slide-in-from-bottom-8 duration-500">
-            <CardContent className="p-8 md:p-14 space-y-10">
+          <Card className="border-none shadow-md rounded-2xl bg-white dark:bg-gray-800 overflow-hidden border border-gray-200 dark:border-gray-700/60 animate-in slide-in-from-bottom-8 duration-500">
+            <CardContent className="p-8 md:p-12 space-y-10">
               <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
-                  <div className="size-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/10">
+                  <div className="size-12 rounded-xl bg-violet-600 text-white flex items-center justify-center shadow-sm">
                     <FileText className="size-6" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-900 leading-tight">Résultat de l'analyse</h3>
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 leading-tight">Résultat de l'analyse</h3>
                     {bilingual.isBilingual && (
-                      <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-0.5">Vidéo multilingue détectée</p>
+                      <p className="text-[10px] font-bold text-violet-500 uppercase tracking-widest mt-0.5">Vidéo multilingue détectée</p>
                     )}
                   </div>
                 </div>
                 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                   {bilingual.isBilingual && (
-                    <div className="bg-slate-100 p-1 rounded-xl flex items-center border border-slate-200/50 w-full sm:w-auto">
+                    <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-lg flex items-center border border-gray-200 dark:border-gray-700/60 w-full sm:w-auto">
                       <button 
                         onClick={() => toggleLanguage('original')}
-                        className={`flex-1 sm:flex-initial px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-center ${activeLang === 'original' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-400 hover:text-slate-600'}`}
+                        className={`flex-1 sm:flex-initial px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all text-center ${activeLang === 'original' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
                       >
                          Original
                       </button>
                       <button 
                         onClick={() => toggleLanguage('french')}
-                        className={`flex-1 sm:flex-initial px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-center ${activeLang === 'french' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/10' : 'text-slate-400 hover:text-slate-600'}`}
+                        className={`flex-1 sm:flex-initial px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all text-center ${activeLang === 'french' ? 'bg-violet-600 text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
                       >
                          Français
                       </button>
@@ -169,7 +169,7 @@ export default function TranscriptionPage() {
                     <button 
                       onClick={() => handleTranscribe(true)}
                       disabled={loading}
-                      className="px-5 py-4 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-950 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-xs disabled:opacity-50"
+                      className="px-5 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
                     >
                       <RotateCw className="size-3.5" />
                       Réanalyser
@@ -177,7 +177,7 @@ export default function TranscriptionPage() {
 
                     <button 
                       onClick={handleCopy}
-                      className={`px-5 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${copied ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white hover:bg-indigo-600 shadow-xl'}`}
+                      className={`px-5 py-3 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${copied ? 'bg-emerald-500 text-white' : 'bg-gray-900 dark:bg-gray-700 text-white hover:bg-violet-600 shadow-sm'}`}
                     >
                       {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
                       {copied ? 'Copié' : 'Copier'}
@@ -186,17 +186,17 @@ export default function TranscriptionPage() {
                 </div>
               </div>
               
-              <div className="p-10 bg-slate-50 rounded-[32px] text-slate-700 text-lg leading-relaxed whitespace-pre-wrap font-medium border border-slate-100">
+              <div className="p-8 bg-gray-50 dark:bg-gray-800/50 rounded-2xl text-gray-700 dark:text-gray-300 text-lg leading-relaxed whitespace-pre-wrap font-medium border border-gray-200 dark:border-gray-700/60">
                 {transcript}
               </div>
             </CardContent>
           </Card>
         ) : (
           <div className="h-full flex flex-col items-center justify-center py-20 space-y-6 opacity-40">
-            <div className="size-24 rounded-[40px] border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-200">
+            <div className="size-24 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-300 dark:text-gray-600">
               <Mic2 className="size-12" />
             </div>
-            <p className="text-slate-300 font-bold uppercase tracking-widest text-[10px]">En attente d'un lien</p>
+            <p className="text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest text-[10px]">En attente d'un lien</p>
           </div>
         )}
       </div>

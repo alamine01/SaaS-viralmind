@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
-  ShieldCheck, 
   Users, 
   Search, 
   Edit3, 
@@ -14,7 +13,6 @@ import {
   UserCheck
 } from "lucide-react";
 import { toast } from "sonner";
-import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 
 interface UserProfile {
@@ -187,183 +185,167 @@ export default function AdminUsersPage() {
   if (checkingAuth) {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
-        <Loader2 className="size-8 text-indigo-600 animate-spin" />
-        <p className="text-slate-400 font-medium">Vérification des autorisations admin...</p>
+        <Loader2 className="size-8 text-indigo-500 animate-spin" />
+        <p className="text-slate-500 font-medium text-sm">Vérification des autorisations admin...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 lg:space-y-8 animate-in fade-in duration-500 pb-20 px-0">
+    <div className="w-full max-w-9xl mx-auto py-8 sm:px-6 lg:px-8 space-y-8">
       
-      {/* Navigation Header */}
-      <div className="flex items-center gap-3">
-        <Link 
-          href="/admin"
-          className="p-2 bg-white border border-slate-100 hover:bg-slate-50 text-slate-600 rounded-xl transition-all shadow-xs"
-        >
-          <ArrowLeft className="size-4" />
-        </Link>
-        <span className="text-slate-400 text-xs font-bold">Retour au Tableau de bord Admin</span>
+      {/* Page Header (Mosaic Style) */}
+      <div className="sm:flex sm:justify-between sm:items-center mb-8 px-4 sm:px-0">
+        <div className="mb-4 sm:mb-0">
+          <div className="flex items-center gap-2 mb-1">
+            <Link 
+              href="/admin"
+              className="text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <ArrowLeft className="size-4" />
+            </Link>
+            <h1 className="text-2xl md:text-3xl text-slate-800 font-bold">Gestion des Utilisateurs</h1>
+          </div>
+          <p className="text-sm text-slate-500 ml-6">Ajustez les abonnements, rôles et consommations de la plateforme.</p>
+        </div>
+        
+        <div className="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
+          <button 
+            onClick={fetchAdminData}
+            disabled={loadingUsers}
+            className="btn bg-white border-slate-200 hover:border-slate-300 text-slate-500 hover:text-slate-600 rounded-lg px-4 py-2 shadow-sm flex items-center gap-2 text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            {loadingUsers ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+            <span>Actualiser</span>
+          </button>
+        </div>
       </div>
 
-      {/* Header Info */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-        <div className="space-y-0.5 sm:space-y-1">
-          <div className="flex items-center gap-2 text-rose-600 font-bold text-[10px] sm:text-xs uppercase tracking-wider">
-            <Users className="size-3.5 sm:size-4" />
-            <span>Gestion Utilisateurs</span>
-          </div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight">Utilisateurs</h1>
-          <p className="text-slate-500 text-[10px] sm:text-xs lg:text-sm font-medium hidden sm:block">Ajustez les abonnements, rôles et consommations.</p>
-        </div>
-        <button 
-          onClick={fetchAdminData}
-          disabled={loadingUsers}
-          className="self-start sm:self-center px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] sm:text-xs font-bold shadow-md transition-all flex items-center gap-1.5 sm:gap-2 disabled:opacity-50"
-        >
-          {loadingUsers ? <Loader2 className="size-3 sm:size-3.5 animate-spin" /> : <RefreshCw className="size-3 sm:size-3.5" />}
-          <span>Actualiser</span>
-        </button>
-          </div>
- 
-      {/* Responsive Stats Cards Grid */}
+      {/* Stats Cards (Mosaic Style) */}
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-          <Card className="border border-slate-100 rounded-2xl shadow-sm bg-white overflow-hidden">
-            <CardContent className="p-3.5 sm:p-5 flex items-center gap-3 sm:gap-4">
-              <div className="size-9 sm:size-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                <Users className="size-4.5 sm:size-6" />
+        <div className="grid grid-cols-12 gap-6 px-4 sm:px-0">
+          <div className="flex flex-col col-span-full sm:col-span-6 xl:col-span-4 bg-white shadow-sm rounded-xl border border-slate-200">
+            <div className="px-5 pt-5 pb-5">
+              <header className="flex justify-between items-start mb-2">
+                <div className="size-10 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center">
+                  <Users className="size-5" />
+                </div>
+              </header>
+              <div className="text-xs font-semibold text-slate-400 uppercase mb-1">Total Utilisateurs</div>
+              <div className="flex items-start">
+                <div className="text-3xl font-bold text-slate-800 mr-2">{stats.total}</div>
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider truncate">Total</p>
-                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">{stats.total}</p>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card className="border border-slate-100 rounded-2xl shadow-sm bg-white overflow-hidden">
-            <CardContent className="p-3.5 sm:p-5 flex items-center gap-3 sm:gap-4">
-              <div className="size-9 sm:size-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
-                <span className="font-black text-[10px] sm:text-xs tracking-tight">FREE</span>
+          <div className="flex flex-col col-span-full sm:col-span-6 xl:col-span-4 bg-white shadow-sm rounded-xl border border-slate-200">
+            <div className="px-5 pt-5 pb-5">
+              <header className="flex justify-between items-start mb-2">
+                <div className="size-10 rounded-full bg-sky-50 text-sky-500 flex items-center justify-center">
+                  <span className="font-bold text-sm">FREE</span>
+                </div>
+              </header>
+              <div className="text-xs font-semibold text-slate-400 uppercase mb-1">Plan Free</div>
+              <div className="flex items-start">
+                <div className="text-3xl font-bold text-slate-800 mr-2">{stats.plans.free}</div>
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider truncate">Free</p>
-                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">{stats.plans.free}</p>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card className="border border-slate-100 rounded-2xl shadow-sm bg-white overflow-hidden">
-            <CardContent className="p-3.5 sm:p-5 flex items-center gap-3 sm:gap-4">
-              <div className="size-9 sm:size-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
-                <span className="font-black text-[10px] sm:text-xs tracking-tight">PRO</span>
+          <div className="flex flex-col col-span-full sm:col-span-6 xl:col-span-4 bg-white shadow-sm rounded-xl border border-slate-200">
+            <div className="px-5 pt-5 pb-5">
+              <header className="flex justify-between items-start mb-2">
+                <div className="size-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center">
+                  <span className="font-bold text-sm">PRO</span>
+                </div>
+              </header>
+              <div className="text-xs font-semibold text-slate-400 uppercase mb-1">Plan Pro</div>
+              <div className="flex items-start">
+                <div className="text-3xl font-bold text-slate-800 mr-2">{stats.plans.pro}</div>
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider truncate">Pro</p>
-                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">{stats.plans.pro}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-slate-100 rounded-2xl shadow-sm bg-white overflow-hidden">
-            <CardContent className="p-3.5 sm:p-5 flex items-center gap-3 sm:gap-4">
-              <div className="size-9 sm:size-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
-                <span className="font-black text-[10px] sm:text-xs tracking-tight">VISI</span>
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider truncate">Visionary</p>
-                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">{stats.plans.visionary}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-slate-100 rounded-2xl shadow-sm bg-white overflow-hidden col-span-2 sm:col-span-1">
-            <CardContent className="p-3.5 sm:p-5 flex items-center gap-3 sm:gap-4">
-              <div className="size-9 sm:size-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
-                <span className="font-black text-[10px] sm:text-xs tracking-tight">TITAN</span>
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider truncate">Titan</p>
-                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">{stats.plans.titan}</p>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Main Container */}
-      <div className="bg-white border border-slate-100 rounded-xl sm:rounded-[28px] p-3 sm:p-6 shadow-sm space-y-4 sm:space-y-6">
+      {/* Users Table Card (Mosaic Style) */}
+      <div className="bg-white shadow-sm rounded-xl border border-slate-200 mx-4 sm:mx-0">
+        <header className="px-5 py-4 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+          <h2 className="font-semibold text-slate-800">Liste des utilisateurs ({filteredUsers.length})</h2>
+          
+          {/* Filter Options */}
+          <div className="flex flex-col sm:flex-row w-full md:w-auto gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Rechercher..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:w-64 bg-white border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm font-medium text-slate-800 focus:border-indigo-500 outline-none transition-colors shadow-sm"
+              />
+            </div>
+            
+            <select
+              value={selectedPlanFilter}
+              onChange={(e) => setSelectedPlanFilter(e.target.value)}
+              className="bg-white border border-slate-200 text-sm font-medium text-slate-600 rounded-lg px-3 py-2 outline-none shadow-sm focus:border-indigo-500"
+            >
+              <option value="all">Tous les plans</option>
+              <option value="free">Free</option>
+              <option value="pro">Pro</option>
+              <option value="visionary">Visionary</option>
+              <option value="titan">Titan</option>
+            </select>
+
+            <select
+              value={selectedRoleFilter}
+              onChange={(e) => setSelectedRoleFilter(e.target.value)}
+              className="bg-white border border-slate-200 text-sm font-medium text-slate-600 rounded-lg px-3 py-2 outline-none shadow-sm focus:border-indigo-500"
+            >
+              <option value="all">Tous les rôles</option>
+              <option value="user">Utilisateurs</option>
+              <option value="admin">Admins</option>
+            </select>
+          </div>
+        </header>
         
-        {/* Responsive Filters */}
-        <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row items-stretch lg:items-center justify-between">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 sm:size-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Rechercher..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold text-slate-900 focus:border-indigo-500 outline-hidden transition-all shadow-xs"
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl px-2 sm:px-3 py-1.5 flex-1 sm:flex-initial">
-              <span className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Plan</span>
-              <select
-                value={selectedPlanFilter}
-                onChange={(e) => setSelectedPlanFilter(e.target.value)}
-                className="bg-transparent border-0 text-[11px] sm:text-xs font-semibold text-slate-700 outline-hidden w-full focus:ring-0"
-              >
-                <option value="all">Tous</option>
-                <option value="free">Free</option>
-                <option value="pro">Pro</option>
-                <option value="visionary">Visionary</option>
-                <option value="titan">Titan</option>
-              </select>
-            </div>
-
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl px-2 sm:px-3 py-1.5 flex-1 sm:flex-initial">
-              <span className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Rôle</span>
-              <select
-                value={selectedRoleFilter}
-                onChange={(e) => setSelectedRoleFilter(e.target.value)}
-                className="bg-transparent border-0 text-[11px] sm:text-xs font-semibold text-slate-700 outline-hidden w-full focus:ring-0"
-              >
-                <option value="all">Tous</option>
-                <option value="user">Membres</option>
-                <option value="admin">Admins</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Scrollable Responsive Table Wrapper */}
-        <div className="overflow-x-auto border border-slate-100 rounded-xl sm:rounded-2xl -mx-3 sm:mx-0">
-          <div className="inline-block min-w-full align-middle">
-            <table className="min-w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100 text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                  <th className="px-3 sm:px-6 py-3 sm:py-4">Utilisateur</th>
-                  <th className="px-3 sm:px-6 py-3 sm:py-4">Plan</th>
-                  <th className="px-3 sm:px-6 py-3 sm:py-4 hidden sm:table-cell">Quotas</th>
-                  <th className="px-3 sm:px-6 py-3 sm:py-4 hidden md:table-cell">Inscription</th>
-                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-right"></th>
+        <div className="p-3">
+          <div className="overflow-x-auto">
+            <table className="table-auto w-full">
+              {/* Table header */}
+              <thead className="text-xs font-semibold uppercase text-slate-500 bg-slate-50 border-t border-b border-slate-100">
+                <tr>
+                  <th className="px-2 py-3 whitespace-nowrap">
+                    <div className="font-semibold text-left">Utilisateur</div>
+                  </th>
+                  <th className="px-2 py-3 whitespace-nowrap">
+                    <div className="font-semibold text-left">Plan / Rôle</div>
+                  </th>
+                  <th className="px-2 py-3 whitespace-nowrap hidden sm:table-cell">
+                    <div className="font-semibold text-left">Quotas</div>
+                  </th>
+                  <th className="px-2 py-3 whitespace-nowrap hidden md:table-cell">
+                    <div className="font-semibold text-left">Inscription</div>
+                  </th>
+                  <th className="px-2 py-3 whitespace-nowrap">
+                    <div className="font-semibold text-right">Actions</div>
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              {/* Table body */}
+              <tbody className="text-sm divide-y divide-slate-100">
                 {loadingUsers ? (
                   <tr>
-                    <td colSpan={5} className="py-20 text-center">
-                      <Loader2 className="size-6 text-rose-600 animate-spin mx-auto" />
-                      <p className="text-xs text-slate-400 font-bold mt-2">Chargement de la liste...</p>
+                    <td colSpan={5} className="py-12 text-center">
+                      <Loader2 className="size-6 text-indigo-500 animate-spin mx-auto" />
+                      <p className="text-sm text-slate-500 font-medium mt-2">Chargement...</p>
                     </td>
                   </tr>
                 ) : filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-16 text-center text-slate-400 font-semibold text-xs">
-                      Aucun utilisateur trouvé correspondant aux critères.
+                    <td colSpan={5} className="py-12 text-center text-slate-500 font-medium text-sm">
+                      Aucun utilisateur ne correspond à votre recherche.
                     </td>
                   </tr>
                 ) : (
@@ -371,79 +353,76 @@ export default function AdminUsersPage() {
                     const limits = PLAN_LIMITS[user.plan as keyof typeof PLAN_LIMITS] || PLAN_LIMITS.free;
                     
                     // Plan styles
-                    let planStyle = "bg-slate-100 text-slate-700";
-                    if (user.plan === "pro") planStyle = "bg-blue-50 text-blue-700 border border-blue-100";
-                    if (user.plan === "visionary") planStyle = "bg-indigo-50 text-indigo-700 border border-indigo-100";
-                    if (user.plan === "titan") planStyle = "bg-purple-50 text-purple-700 border border-purple-100";
+                    let planBadge = "bg-slate-100 text-slate-500";
+                    if (user.plan === "pro") planBadge = "bg-emerald-100 text-emerald-600";
+                    if (user.plan === "visionary") planBadge = "bg-indigo-100 text-indigo-600";
+                    if (user.plan === "titan") planBadge = "bg-purple-100 text-purple-600";
 
                     // Role styles
-                    const roleStyle = user.role === "admin" 
-                      ? "bg-rose-50 text-rose-700 border border-rose-100" 
-                      : "bg-slate-50 text-slate-600 border border-slate-100";
+                    const roleBadge = user.role === "admin" 
+                      ? "bg-rose-100 text-rose-600" 
+                      : "bg-slate-100 text-slate-500";
 
                     const formattedDate = user.created_at 
                       ? new Date(user.created_at).toLocaleDateString("fr-FR", { day: 'numeric', month: 'short', year: 'numeric' })
                       : "Inconnue";
 
                     return (
-                      <tr key={user.id} className="hover:bg-slate-50/50 transition-colors text-[11px] sm:text-xs font-semibold text-slate-700">
-                        {/* User Info */}
-                        <td className="px-3 sm:px-6 py-3 sm:py-4.5">
-                          <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="size-7 sm:size-9 rounded-lg sm:rounded-xl bg-slate-900 flex items-center justify-center shadow-sm overflow-hidden shrink-0">
-                              <img src={`https://ui-avatars.com/api/?name=${user.full_name || user.email}&background=0f172a&color=818cf8&bold=true&size=32`} alt="" className="w-full h-full" />
+                      <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-2 py-3 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="w-10 h-10 shrink-0 mr-2 sm:mr-3 rounded-full bg-slate-200">
+                              <img className="rounded-full" src={`https://ui-avatars.com/api/?name=${user.full_name || user.email}&background=e2e8f0&color=475569&bold=true&size=40`} alt={user.full_name} />
                             </div>
-                            <div className="min-w-0 max-w-[100px] sm:max-w-none">
-                              <p className="font-bold text-slate-900 truncate text-[11px] sm:text-xs">{user.full_name}</p>
-                              <p className="text-[9px] sm:text-[11px] text-slate-400 font-medium truncate mt-0.5 hidden sm:block">{user.email}</p>
+                            <div>
+                              <div className="font-medium text-slate-800">{user.full_name}</div>
+                              <div className="text-xs text-slate-500">{user.email}</div>
                             </div>
                           </div>
                         </td>
-
-                        {/* Plan / Role Badges */}
-                        <td className="px-3 sm:px-6 py-3 sm:py-4.5">
-                          <div className="flex flex-col gap-1 items-start">
-                            <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[8px] sm:text-[10px] font-black uppercase tracking-wider ${planStyle}`}>
+                        
+                        <td className="px-2 py-3 whitespace-nowrap">
+                          <div className="flex flex-col gap-1.5 items-start">
+                            <span className={`text-[10px] inline-flex font-medium rounded-full text-center px-2.5 py-0.5 uppercase ${planBadge}`}>
                               {user.plan}
                             </span>
-                            <span className={`px-1 sm:px-1.5 py-0.5 rounded-full text-[7px] sm:text-[9px] font-black uppercase tracking-wider ${roleStyle}`}>
+                            <span className={`text-[10px] inline-flex font-medium rounded-full text-center px-2.5 py-0.5 uppercase ${roleBadge}`}>
                               {user.role}
                             </span>
                           </div>
                         </td>
 
-                        {/* Quota values */}
-                        <td className="px-3 sm:px-6 py-3 sm:py-4.5 hidden sm:table-cell">
-                          <div className="space-y-1 w-28 sm:w-40 text-[9px] sm:text-[10px] font-bold text-slate-500">
-                            <div className="flex justify-between items-center">
-                              <span>Scripts :</span>
-                              <span className="text-slate-800">{user.daily_script_count} / {limits.dailyScripts === 9999 ? "∞" : limits.dailyScripts}</span>
+                        <td className="px-2 py-3 whitespace-nowrap hidden sm:table-cell">
+                          <div className="space-y-1 text-xs text-slate-500 w-32">
+                            <div className="flex justify-between">
+                              <span>Scripts:</span>
+                              <span className="font-medium text-slate-700">{user.daily_script_count} / {limits.dailyScripts === 9999 ? "∞" : limits.dailyScripts}</span>
                             </div>
-                            <div className="flex justify-between items-center">
-                              <span>Analyses :</span>
-                              <span className="text-slate-800">{user.monthly_analysis_count} / {limits.monthlyAnalysis}</span>
+                            <div className="flex justify-between">
+                              <span>Analyses:</span>
+                              <span className="font-medium text-slate-700">{user.monthly_analysis_count} / {limits.monthlyAnalysis}</span>
                             </div>
-                            <div className="flex justify-between items-center">
-                              <span>Uploads :</span>
-                              <span className="text-slate-800">{user.daily_upload_count} / {limits.dailyUploads}</span>
+                            <div className="flex justify-between">
+                              <span>Uploads:</span>
+                              <span className="font-medium text-slate-700">{user.daily_upload_count} / {limits.dailyUploads}</span>
                             </div>
                           </div>
                         </td>
 
-                        {/* Joined Date */}
-                        <td className="px-3 sm:px-6 py-3 sm:py-4.5 text-slate-500 hidden md:table-cell">
+                        <td className="px-2 py-3 whitespace-nowrap hidden md:table-cell text-sm text-slate-500">
                           {formattedDate}
                         </td>
 
-                        {/* Actions */}
-                        <td className="px-3 sm:px-6 py-3 sm:py-4.5 text-right">
-                          <button
-                            onClick={() => handleEditClick(user)}
-                            className="p-1.5 sm:p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 rounded-lg sm:rounded-xl transition-all inline-flex items-center justify-center"
-                            title="Modifier"
-                          >
-                            <Edit3 className="size-3.5 sm:size-4" />
-                          </button>
+                        <td className="px-2 py-3 whitespace-nowrap">
+                          <div className="text-right">
+                            <button
+                              onClick={() => handleEditClick(user)}
+                              className="text-slate-400 hover:text-indigo-500 rounded-full p-2 hover:bg-indigo-50 transition-colors"
+                              title="Modifier l'utilisateur"
+                            >
+                              <Edit3 className="size-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -455,55 +434,47 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      {/* Editing Modal */}
+      {/* Editing Modal (Adapted to Mosaic Style) */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div 
-            className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-300"
+            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
             onClick={() => setEditingUser(null)}
           />
           
-          <div className="relative bg-white w-full sm:max-w-md rounded-t-[24px] sm:rounded-[32px] p-4 sm:p-8 shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300 max-h-[85vh] sm:max-h-[90vh] flex flex-col z-10">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-rose-500/10 rounded-full blur-3xl -z-10" />
-
+          <div className="relative bg-white w-full max-w-lg rounded-xl shadow-lg border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-100 mb-4 sm:mb-5 shrink-0">
-              <div>
-                <span className="text-[9px] sm:text-[10px] font-black text-rose-600 uppercase tracking-widest">Configuration</span>
-                <h3 className="text-base sm:text-xl font-black text-slate-900 flex items-center gap-2 mt-0.5">
-                  Modifier
-                </h3>
-              </div>
+            <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h3 className="font-semibold text-slate-800">
+                Modifier l'utilisateur
+              </h3>
               <button 
                 onClick={() => setEditingUser(null)}
-                className="size-7 sm:size-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all border border-slate-100"
+                className="text-slate-400 hover:text-slate-600 transition-colors"
               >
-                <X className="size-3.5 sm:size-4" />
+                <X className="size-5" />
               </button>
             </div>
 
-            {/* Modal Scrollable Body */}
-            <div className="space-y-4 sm:space-y-5 overflow-y-auto pr-1 py-1 flex-1 text-slate-700 text-xs">
-              {/* User Identity Banner */}
-              <div className="p-3 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
-                <div className="size-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-xs overflow-hidden shrink-0">
-                  <img src={`https://ui-avatars.com/api/?name=${editingUser.full_name || editingUser.email}&background=0f172a&color=818cf8&bold=true`} alt="" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-bold text-slate-900 truncate">{editingUser.full_name}</p>
-                  <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate mt-0.5">{editingUser.email}</p>
+            {/* Modal Body */}
+            <div className="p-5 overflow-y-auto space-y-5">
+              {/* User Identity */}
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <img src={`https://ui-avatars.com/api/?name=${editingUser.full_name || editingUser.email}&background=e2e8f0&color=475569&bold=true&size=40`} alt="" className="rounded-full w-10 h-10" />
+                <div>
+                  <div className="font-medium text-slate-800">{editingUser.full_name}</div>
+                  <div className="text-sm text-slate-500">{editingUser.email}</div>
                 </div>
               </div>
 
               {/* Form Controls */}
               <div className="space-y-4">
-                {/* Plan Selector */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Forfait</label>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-slate-700">Forfait actuel</label>
                   <select
                     value={modalPlan}
                     onChange={(e) => setModalPlan(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-950 focus:border-rose-500 outline-hidden transition-all"
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors"
                   >
                     <option value="free">Free</option>
                     <option value="pro">Pro</option>
@@ -512,88 +483,81 @@ export default function AdminUsersPage() {
                   </select>
                 </div>
 
-                {/* Role Selector */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Rôle d'accès</label>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-slate-700">Rôle d'accès</label>
                   <select
                     value={modalRole}
                     onChange={(e) => setModalRole(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-950 focus:border-rose-500 outline-hidden transition-all"
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors"
                   >
-                    <option value="user">Utilisateur (Standard)</option>
-                    <option value="admin">Administrateur (Accès total)</option>
+                    <option value="user">Utilisateur Standard</option>
+                    <option value="admin">Administrateur</option>
                   </select>
                 </div>
 
-                <div className="h-px bg-slate-100 my-2" />
-
-                {/* Quotas Customization */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Consommation Actuelle</span>
+                <div className="pt-4 border-t border-slate-100">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="text-sm font-medium text-slate-800">Quotas consommés</h4>
                     <button 
                       type="button" 
                       onClick={handleResetToPlanDefaults}
-                      className="text-[9px] font-black text-rose-600 hover:text-rose-750 hover:underline flex items-center gap-1"
+                      className="text-xs font-medium text-indigo-500 hover:text-indigo-600 flex items-center gap-1"
                     >
-                      <RefreshCw className="size-2.5" />
+                      <RefreshCw className="size-3" />
                       Remettre à zéro
                     </button>
                   </div>
 
-                  {/* Scripts Quota */}
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-bold text-slate-500 ml-1">Scripts IA consommés (Aujourd'hui)</span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={modalScripts}
-                      onChange={(e) => setModalScripts(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 font-bold text-slate-955 focus:border-rose-500 outline-hidden transition-all"
-                    />
-                  </div>
-
-                  {/* Analyses Quota */}
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-bold text-slate-500 ml-1">Analyses consommées (Ce mois)</span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={modalAnalyses}
-                      onChange={(e) => setModalAnalyses(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 font-bold text-slate-955 focus:border-rose-500 outline-hidden transition-all"
-                    />
-                  </div>
-
-                  {/* Uploads Quota */}
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-bold text-slate-500 ml-1">Uploads consommés (Aujourd'hui)</span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={modalUploads}
-                      onChange={(e) => setModalUploads(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 font-bold text-slate-955 focus:border-rose-500 outline-hidden transition-all"
-                    />
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium mb-1 text-slate-500">Scripts IA (Aujourd'hui)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={modalScripts}
+                        onChange={(e) => setModalScripts(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:border-indigo-500 outline-none transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1 text-slate-500">Analyses (Ce mois)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={modalAnalyses}
+                        onChange={(e) => setModalAnalyses(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:border-indigo-500 outline-none transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1 text-slate-500">Uploads (Aujourd'hui)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={modalUploads}
+                        onChange={(e) => setModalUploads(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:border-indigo-500 outline-none transition-colors"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Modal Actions Footer */}
-            <div className="pt-4 border-t border-slate-100 mt-5 flex gap-3 shrink-0">
+            {/* Modal Actions */}
+            <div className="px-5 py-4 border-t border-slate-100 flex gap-3 justify-end bg-slate-50/50">
               <button 
                 onClick={() => setEditingUser(null)}
-                className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all text-center"
+                className="px-4 py-2 border border-slate-200 bg-white hover:border-slate-300 text-slate-600 rounded-lg text-sm font-medium transition-colors"
               >
                 Annuler
               </button>
               <button 
                 onClick={handleSaveUser}
                 disabled={savingUser}
-                className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+                className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm inline-flex items-center gap-2 disabled:opacity-50"
               >
-                {savingUser ? <Loader2 className="size-3.5 animate-spin" /> : <UserCheck className="size-3.5" />}
+                {savingUser ? <Loader2 className="size-4 animate-spin" /> : <UserCheck className="size-4" />}
                 <span>Enregistrer</span>
               </button>
             </div>

@@ -15,6 +15,7 @@ import {
   FileText,
   Save
 } from "lucide-react"
+
 export default function VoiceProfilePage() {
   const { activeWorkspace, refreshWorkspaces } = useWorkspace()
   const [profiles, setProfiles] = useState<any[]>([])
@@ -23,7 +24,6 @@ export default function VoiceProfilePage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [checkingPlan, setCheckingPlan] = useState(true)
   const [isLocked, setIsLocked] = useState(false)
-  
   const [saving, setSaving] = useState(false)
   
   // Form state
@@ -319,47 +319,47 @@ export default function VoiceProfilePage() {
 
   if (checkingPlan) {
     return (
-      <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
-        <Loader2 className="size-8 text-indigo-600 animate-spin" />
-        <p className="text-slate-400 font-medium">Chargement de la page...</p>
+      <div className="h-[60vh] flex flex-col items-center justify-center gap-4 animate-in fade-in">
+        <Loader2 className="size-8 text-violet-650 animate-spin" />
+        <p className="text-gray-400 dark:text-gray-500 font-medium animate-pulse">Chargement de la page...</p>
       </div>
     )
   }
 
   if (isLocked) {
     return (
-      <div className="max-w-md mx-auto my-20 p-8 bg-white border border-slate-100 rounded-[32px] shadow-2xl text-center space-y-6 relative overflow-hidden animate-in fade-in zoom-in-95 duration-500">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl -z-10" />
+      <div className="max-w-md mx-auto my-20 p-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-xl text-center space-y-6 relative overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-violet-500/10 rounded-full blur-3xl -z-10 animate-pulse" />
         
-        <div className="size-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto shadow-sm">
-          <Sparkles className="size-8 animate-pulse text-indigo-500" />
+        <div className="size-16 rounded-xl bg-violet-50 dark:bg-violet-500/10 text-violet-650 dark:text-violet-400 flex items-center justify-center mx-auto shadow-sm border border-violet-100 dark:border-violet-500/20">
+          <Sparkles className="size-8 animate-pulse text-violet-500" />
         </div>
         
         <div className="space-y-2">
-          <h2 className="text-2xl font-black text-slate-900">Fonctionnalité Premium</h2>
-          <p className="text-slate-500 font-medium text-xs leading-relaxed">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Fonctionnalité Premium</h2>
+          <p className="text-gray-500 dark:text-gray-400 font-medium text-xs leading-relaxed">
             Cette fonctionnalité exclusive nécessite un plan <strong>Visionary</strong> ou <strong>Titan</strong> pour être débloquée.
           </p>
         </div>
 
-        <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50 text-[11px] font-semibold text-slate-600 leading-normal text-left space-y-2">
+        <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 text-[11px] font-semibold text-gray-600 dark:text-gray-300 leading-normal text-left space-y-2">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="size-3.5 text-indigo-500 shrink-0" />
+            <CheckCircle2 className="size-3.5 text-violet-550 shrink-0" />
             <span>Profil de voix IA ultra-réaliste</span>
           </div>
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="size-3.5 text-indigo-500 shrink-0" />
+            <CheckCircle2 className="size-3.5 text-violet-550 shrink-0" />
             <span>Copie automatique du ton et de l'énergie</span>
           </div>
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="size-3.5 text-indigo-500 shrink-0" />
+            <CheckCircle2 className="size-3.5 text-violet-550 shrink-0" />
             <span>Générations de scripts de marque</span>
           </div>
         </div>
 
         <Link 
           href="/settings?tab=Abonnement"
-          className="block w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-100"
+          className="block w-full py-3.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-all shadow-sm"
         >
           Débloquer maintenant
         </Link>
@@ -372,164 +372,167 @@ export default function VoiceProfilePage() {
     : profiles.length > 0;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in duration-700">
+    <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-700 pb-20">
       
-      {/* Header */}
-      <div className="space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 text-indigo-400 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] border border-white/5">
-          <Sparkles className="size-3" /> Entraînement IA
-        </div>
-        <h1 className="text-4xl font-black tracking-tight text-slate-900">Profil de <span className="text-indigo-600">Voix</span></h1>
-        <p className="text-slate-500 font-medium max-w-2xl text-sm leading-relaxed">
-          Apprenez à ViralMind comment vous écrivez. Donnez-lui vos meilleurs scripts, emails ou textes, et l'IA imitera votre ton, votre vocabulaire et votre énergie.
-        </p>
+      {/* 1. RADAR HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-200 dark:border-gray-800">
+         <div>
+            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">Profil de Voix</h1>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1 font-medium">
+               Apprenez à ViralMind comment vous écrivez. Donnez-lui vos meilleurs scripts, emails ou textes, et l'IA imitera votre ton, votre vocabulaire et votre énergie.
+            </p>
+         </div>
+         <div className="inline-flex items-center gap-2 px-3 py-1 bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 rounded-full text-xs font-bold uppercase tracking-wider border border-violet-100 dark:border-violet-900/50 self-start md:self-center">
+            <Sparkles className="size-3.5" /> Entraînement IA
+         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        
-        {/* Left: Create Form */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm space-y-6">
-            <div className="flex items-center gap-3">
-               <div className="size-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
-                  <Plus className="size-5" />
+      {/* 2. GRID LAYOUT */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+         
+         {/* LEFT: CREATE / EDIT FORM (2/3 width for comfortable typing) */}
+         <div className="lg:col-span-8 space-y-6">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm space-y-6">
+               <div className="flex items-center gap-3">
+                  <div className="size-10 rounded-xl bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 flex items-center justify-center font-bold border border-violet-100 dark:border-violet-900/30">
+                     <Plus className="size-5" />
+                  </div>
+                  <div>
+                     <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">
+                        {hasLinkedVoice ? "Édition du Style" : "Nouveau Style"}
+                     </h2>
+                     <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold uppercase tracking-wider mt-0.5">
+                        {hasLinkedVoice ? "Ajuster la voix du projet" : "Entraîner l'IA"}
+                     </p>
+                  </div>
                </div>
-               <div>
-                  <p className="text-sm font-bold text-slate-900">
-                     {hasLinkedVoice ? "Édition du Style" : "Nouveau Style"}
-                  </p>
-                  <p className="text-[11px] text-slate-400 font-medium uppercase tracking-tighter">
-                     {hasLinkedVoice ? "Ajuster la voix du projet" : "Entraîner l'IA"}
-                  </p>
-               </div>
-            </div>
 
-            <div className="space-y-4">
-               <div className="space-y-2">
-               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nom du profil</label>
-               <input 
-                 value={newProfile.name}
-                 onChange={(e) => setNewProfile({...newProfile, name: e.target.value})}
-                 placeholder="Ex: Mon style YouTube, Pro, Fun..." 
-                 className="w-full bg-white border-2 border-indigo-500/20 rounded-2xl px-5 py-3 text-sm font-bold focus:border-indigo-500 outline-hidden transition-all shadow-sm"
-               />
-            </div>
+               <div className="space-y-4">
+                  <div className="space-y-1.5">
+                     <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nom du profil</label>
+                      <input 
+                       value={newProfile.name}
+                       onChange={(e) => setNewProfile({...newProfile, name: e.target.value})}
+                       placeholder="Ex: Mon style YouTube, Pro, Fun..." 
+                       className="w-full bg-gray-50 dark:bg-gray-950 hover:bg-gray-100/50 dark:hover:bg-gray-950/80 border border-gray-200 dark:border-gray-800 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-xl px-4 py-3 text-sm focus:outline-hidden transition-all text-gray-900 dark:text-gray-100 placeholder-gray-400"
+                     />
+                  </div>
 
-            <div className="space-y-2">
-               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Niche / Domaine (Expertise)</label>
-               <input 
-                 value={newProfile.niche}
-                 onChange={(e) => setNewProfile({...newProfile, niche: e.target.value})}
-                 placeholder="Ex: Fitness, Crypto, E-commerce..." 
-                 className="w-full bg-white border-2 border-indigo-500/20 rounded-2xl px-5 py-3 text-sm font-bold focus:border-indigo-500 outline-hidden transition-all shadow-sm"
-               />
-            </div>
-               <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Vos textes (Min 500 mots)</label>
-                  <textarea 
-                    value={newProfile.content}
-                    onChange={(e) => setNewProfile({...newProfile, content: e.target.value})}
-                    placeholder="Collez ici des scripts ou des textes que vous avez écrits..." 
-                    rows={8}
-                    className="w-full bg-slate-50 border-slate-100 rounded-xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500 transition-all resize-none"
-                  />
-               </div>
-               <button 
-                 onClick={handleSave}
-                 disabled={saving}
-                 className="w-full bg-slate-900 hover:bg-black text-white rounded-xl py-4 font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-               >
-                 {saving ? <Loader2 className="size-4 animate-spin" /> : <><Save className="size-4" /> {hasLinkedVoice ? "Mettre à jour le Style" : "Sauvegarder & Analyser"}</>}
-               </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: List Profiles */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between px-2">
-             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Style de Voix du Workspace</p>
-             <p className="text-[11px] font-semibold text-indigo-500 uppercase">
-                {profiles.length ? "1 Voix Liée" : "Aucune Voix"}
-             </p>
-          </div>
-
-          {loading && profiles.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-20 bg-slate-50/50 rounded-[32px] border border-dashed border-slate-200">
-               <Loader2 className="size-8 text-slate-300 animate-spin" />
-            </div>
-          ) : profiles.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-20 bg-slate-50/50 rounded-[32px] border border-dashed border-slate-200 text-center space-y-4">
-               <div className="size-16 rounded-3xl bg-white flex items-center justify-center shadow-sm text-slate-300">
-                  <UserRound className="size-8" />
-               </div>
-               <div className="space-y-1">
-                  <p className="text-sm font-bold text-slate-600">Aucun profil de voix lié</p>
-                  <p className="text-xs text-slate-400 font-medium">Configurez ou entraînez une voix sur la gauche pour l'associer automatiquement à ce projet.</p>
-               </div>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 gap-4">
-               {profiles.map((profile) => {
-                 const isProfileActive = activeWorkspace && activeWorkspace.id
-                   ? activeWorkspace.voice_profile_id === profile.id
-                   : profile.is_active;
-
-                 return (
-                  <div 
-                    key={profile.id}
-                    className={`
-                      p-6 rounded-[28px] border transition-all duration-300 relative group
-                      ${isProfileActive 
-                        ? 'bg-white border-indigo-600 shadow-xl shadow-indigo-100/50' 
-                        : 'bg-white border-slate-100 hover:border-slate-200 shadow-sm'}
-                    `}
+                  <div className="space-y-1.5">
+                     <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Niche / Domaine (Expertise)</label>
+                      <input 
+                       value={newProfile.niche}
+                       onChange={(e) => setNewProfile({...newProfile, niche: e.target.value})}
+                       placeholder="Ex: Fitness, Crypto, E-commerce..." 
+                       className="w-full bg-gray-50 dark:bg-gray-950 hover:bg-gray-100/50 dark:hover:bg-gray-950/80 border border-gray-200 dark:border-gray-800 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-xl px-4 py-3 text-sm focus:outline-hidden transition-all text-gray-900 dark:text-gray-100 placeholder-gray-400"
+                     />
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                     <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Vos textes (Min 500 mots)</label>
+                      <textarea 
+                       value={newProfile.content}
+                       onChange={(e) => setNewProfile({...newProfile, content: e.target.value})}
+                       placeholder="Collez ici des scripts ou des textes que vous avez écrits..." 
+                       rows={12}
+                       className="w-full bg-gray-50 dark:bg-gray-950 hover:bg-gray-100/50 dark:hover:bg-gray-950/80 border border-gray-200 dark:border-gray-800 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-xl py-3 px-4 text-sm focus:outline-hidden transition-all text-gray-900 dark:text-gray-300 resize-none leading-relaxed"
+                     />
+                  </div>
+                  
+                  <button 
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="w-full bg-violet-600 hover:bg-violet-700 text-white rounded-xl py-3.5 font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm cursor-pointer"
                   >
-                     {isProfileActive && (
-                       <div className="absolute top-4 right-4 text-indigo-600">
-                         <CheckCircle2 className="size-5 fill-indigo-50" />
-                       </div>
-                     )}
-                     
-                     <div className="space-y-4">
-                        <div className="space-y-1">
-                           <div className="flex items-center gap-2">
-                              <h4 className="font-bold text-slate-900">{profile.name}</h4>
+                    {saving ? <Loader2 className="size-4 animate-spin" /> : <><Save className="size-4" /> {hasLinkedVoice ? "Mettre à jour le Style" : "Sauvegarder & Analyser"}</>}
+                  </button>
+               </div>
+            </div>
+         </div>
+
+         {/* RIGHT: LIST PROFILES / SIDEBAR (1/3 width) */}
+         <div className="lg:col-span-4 space-y-4">
+            <div className="flex items-center justify-between px-1">
+               <p className="text-xs font-bold text-gray-405 dark:text-gray-500 uppercase tracking-widest">Style de Voix du Workspace</p>
+               <p className="text-xs font-semibold text-violet-500 dark:text-violet-400 uppercase">
+                  {profiles.length ? "1 Voix Liée" : "Aucune Voix"}
+               </p>
+            </div>
+
+            {loading && profiles.length === 0 ? (
+               <div className="flex flex-col items-center justify-center p-12 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
+                  <Loader2 className="size-6 text-violet-500 animate-spin" />
+               </div>
+            ) : profiles.length === 0 ? (
+               <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-gray-900 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl text-center space-y-4 shadow-sm">
+                  <div className="size-16 rounded-xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center shadow-xs text-gray-300 dark:text-gray-600">
+                     <UserRound className="size-8" />
+                  </div>
+                  <div className="space-y-1">
+                     <p className="text-sm font-bold text-gray-600 dark:text-gray-400">Aucun profil lié</p>
+                     <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">Configurez ou entraînez une voix sur la gauche pour l'associer à ce projet.</p>
+                  </div>
+               </div>
+            ) : (
+               <div className="flex flex-col gap-4">
+                  {profiles.map((profile) => {
+                    const isProfileActive = activeWorkspace && activeWorkspace.id
+                      ? activeWorkspace.voice_profile_id === profile.id
+                      : profile.is_active;
+
+                    return (
+                     <div 
+                       key={profile.id}
+                       className={`
+                         p-5 rounded-2xl border transition-all duration-300 relative group shadow-xs
+                         ${isProfileActive 
+                           ? 'bg-white dark:bg-gray-900 border-violet-500 dark:border-violet-400' 
+                           : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700'}
+                       `}
+                     >
+                        {isProfileActive && (
+                          <div className="absolute top-4 right-4 text-violet-600 dark:text-violet-400">
+                            <CheckCircle2 className="size-5" />
+                          </div>
+                        )}
+                        
+                        <div className="space-y-4">
+                           <div className="space-y-1.5">
+                              <h4 className="font-bold text-gray-900 dark:text-gray-100 text-sm">{profile.name}</h4>
+                              {profile.niche && (
+                                <p className="text-[10px] text-violet-600 dark:text-violet-400 font-bold uppercase tracking-wider">{profile.niche}</p>
+                              )}
+                              <div className="flex items-center gap-1.5">
+                                 <FileText className="size-3.5 text-gray-400 dark:text-gray-500" />
+                                 <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase">
+                                   {profile.content.length} Caractères d'entraînement
+                                 </p>
+                              </div>
                            </div>
-                           {profile.niche && (
-                             <p className="text-[10px] text-indigo-500 font-black uppercase tracking-widest mt-0.5">{profile.niche}</p>
-                           )}
-                           <div className="flex items-center gap-2">
-                              <FileText className="size-3 text-slate-400" />
-                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
-                                {profile.content.length} Caractères d'entraînement
-                              </p>
+
+                           <div className="pt-2 flex items-center gap-2">
+                              {!isProfileActive && (
+                                <button 
+                                  onClick={() => handleActivate(profile.id)}
+                                  className="flex-1 bg-gray-50 dark:bg-gray-950 hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300 py-2 rounded-xl text-xs font-bold transition-all border border-gray-200 dark:border-gray-800 cursor-pointer"
+                                >
+                                  Activer
+                                </button>
+                              )}
+                              <button 
+                                onClick={() => handleDelete(profile.id)}
+                                className="size-9 flex items-center justify-center bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                              >
+                                 <Trash2 className="size-4" />
+                              </button>
                            </div>
                         </div>
-
-                        <div className="pt-2 flex items-center gap-2">
-                           {!isProfileActive && (
-                             <button 
-                               onClick={() => handleActivate(profile.id)}
-                              className="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-600 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all"
-                            >
-                              Activer
-                            </button>
-                          )}
-                          <button 
-                            onClick={() => handleDelete(profile.id)}
-                            className="size-10 flex items-center justify-center bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-100 transition-all opacity-0 group-hover:opacity-100"
-                          >
-                             <Trash2 className="size-4" />
-                          </button>
-                       </div>
                      </div>
-                  </div>
-                 )
-               })}
-            </div>
-          )}
-        </div>
+                    )
+                  })}
+               </div>
+            )}
+         </div>
       </div>
     </div>
   )

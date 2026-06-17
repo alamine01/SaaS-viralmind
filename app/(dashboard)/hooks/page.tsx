@@ -67,6 +67,10 @@ export default function HooksLibraryPage() {
   }
 
   const generateAIHooks = async () => {
+    if (!topic.trim()) {
+      toast.warning("Veuillez saisir un sujet")
+      return
+    }
     setIsGenerating(true)
     try {
       const res = await fetch("/api/generate-hooks", {
@@ -77,7 +81,6 @@ export default function HooksLibraryPage() {
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       
-      // On ajoute les nouveaux au début de la liste
       setAiHooks(data)
       toast.success("3 Nouveaux Hooks générés !")
     } catch (e) {
@@ -92,28 +95,42 @@ export default function HooksLibraryPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 text-amber-600 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] border border-amber-500/10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] border border-amber-500/20">
             <Flame className="size-3" /> Top Performance
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-slate-900">Bibliothèque de <span className="text-amber-500">Hooks</span></h1>
-          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+            Bibliothèque de <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">Hooks</span>
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 font-medium max-w-xl text-sm leading-relaxed">
             Les 3 premières secondes décident du succès de votre vidéo. Utilisez ces accroches testées ou demandez à l'IA d'en créer de nouvelles.
           </p>
+        </div>
+
+        {/* Search input */}
+        <div className="relative w-full md:w-72 shrink-0">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400 dark:text-gray-500" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Rechercher un hook..."
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-xl text-sm font-semibold text-gray-800 dark:text-gray-100 placeholder:text-gray-400 focus:border-violet-500 outline-none transition-all shadow-sm"
+          />
         </div>
       </div>
 
       {/* AI GENERATOR SECTION */}
-      <div className="bg-slate-900 rounded-[40px] p-8 md:p-10 text-white shadow-2xl shadow-slate-200 overflow-hidden relative">
-         <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none">
+      <div className="bg-gray-950 dark:bg-gray-900 rounded-2xl p-8 md:p-10 text-white shadow-xl overflow-hidden relative border border-gray-800">
+         <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
             <Sparkles className="size-32" />
          </div>
          <div className="relative z-10 space-y-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                <div className="space-y-2">
-                  <h2 className="text-2xl font-black">Générateur Magique par <span className="text-indigo-400">IA</span></h2>
-                  <p className="text-slate-400 text-sm font-medium">Laissez l'IA créer 3 hooks uniques pour votre prochain sujet.</p>
+                  <h2 className="text-2xl font-bold">Générateur Magique par <span className="text-violet-400">IA</span></h2>
+                  <p className="text-gray-400 text-sm font-medium">Laissez l'IA créer 3 hooks uniques pour votre prochain sujet.</p>
                </div>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white/5 p-2 rounded-3xl sm:rounded-2xl border border-white/10 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white/5 p-2 rounded-2xl border border-white/10 w-full lg:w-auto">
                    <input 
                      value={topic}
                      onChange={(e) => setTopic(e.target.value)}
@@ -123,7 +140,7 @@ export default function HooksLibraryPage() {
                    <button 
                      onClick={generateAIHooks}
                      disabled={isGenerating}
-                     className="bg-indigo-500 hover:bg-indigo-400 text-white px-6 py-4 sm:py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50 shrink-0"
+                     className="bg-violet-600 hover:bg-violet-500 text-white px-6 py-4 sm:py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50 shrink-0 shadow-sm"
                    >
                      {isGenerating ? <Loader2 className="size-4 animate-spin" /> : <><Sparkles className="size-4" /> Générer 3 Hooks</>}
                    </button>
@@ -133,10 +150,10 @@ export default function HooksLibraryPage() {
             {aiHooks.length > 0 && (
                <div className="grid md:grid-cols-3 gap-4 pt-4 animate-in slide-in-from-bottom-4 duration-500">
                   {aiHooks.map((hook, idx) => (
-                    <div key={idx} className="bg-white/5 border border-white/10 rounded-3xl p-6 space-y-4 hover:border-indigo-500/50 transition-all group">
+                    <div key={idx} className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-4 hover:border-violet-500/50 transition-all group relative">
                        <div className="flex items-center justify-between">
-                          <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 px-2 py-1 bg-indigo-500/10 rounded-lg">{hook.type}</span>
-                          <button onClick={() => handleCopy(hook.text)} className="text-slate-400 hover:text-white transition-colors">
+                          <span className="text-[9px] font-bold uppercase tracking-widest text-violet-400 px-2 py-1 bg-violet-500/10 rounded-lg">{hook.type}</span>
+                          <button onClick={() => handleCopy(hook.text)} className="text-gray-400 hover:text-white transition-colors">
                              <Copy className="size-4" />
                           </button>
                        </div>
@@ -150,63 +167,68 @@ export default function HooksLibraryPage() {
 
       {/* Main Content */}
       <div className="space-y-12">
-        {HOOKS_DATA.map((section) => (
-          <section key={section.category} className="space-y-6">
-             <div className="flex items-center gap-3 px-2">
-                <div className="size-8 rounded-xl bg-slate-900 flex items-center justify-center text-white">
-                   <Target className="size-4" />
-                </div>
-                <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">{section.category}</h2>
-             </div>
+        {HOOKS_DATA.map((section) => {
+          const filtered = section.hooks.filter(h => h.text.toLowerCase().includes(searchTerm.toLowerCase()))
+          if (filtered.length === 0) return null
 
-             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {section.hooks.filter(h => h.text.toLowerCase().includes(searchTerm.toLowerCase())).map((hook) => (
-                  <div 
-                    key={hook.text}
-                    className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all group flex flex-col justify-between"
-                  >
-                     <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                           <div className="flex items-center gap-2 px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-widest">
-                              <TrendingUp className="size-3" /> {hook.views} Vues
-                           </div>
-                           <div className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${hook.conversion === 'Élevé' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-500'}`}>
-                              Conversion {hook.conversion}
-                           </div>
-                        </div>
-                        <p className="text-base font-bold text-slate-800 leading-snug">"{hook.text}"</p>
-                     </div>
-
-                     <div className="pt-6">
-                        <button 
-                          onClick={() => handleCopy(hook.text)}
-                          className={`
-                            w-full py-3.5 rounded-2xl text-xs font-black uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2
-                            ${copiedId === hook.text 
-                              ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200' 
-                              : 'bg-slate-50 text-slate-600 hover:bg-slate-900 hover:text-white'}
-                          `}
-                        >
-                           {copiedId === hook.text ? <><Check className="size-4" /> Copié !</> : <><Copy className="size-4" /> Copier l'accroche</>}
-                        </button>
-                     </div>
+          return (
+            <section key={section.category} className="space-y-6">
+               <div className="flex items-center gap-3 px-2">
+                  <div className="size-8 rounded-lg bg-gray-900 dark:bg-gray-800 flex items-center justify-center text-white border border-gray-800 dark:border-gray-700/60 shadow-sm">
+                     <Target className="size-4 text-violet-500" />
                   </div>
-                ))}
-             </div>
-          </section>
-        ))}
+                  <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">{section.category}</h2>
+               </div>
+
+               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filtered.map((hook) => (
+                    <div 
+                      key={hook.text}
+                      className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-sm hover:shadow-md hover:border-violet-500/30 dark:hover:border-violet-500/30 transition-all group flex flex-col justify-between"
+                    >
+                       <div className="space-y-4">
+                          <div className="flex items-center justify-between gap-2">
+                             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-[9px] font-bold uppercase tracking-widest">
+                                <TrendingUp className="size-3" /> {hook.views} Vues
+                             </div>
+                             <div className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-widest ${hook.conversion === 'Élevé' ? 'bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400' : 'bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400'}`}>
+                                Conversion {hook.conversion}
+                             </div>
+                          </div>
+                          <p className="text-sm font-bold text-gray-800 dark:text-gray-200 leading-snug">"{hook.text}"</p>
+                       </div>
+
+                       <div className="pt-6">
+                          <button 
+                            onClick={() => handleCopy(hook.text)}
+                            className={`
+                              w-full py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 border shadow-sm
+                              ${copiedId === hook.text 
+                                ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' 
+                                : 'bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-gray-900 hover:border-gray-900 dark:hover:border-white'}
+                            `}
+                          >
+                             {copiedId === hook.text ? <><Check className="size-3.5" /> Copié !</> : <><Copy className="size-3.5" /> Copier l'accroche</>}
+                          </button>
+                       </div>
+                    </div>
+                  ))}
+               </div>
+            </section>
+          )
+        })}
       </div>
 
       {/* Advice Section */}
-      <div className="bg-indigo-600 rounded-[40px] p-8 md:p-12 text-white relative overflow-hidden shadow-2xl shadow-indigo-200">
-         <div className="absolute right-[-5%] top-[-10%] size-64 bg-white/10 blur-[80px] rounded-full" />
-         <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
-            <div className="size-20 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center shrink-0">
-               <Lightbulb className="size-10 text-white" />
+      <div className="bg-gradient-to-br from-violet-600 to-purple-600 dark:from-violet-900/60 dark:to-purple-900/60 rounded-2xl p-8 md:p-12 text-white relative overflow-hidden shadow-lg border border-violet-500/20">
+         <div className="absolute right-[-5%] top-[-10%] size-64 bg-white/5 blur-[80px] rounded-full pointer-events-none" />
+         <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+            <div className="size-16 bg-white/10 dark:bg-white/5 border border-white/20 backdrop-blur-md rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+               <Lightbulb className="size-8 text-amber-300" />
             </div>
-            <div className="space-y-2 text-center md:text-left">
-               <h3 className="text-2xl font-black">Conseil d'Expert</h3>
-               <p className="text-indigo-100 font-medium leading-relaxed">
+            <div className="space-y-1.5 text-center md:text-left">
+               <h3 className="text-xl font-bold">Conseil d'Expert</h3>
+               <p className="text-violet-100 dark:text-violet-200 text-xs md:text-sm font-medium leading-relaxed">
                   Ne vous contentez pas de copier le texte. L'intonation et l'expression de votre visage pendant les 3 premières secondes sont tout aussi importantes que les mots. Soyez dynamique et cassez le rythme dès le départ !
                </p>
             </div>

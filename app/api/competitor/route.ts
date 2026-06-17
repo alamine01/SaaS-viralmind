@@ -48,6 +48,7 @@ export async function POST(req: Request) {
     // 2. SCRAPING DU PROFIL ET DE SES POSTS
     let posts: any[] = [];
     let followers = 0;
+    let avatarUrl = "";
 
     if (platform === 'youtube') {
       // --- LOGIQUE SCRAPING YOUTUBE ---
@@ -59,6 +60,11 @@ export async function POST(req: Request) {
       });
       const html = await res.text();
       
+      const ogImageMatch = html.match(/<meta property="og:image" content="([^"]+)"/);
+      if (ogImageMatch) {
+        avatarUrl = ogImageMatch[1];
+      }
+
       let channelId = null;
       const canonicalMatch = html.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/channel\/(UC[A-Za-z0-9_-]{22})"/);
       if (canonicalMatch) channelId = canonicalMatch[1];
@@ -206,7 +212,10 @@ export async function POST(req: Request) {
 
           if (profileRes.ok && postsRes.ok) {
             const [profileData, postsData] = await Promise.all([profileRes.json(), postsRes.json()]);
-            if (profileData.length > 0) followers = parseInt(profileData[0].followersCount || "0");
+            if (profileData.length > 0) {
+              followers = parseInt(profileData[0].followersCount || "0");
+              avatarUrl = profileData[0].profilePicUrl || profileData[0].profilePicUrlHd || "";
+            }
             posts = postsData.map((p: any) => {
               const views = p.videoPlayCount || p.playCount || p.videoViewCount || 0;
               return {
@@ -242,6 +251,7 @@ export async function POST(req: Request) {
             const userData = await aboutRes.json();
             const u = userData.data || userData.user || userData;
             followers = parseInt(u.follower_count || u.followers || u.edge_followed_by?.count || "0");
+            avatarUrl = u.profile_pic_url_hd || u.profile_pic_url || "";
           }
 
           if (postsRes.ok) {
@@ -282,6 +292,7 @@ export async function POST(req: Request) {
           const userData = await infoRes.json();
           const stats = userData.data?.stats || userData.data || {};
           followers = parseInt(stats.followerCount || stats.follower_count || stats.followers || "0");
+          avatarUrl = userData.data?.user?.avatarLarger || userData.data?.user?.avatarMedium || userData.data?.user?.avatarThumb || userData.data?.avatarLarger || userData.data?.avatarMedium || userData.data?.avatarThumb || "";
         }
 
         if (postsRes.ok) {
@@ -297,6 +308,9 @@ export async function POST(req: Request) {
 
           if (followers === 0 && videosList.length > 0) {
             followers = parseInt(videosList[0].author?.follower_count || "0");
+          }
+          if (!avatarUrl && videosList.length > 0) {
+            avatarUrl = videosList[0].author?.avatar || videosList[0].author?.avatar_thumb || videosList[0].author?.avatar_medium || "";
           }
         }
       } catch (err: any) {
@@ -358,6 +372,7 @@ export async function POST(req: Request) {
           followers_count: followers,
           median_views: medianViews,
           audit_report: auditReport,
+          avatar_url: avatarUrl,
           last_scanned_at: new Date().toISOString()
         })
         .eq("id", existing.id)
@@ -376,6 +391,7 @@ export async function POST(req: Request) {
           followers_count: followers,
           median_views: medianViews,
           audit_report: auditReport,
+          avatar_url: avatarUrl,
           collection_name: targetCol,
           last_scanned_at: new Date().toISOString()
         })

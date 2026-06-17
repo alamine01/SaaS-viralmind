@@ -93,47 +93,47 @@ export default function PlaybooksPage() {
       
       {/* Header */}
       <div className="space-y-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-bold uppercase tracking-widest border border-indigo-100">
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 rounded-full text-[10px] font-bold uppercase tracking-widest border border-violet-100 dark:border-violet-500/20">
           <BookOpen className="size-3" />
           Playbooks d'Élite
         </div>
-        <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight leading-tight">
-          Bibliothèque de <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Formules</span>
+        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 tracking-tight leading-tight">
+          Bibliothèque de <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-purple-600 dark:from-violet-400 dark:to-purple-400">Formules</span>
         </h1>
-        <p className="text-slate-500 font-medium max-w-2xl text-lg">
+        <p className="text-gray-500 dark:text-gray-400 font-medium max-w-2xl text-base md:text-lg">
           Ne réinventez pas la roue. Utilisez les structures psychologiques qui ont déjà fait leurs preuves des millions de fois.
         </p>
       </div>
 
       {/* Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
+      <div className="grid md:grid-cols-2 gap-6">
         {playbooks.map((pb) => (
-          <Card key={pb.id} className="group relative border-none shadow-[0_8px_30px_rgb(0,0,0,0.03)] rounded-[32px] bg-white overflow-hidden hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500 border border-slate-50">
-            <CardContent className="p-8 md:p-10 space-y-8">
+          <Card key={pb.id} className="group relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl overflow-hidden hover:shadow-md transition-all duration-300">
+            <CardContent className="p-6 md:p-8 space-y-6">
               <div className="flex items-start justify-between">
-                <div className={`size-16 rounded-2xl ${pb.color} text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-500`}>
-                  {pb.id === 'controversial' ? <MessageSquare className="size-8" /> : <Flame className="size-8" />}
+                <div className={`size-14 rounded-xl ${pb.color} text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-300`}>
+                  {pb.id === 'controversial' ? <MessageSquare className="size-6" /> : <Flame className="size-6" />}
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Impact</span>
-                  <span className="text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">{pb.impact}</span>
+                  <span className="text-[10px] font-bold text-gray-400 dark:text-gray-550 uppercase tracking-widest">Impact</span>
+                  <span className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10 px-2.5 py-1 rounded-lg border border-violet-100/30">{pb.impact}</span>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">{pb.title}</h3>
+                <p className="text-gray-500 dark:text-gray-400 font-medium leading-relaxed text-sm">{pb.description}</p>
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight">{pb.title}</h3>
-                <p className="text-slate-500 font-medium leading-relaxed">{pb.description}</p>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                   <Target className="size-3.5" /> Structure de la formule
+                <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-550 uppercase tracking-widest flex items-center gap-2">
+                   <Target className="size-3.5 text-violet-500" /> Structure de la formule
                 </h4>
                 <div className="grid grid-cols-1 gap-2">
                   {pb.structure.map((step, i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 group-hover:bg-white group-hover:border-indigo-100 transition-colors">
-                      <div className="size-6 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400">{i+1}</div>
-                      <span className="text-xs font-bold text-slate-700">{step}</span>
+                    <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-700 group-hover:bg-white dark:group-hover:bg-gray-800 group-hover:border-violet-150 dark:group-hover:border-violet-500/20 transition-colors">
+                      <div className="size-6 rounded-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-[10px] font-bold text-gray-400 dark:text-gray-500">{i+1}</div>
+                      <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{step}</span>
                     </div>
                   ))}
                 </div>
@@ -141,7 +141,7 @@ export default function PlaybooksPage() {
 
               <button 
                 onClick={() => handleUsePlaybook(pb)}
-                className="w-full h-14 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-indigo-600 transition-all flex items-center justify-center gap-3 shadow-xl"
+                className="w-full h-12 bg-gray-900 dark:bg-white hover:bg-violet-600 dark:hover:bg-violet-500 text-white dark:text-gray-900 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm"
               >
                 Appliquer cette Formule <ArrowRight className="size-4" />
               </button>
@@ -151,15 +151,15 @@ export default function PlaybooksPage() {
       </div>
 
       {/* Pro Note */}
-      <div className="bg-slate-900 rounded-[32px] p-10 text-white flex flex-col md:flex-row items-center justify-between gap-10 overflow-hidden relative">
-         <div className="absolute top-0 right-0 size-64 bg-indigo-600/20 blur-[100px] rounded-full" />
+      <div className="bg-gray-900 dark:bg-gray-800/40 border border-gray-850 dark:border-gray-700/60 rounded-2xl p-10 text-white flex flex-col md:flex-row items-center justify-between gap-10 overflow-hidden relative shadow-md">
+         <div className="absolute top-0 right-0 size-64 bg-violet-600/20 blur-[100px] rounded-full" />
          <div className="relative z-10 space-y-4">
-            <h3 className="text-3xl font-black tracking-tight leading-tight">Vous voulez une formule <br />sur-mesure ?</h3>
-            <p className="text-slate-400 font-medium">Scannez un Outlier et notre IA extraira sa structure pour vous.</p>
+            <h3 className="text-3xl font-bold tracking-tight leading-tight">Vous voulez une formule <br />sur-mesure ?</h3>
+            <p className="text-gray-400 font-medium">Scannez un Outlier et notre IA extraira sa structure pour vous.</p>
          </div>
          <button 
            onClick={() => router.push("/analyse")}
-           className="relative z-10 px-8 py-4 bg-white text-slate-900 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-indigo-400 hover:text-white transition-all shadow-xl"
+           className="relative z-10 px-8 py-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-violet-600 hover:text-white dark:hover:bg-violet-500 transition-all shadow-sm"
          >
             Ouvrir le Radar
          </button>

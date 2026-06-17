@@ -351,9 +351,9 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "center" })
           // Premium halo visual cue highlight
-          el.classList.add("ring-4", "ring-indigo-500/20", "scale-[1.01]")
+          el.classList.add("ring-4", "ring-violet-500/20", "scale-[1.01]")
           setTimeout(() => {
-            el.classList.remove("ring-4", "ring-indigo-500/20", "scale-[1.01]")
+            el.classList.remove("ring-4", "ring-violet-500/20", "scale-[1.01]")
           }, 3000)
         } else {
           chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -566,14 +566,14 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
       {/* 1. Header Premium */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-bold uppercase tracking-widest border border-indigo-100">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 rounded-full text-[10px] font-bold uppercase tracking-widest border border-violet-200 dark:border-violet-500/30">
             <Wand2 className="size-3" />
             Studio Conversationnel
           </div>
-          <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-none">
-            Script <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Studio</span>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100 tracking-tight leading-none">
+            Script <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-purple-500">Studio</span>
           </h1>
-          <p className="text-slate-500 font-medium text-xs md:text-sm">
+          <p className="text-gray-500 dark:text-gray-400 font-medium text-xs md:text-sm">
             Discutez avec notre IA pour concevoir et affiner votre vidéo virale parfaite.
           </p>
         </div>
@@ -581,27 +581,27 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowHistory(!showHistory)}
-            className="lg:hidden px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center gap-2 transition-all"
+            className="lg:hidden px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl flex items-center gap-2 transition-all border border-transparent dark:border-gray-700/60"
             title={showHistory ? "Masquer l'historique" : "Voir l'historique"}
           >
-            <History className="size-4 text-slate-500" />
+            <History className="size-4 text-gray-500 dark:text-gray-400" />
             <span>{showHistory ? "Masquer" : "Historique"}</span>
           </button>
 
           <div 
             onClick={() => !user && setShowAuthModal(true)}
-            className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest flex items-center gap-2 cursor-pointer transition-all hover:scale-105 ${user ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}
+            className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest flex items-center gap-2 cursor-pointer transition-all hover:scale-105 ${user ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30' : 'bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30'}`}
           >
             <div className={`size-1.5 rounded-full animate-pulse ${user ? 'bg-emerald-500' : 'bg-rose-500'}`} />
             {user ? 'Studio Connecté' : 'Se Connecter'}
           </div>
           
           {quotas && (
-            <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-xl border border-slate-200/50 text-xs font-bold text-slate-600 shadow-xs">
+            <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700/60 text-xs font-bold text-gray-600 dark:text-gray-300 shadow-sm">
               <span>Quota : {quotas.daily_script_count} / {quotas.limits.dailyScripts === 9999 ? "∞" : quotas.limits.dailyScripts}</span>
-              <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+              <div className="w-16 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                  className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"
                   style={{ width: `${Math.min(100, (quotas.daily_script_count / (quotas.limits.dailyScripts || 1)) * 100)}%` }}
                 />
               </div>
@@ -614,13 +614,13 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
       <div className="grid lg:grid-cols-12 gap-6 min-h-[600px]">
         
         {/* Left Side: Discussions History Panel */}
-        <aside className={`col-span-12 lg:col-span-3 bg-white border border-slate-100 rounded-3xl p-5 flex flex-col justify-between shadow-sm min-h-[300px] lg:min-h-auto ${showHistory ? 'block' : 'hidden lg:flex'}`}>
+        <aside className={`col-span-12 lg:col-span-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-xl p-5 flex flex-col justify-between shadow-sm min-h-[300px] lg:min-h-auto ${showHistory ? 'block' : 'hidden lg:flex'}`}>
           <div className="space-y-4 flex-1 flex flex-col min-w-0">
              <div className="flex items-center justify-between">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Discussions récentes</p>
+                <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Discussions récentes</p>
                 <button 
                   onClick={handleCreateDiscussion}
-                  className="p-1 text-indigo-600 hover:text-indigo-800 transition-colors"
+                  className="p-1 text-violet-500 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
                   title="Nouvelle discussion"
                 >
                   <Plus className="size-4" />
@@ -630,12 +630,12 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
              <div className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[350px] lg:max-h-[500px]">
                 {loadingDiscussions ? (
                   <div className="flex justify-center py-10">
-                     <Loader2 className="size-6 text-indigo-600 animate-spin" />
+                     <Loader2 className="size-6 text-violet-500 animate-spin" />
                   </div>
                 ) : discussions.length === 0 ? (
-                  <div className="text-center py-12 px-4 border border-dashed border-slate-100 rounded-2xl bg-slate-50/50">
-                     <p className="text-xs font-bold text-slate-400 italic">Aucune discussion lancée</p>
-                     <button onClick={handleCreateDiscussion} className="mt-3 text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline flex items-center gap-1 mx-auto">
+                  <div className="text-center py-12 px-4 border border-dashed border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                     <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 italic">Aucune discussion lancée</p>
+                     <button onClick={handleCreateDiscussion} className="mt-3 text-[10px] font-bold text-violet-500 uppercase tracking-widest hover:underline flex items-center gap-1 mx-auto">
                         <Plus className="size-3" /> Nouveau script
                      </button>
                   </div>
@@ -647,15 +647,15 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                         key={d.id}
                         onClick={() => handleSelectDiscussion(d.id)}
                         onDoubleClick={(e) => handleStartRename(d.id, d.title, e as any)}
-                        className={`group p-3 rounded-2xl flex items-center justify-between cursor-pointer border transition-all ${
+                        className={`group p-3 rounded-xl flex items-center justify-between cursor-pointer border transition-all ${
                           isActive 
-                            ? 'bg-slate-900 border-slate-900 text-white shadow-lg' 
-                            : 'bg-white border-slate-50 hover:bg-slate-50 hover:border-slate-100 text-slate-700'
+                            ? 'bg-violet-500 text-white shadow-md border-violet-500' 
+                            : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700/60 hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300'
                         }`}
                         title="Double-cliquez pour renommer"
                       >
                         <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                           <MessageSquare className={`size-4 shrink-0 ${isActive ? 'text-indigo-400' : 'text-slate-400'}`} />
+                           <MessageSquare className={`size-4 shrink-0 ${isActive ? 'text-white' : 'text-gray-400 dark:text-gray-500'}`} />
                            
                            {renamingId === d.id ? (
                              <input 
@@ -667,10 +667,10 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                                  else if (e.key === 'Escape') setRenamingId(null)
                                }}
                                autoFocus
-                               className="bg-white text-slate-900 text-xs font-bold border border-slate-300 rounded px-1.5 py-0.5 focus:outline-hidden w-full"
+                               className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs font-bold border border-gray-300 dark:border-gray-600 rounded px-1.5 py-0.5 focus:outline-hidden w-full"
                              />
                            ) : (
-                             <span className="text-xs font-bold truncate pr-1">{d.title}</span>
+                             <span className="text-xs font-semibold truncate pr-1">{d.title}</span>
                            )}
                         </div>
 
@@ -678,14 +678,14 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                            {renamingId === d.id ? (
                              <button 
                                onClick={(e) => handleSaveRename(d.id, e)}
-                               className="p-1 hover:bg-white/10 rounded-md text-emerald-500"
+                               className={`p-1 rounded-md ${isActive ? 'text-white hover:bg-white/20' : 'text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10'}`}
                              >
                                <Check className="size-3.5" />
                              </button>
                            ) : (
                              <button 
                                onClick={(e) => handleStartRename(d.id, d.title, e)}
-                               className={`p-1 hover:bg-white/10 rounded-md transition-colors ${isActive ? 'text-white/40 hover:text-white' : 'text-slate-400 hover:text-slate-800'}`}
+                               className={`p-1 rounded-md transition-colors ${isActive ? 'text-white/70 hover:text-white hover:bg-white/20' : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                                title="Renommer (Double-cliquer)"
                              >
                                <Edit3 className="size-3.5" />
@@ -694,7 +694,7 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                            
                            <button 
                              onClick={(e) => handleDeleteDiscussion(d.id, e)}
-                             className={`p-1 hover:bg-white/10 rounded-md transition-colors ${isActive ? 'text-white/40 hover:text-rose-400' : 'text-slate-400 hover:text-rose-600'}`}
+                             className={`p-1 rounded-md transition-colors ${isActive ? 'text-white/70 hover:text-rose-200 hover:bg-white/20' : 'text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                              title="Supprimer"
                            >
                              <Trash2 className="size-3.5" />
@@ -708,10 +708,10 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
           </div>
           
           {quotas && (
-            <div className="mt-4 pt-4 border-t border-slate-100 space-y-2 text-[10px] font-semibold text-slate-400 leading-normal">
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700/60 space-y-2 text-[10px] font-semibold text-gray-500 dark:text-gray-400 leading-normal">
                <div className="flex justify-between">
                   <span>Plan :</span>
-                  <span className="font-extrabold uppercase text-indigo-600">{quotas.plan}</span>
+                  <span className="font-bold uppercase text-violet-500">{quotas.plan}</span>
                </div>
                <div className="flex justify-between">
                   <span>Générations du jour :</span>
@@ -722,27 +722,27 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
         </aside>
 
         {/* Right Side: Chat Container Panel */}
-        <main className="col-span-12 lg:col-span-9 bg-white border border-slate-100 rounded-3xl overflow-hidden flex flex-col justify-between shadow-sm min-h-[500px]">
+        <main className="col-span-12 lg:col-span-9 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-xl overflow-hidden flex flex-col justify-between shadow-sm min-h-[500px]">
           
           {/* Header de la discussion active (Sélecteurs de contraintes) */}
           {activeDiscussionId && (
-            <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-4">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700/60 bg-gray-50/50 dark:bg-gray-800/50 flex flex-wrap items-center justify-between gap-4">
                <div className="flex items-center gap-2">
                   <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <p className="text-xs font-bold text-slate-800">Configuration en temps réel :</p>
+                  <p className="text-xs font-bold text-gray-800 dark:text-gray-200">Configuration en temps réel :</p>
                </div>
                
                <div className="flex flex-wrap items-center gap-3">
                   {/* Angle Selector */}
                   <div className="flex items-center gap-2">
-                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Format</span>
+                     <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Format</span>
                      <select 
                        value={niche}
                        onChange={(e) => {
                          setNiche(e.target.value)
                          toast.success(`Format défini sur : ${e.target.value}`)
                        }}
-                       className="bg-white border border-slate-200 rounded-lg pl-3 pr-8 py-1.5 text-[11px] font-bold outline-hidden cursor-pointer text-slate-700 shadow-xs focus:border-indigo-500"
+                       className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-lg pl-3 pr-8 py-1.5 text-[11px] font-bold outline-hidden cursor-pointer text-gray-700 dark:text-gray-300 shadow-sm focus:border-violet-500"
                      >
                         <option>Dynamique & Viral (Style TikTok)</option>
                         <option>Expert & Éducatif (Style LinkedIn)</option>
@@ -756,7 +756,7 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
 
                   {/* Duration Selector */}
                   <div className="flex items-center gap-2">
-                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Durée</span>
+                     <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Durée</span>
                      <select 
                        value={duration}
                        onChange={(e) => {
@@ -764,7 +764,7 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                          const durationMin = parseInt(e.target.value) >= 60 ? `${parseInt(e.target.value) / 60} min` : `${e.target.value}s`;
                          toast.success(`Durée ajustée sur : ${durationMin}`)
                        }}
-                       className="bg-white border border-slate-200 rounded-lg pl-3 pr-8 py-1.5 text-[11px] font-bold outline-hidden cursor-pointer text-slate-700 shadow-xs focus:border-indigo-500"
+                       className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-lg pl-3 pr-8 py-1.5 text-[11px] font-bold outline-hidden cursor-pointer text-gray-700 dark:text-gray-300 shadow-sm focus:border-violet-500"
                      >
                         <option value="30">30 Secondes</option>
                         <option value="60">60 Secondes</option>
@@ -785,23 +785,23 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
           <div className="flex-1 overflow-y-auto p-6 space-y-6 max-h-[480px]">
              {loadingChat ? (
                 <div className="h-full flex flex-col items-center justify-center gap-3">
-                   <Loader2 className="size-8 text-indigo-500 animate-spin" />
-                   <p className="text-xs text-slate-400 font-bold uppercase tracking-widest animate-pulse">Chargement de la discussion...</p>
+                   <Loader2 className="size-8 text-violet-500 animate-spin" />
+                   <p className="text-xs text-gray-400 font-bold uppercase tracking-widest animate-pulse">Chargement de la discussion...</p>
                 </div>
              ) : !activeDiscussionId ? (
                 <div className="h-full flex flex-col items-center justify-center text-center max-w-sm mx-auto space-y-6 py-20">
-                   <div className="size-16 rounded-3xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-inner">
+                   <div className="size-16 rounded-3xl bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center text-violet-600 dark:text-violet-400 shadow-sm border border-violet-200 dark:border-violet-500/30">
                       <MessageSquare className="size-8" />
                    </div>
                    <div className="space-y-2">
-                      <h3 className="text-lg font-bold text-slate-900">Studio de Discussion Actif</h3>
-                      <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                      <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">Studio de Discussion Actif</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
                          Sélectionnez un script ou cliquez sur le bouton "+" dans le volet de gauche pour démarrer un nouvel échange guidé.
                       </p>
                    </div>
                    <button 
                      onClick={handleCreateDiscussion}
-                     className="px-6 py-3.5 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-2"
+                     className="px-6 py-3.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-gray-800 dark:hover:bg-gray-100 transition-all flex items-center gap-2"
                    >
                       <Plus className="size-4" /> Nouvelle Discussion
                    </button>
@@ -810,8 +810,8 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                 // Welcome Assistant (Start Discussion Prompt)
                 <div className="space-y-8 py-4 animate-in fade-in duration-500">
                    <div className="space-y-3 max-w-lg">
-                      <h2 className="text-2xl font-black text-slate-900 leading-tight">Génération de script guidée</h2>
-                      <p className="text-xs font-medium text-slate-400 leading-relaxed">
+                      <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 leading-tight">Génération de script guidée</h2>
+                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 leading-relaxed">
                          Choisissez l'une des suggestions ci-dessous pour lancer l'IA, ou décrivez directement votre idée de vidéo.
                       </p>
                    </div>
@@ -826,10 +826,10 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                         <div 
                           key={i} 
                           onClick={() => handleSendMessage(item.concept)}
-                          className="p-5 bg-slate-50/50 hover:bg-slate-900 border border-slate-100 hover:border-slate-900 hover:text-white rounded-2xl transition-all cursor-pointer group shadow-xs active:scale-[0.98] flex flex-col justify-between h-28"
+                          className="p-5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 border border-gray-200 dark:border-gray-700/60 rounded-xl transition-all cursor-pointer group shadow-sm flex flex-col justify-between h-28"
                         >
-                           <h4 className="text-xs font-black uppercase tracking-widest group-hover:text-indigo-400 text-indigo-600">{item.title}</h4>
-                           <p className="text-xs font-medium opacity-60 line-clamp-2 mt-2 leading-relaxed">{item.desc}</p>
+                           <h4 className="text-xs font-bold uppercase tracking-widest text-violet-600 dark:text-violet-400">{item.title}</h4>
+                           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 line-clamp-2 mt-2 leading-relaxed">{item.desc}</p>
                         </div>
                       ))}
                    </div>
@@ -846,22 +846,24 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                          className={`flex gap-4 ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in duration-300 rounded-3xl transition-all duration-1000`}
                        >
                           {!isUser && (
-                            <div className="size-9 shrink-0 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-xs font-black shadow-md shadow-indigo-100">
+                            <div className="size-9 shrink-0 rounded-full bg-violet-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
                                VM
                             </div>
                           )}
                           
                           <div className={`max-w-[80%] space-y-3 ${isUser ? 'items-end' : ''}`}>
-                             <div className={`p-4 rounded-2xl text-sm font-medium leading-relaxed ${
+                             <div className={`p-4 rounded-xl text-sm font-medium leading-relaxed ${
                                isUser 
-                                 ? 'bg-slate-900 text-white rounded-tr-xs shadow-md' 
-                                 : 'bg-slate-100/60 border border-slate-100 text-slate-800 rounded-tl-xs'
+                                 ? 'bg-violet-600 text-white rounded-tr-sm shadow-sm' 
+                                 : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-800 dark:text-gray-100 rounded-tl-sm shadow-sm'
                              }`}>
                                  {m.content && (
                                    isUser ? (
                                      <p className="whitespace-pre-wrap">{m.content}</p>
                                    ) : (
-                                     <MarkdownRenderer content={m.content} />
+                                     <div className="prose dark:prose-invert prose-sm max-w-none">
+                                        <MarkdownRenderer content={m.content} />
+                                     </div>
                                    )
                                  )}
 
@@ -906,7 +908,7 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                                      {m.attachment_type === "doc" && (
                                        <div className="flex items-center justify-between gap-4 py-1.5 px-1">
                                          <div className="flex items-center gap-3 min-w-0">
-                                           <div className={`size-9 rounded-lg flex items-center justify-center shrink-0 ${isUser ? 'bg-slate-700 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+                                           <div className={`size-9 rounded-lg flex items-center justify-center shrink-0 ${isUser ? 'bg-gray-700 dark:bg-gray-900 text-violet-400' : 'bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400'}`}>
                                              <File className="size-5" />
                                            </div>
                                            <div className="min-w-0">
@@ -951,90 +953,90 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                                  )}
                              </div>
 
-                             {/* SCRIPT BLOCK EMBEDDED */}
-                             {!isUser && m.script_data && (
-                               <Card className="border-none shadow-xl shadow-indigo-100/40 rounded-3xl overflow-hidden border border-slate-100/50 bg-white">
-                                  <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+                                 {/* SCRIPT BLOCK EMBEDDED */}
+                                 {!isUser && m.script_data && (
+                                   <Card className="border-none shadow-md rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700/60 bg-white dark:bg-gray-800 mt-4">
+                                      <CardContent className="p-4 sm:p-5 space-y-4">
                                      
-                                     {/* Jauge du score viral */}
-                                     <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
-                                        <div className="flex items-center gap-3">
-                                           <div className="size-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-sm border border-emerald-100 shadow-xs">
-                                              {m.script_data.score || 90}
+                                         {/* Jauge du score viral */}
+                                         <div className="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-700/60 pb-4">
+                                            <div className="flex items-center gap-3">
+                                               <div className="size-10 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm border border-emerald-200 dark:border-emerald-500/30">
+                                                  {m.script_data.score || 90}
+                                               </div>
+                                               <div>
+                                                  <p className="text-[11px] font-bold text-gray-800 dark:text-gray-100 uppercase tracking-widest">Score Viral IA</p>
+                                                  <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">Estimé pour la niche</p>
+                                               </div>
+                                            </div>
+                                            
+                                            <div className="flex items-center gap-2">
+                                               <button
+                                                 onClick={() => {
+                                                   const blocks = m.script_data.script || []
+                                                   const text = blocks.map((b: any) => b.audio).join('\n\n')
+                                                   navigator.clipboard.writeText(text)
+                                                   toast.success("Script complet copié !")
+                                                 }}
+                                                 className="p-2 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700/60 rounded-lg text-gray-500 dark:text-gray-400 transition-colors"
+                                                 title="Copier le script"
+                                               >
+                                                  <Copy className="size-3.5" />
+                                               </button>
+                                            </div>
+                                         </div>
+
+                                         {/* Aperçu du Hook */}
+                                         {m.script_data.script && m.script_data.script[0] && (
+                                           <div className="bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/60 p-4 rounded-xl">
+                                              <p className="text-[9px] font-bold text-violet-500 uppercase tracking-widest mb-1.5">Accroche (Hook)</p>
+                                              <p className="text-xs font-semibold text-gray-800 dark:text-gray-200 italic leading-relaxed">
+                                                 "{m.script_data.script[0].audio}"
+                                              </p>
                                            </div>
-                                           <div>
-                                              <p className="text-xs font-black text-slate-900 uppercase tracking-widest">Score Viral IA</p>
-                                              <p className="text-[10px] text-slate-400 font-medium">Estimé pour la niche</p>
-                                           </div>
-                                        </div>
-                                        
-                                        <div className="flex items-center gap-2">
-                                           <button
-                                             onClick={() => {
-                                               const blocks = m.script_data.script || []
-                                               const text = blocks.map((b: any) => b.audio).join('\n\n')
-                                               navigator.clipboard.writeText(text)
-                                               toast.success("Script complet copié !")
-                                             }}
-                                             className="p-2 hover:bg-slate-50 border border-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
-                                             title="Copier le script"
-                                           >
-                                              <Copy className="size-3.5" />
-                                           </button>
-                                        </div>
-                                     </div>
+                                         )}
 
-                                     {/* Aperçu du Hook */}
-                                     {m.script_data.script && m.script_data.script[0] && (
-                                       <div className="bg-slate-50/50 border border-slate-100/50 p-4 rounded-2xl">
-                                          <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1.5">Accroche (Hook)</p>
-                                          <p className="text-xs font-bold text-slate-800 italic leading-relaxed">
-                                             "{m.script_data.script[0].audio}"
-                                          </p>
-                                       </div>
-                                     )}
+                                         {/* Commandes Storyboard, Visualiser, Prompteur */}
+                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+                                            <button
+                                              onClick={() => {
+                                                setModalBlocks(m.script_data.script || [])
+                                                setOpenModal("full")
+                                              }}
+                                              className="h-9 px-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg font-bold text-[10px] uppercase tracking-widest hover:bg-gray-800 dark:hover:bg-gray-100 transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                                            >
+                                               <Layout className="size-3" /> Visualiser
+                                            </button>
 
-                                     {/* Commandes Storyboard, Visualiser, Prompteur */}
-                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
-                                        <button
-                                          onClick={() => {
-                                            setModalBlocks(m.script_data.script || [])
-                                            setOpenModal("full")
-                                          }}
-                                          className="h-10 px-3 bg-slate-900 text-white rounded-xl font-bold text-[9px] uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-1.5 shadow-xs"
-                                        >
-                                           <Layout className="size-3" /> Visualiser
-                                        </button>
+                                            <button
+                                              onClick={() => {
+                                                setModalBlocks(m.script_data.script || [])
+                                                setOpenModal("tech")
+                                              }}
+                                              className="h-9 px-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-700 dark:text-gray-300 rounded-lg font-bold text-[10px] uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                                            >
+                                               <Video className="size-3 text-amber-500" /> Storyboard
+                                            </button>
 
-                                        <button
-                                          onClick={() => {
-                                            setModalBlocks(m.script_data.script || [])
-                                            setOpenModal("tech")
-                                          }}
-                                          className="h-10 px-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-[9px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-1.5 shadow-xs"
-                                        >
-                                           <Video className="size-3 text-amber-500" /> Storyboard
-                                        </button>
+                                            <button
+                                              onClick={() => {
+                                                 setModalBlocks(m.script_data.script || [])
+                                                 setOpenModal("full")
+                                                 toast.info("Cliquez sur 'Mode Prompteur' en haut à droite du modal pour démarrer !");
+                                              }}
+                                              className="h-9 px-3 bg-violet-100 dark:bg-violet-500/20 border border-violet-200 dark:border-violet-500/30 text-violet-600 dark:text-violet-400 rounded-lg font-bold text-[10px] uppercase tracking-widest hover:bg-violet-200 dark:hover:bg-violet-500/30 transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                                            >
+                                               <Zap className="size-3" /> Prompteur
+                                            </button>
+                                         </div>
 
-                                        <button
-                                          onClick={() => {
-                                             setModalBlocks(m.script_data.script || [])
-                                             setOpenModal("full")
-                                             toast.info("Cliquez sur 'Mode Prompteur' en haut à droite du modal pour démarrer !");
-                                          }}
-                                          className="h-10 px-3 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-xl font-bold text-[9px] uppercase tracking-widest hover:bg-indigo-100 transition-all flex items-center justify-center gap-1.5 shadow-xs"
-                                        >
-                                           <Zap className="size-3 text-indigo-500" /> Prompteur
-                                        </button>
-                                     </div>
-
-                                  </CardContent>
-                               </Card>
-                             )}
+                                      </CardContent>
+                                   </Card>
+                                 )}
                           </div>
 
                           {isUser && (
-                            <div className="size-9 shrink-0 rounded-xl bg-slate-900 border border-slate-800 text-indigo-400 flex items-center justify-center text-xs font-black shadow-md">
+                            <div className="size-9 shrink-0 rounded-full bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-violet-500 flex items-center justify-center text-xs font-bold shadow-sm">
                                ME
                             </div>
                           )}
@@ -1044,12 +1046,12 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                    
                    {submittingMessage && (
                      <div className="flex gap-4 justify-start animate-in fade-in duration-300">
-                        <div className="size-9 shrink-0 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-xs font-black animate-pulse">
+                        <div className="size-9 shrink-0 rounded-full bg-violet-600 text-white flex items-center justify-center text-xs font-bold animate-pulse shadow-sm">
                            VM
                         </div>
-                        <div className="bg-slate-100/60 border border-slate-100 p-4 rounded-2xl rounded-tl-xs flex items-center gap-2 shadow-inner">
-                           <Loader2 className="size-4 text-indigo-600 animate-spin" />
-                           <span className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">L'IA analyse et écrit...</span>
+                        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 p-4 rounded-xl rounded-tl-sm flex items-center gap-2 shadow-sm">
+                           <Loader2 className="size-4 text-violet-500 animate-spin" />
+                           <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest animate-pulse">L'IA analyse et écrit...</span>
                         </div>
                      </div>
                    )}
@@ -1061,13 +1063,13 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
 
           {/* Saisie de message et envoi (Bas) */}
           {activeDiscussionId && (
-            <div className="p-4 border-t border-slate-100 bg-white sticky bottom-0 z-10 space-y-3">
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700/60 bg-white dark:bg-gray-800 sticky bottom-0 z-10 space-y-3">
                
                {/* 1. Attachment Preview Panel */}
                {attachedFile && (
-                 <div className="flex items-center justify-between gap-3 p-3 bg-indigo-50/50 border border-indigo-100/40 rounded-2xl animate-in slide-in-from-bottom-2 duration-300">
+                 <div className="flex items-center justify-between gap-3 p-3 bg-violet-50 dark:bg-violet-500/10 border border-violet-100 dark:border-violet-500/20 rounded-xl animate-in slide-in-from-bottom-2 duration-300">
                    <div className="flex items-center gap-3 min-w-0">
-                     <div className="size-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                     <div className="size-9 rounded-lg bg-violet-600 text-white flex items-center justify-center shrink-0 shadow-sm">
                        {attachedFile.type === "image" && <ImageIcon className="size-4" />}
                        {attachedFile.type === "video" && <FileVideo className="size-4" />}
                        {attachedFile.type === "audio" && <FileAudio className="size-4" />}
@@ -1075,8 +1077,8 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                        {attachedFile.type === "link" && <Globe className="size-4" />}
                      </div>
                      <div className="min-w-0">
-                       <p className="text-xs font-black truncate max-w-[300px] sm:max-w-[450px] text-slate-800">{attachedFile.name}</p>
-                       <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider">
+                       <p className="text-xs font-bold truncate max-w-[300px] sm:max-w-[450px] text-gray-800 dark:text-gray-100">{attachedFile.name}</p>
+                       <p className="text-[10px] text-violet-500 font-bold uppercase tracking-wider">
                          {attachedFile.type === "link" ? "Lien internet rattaché" : `Fichier ${attachedFile.type} (${(attachedFile.size / (1024 * 1024)).toFixed(2)} Mo)`}
                        </p>
                      </div>
@@ -1084,7 +1086,7 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                    <button 
                      type="button"
                      onClick={() => setAttachedFile(null)}
-                     className="p-1.5 hover:bg-slate-200/50 text-slate-400 hover:text-slate-600 rounded-xl transition-colors shrink-0"
+                     className="p-1.5 hover:bg-white/50 dark:hover:bg-gray-700/50 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg transition-colors shrink-0"
                      title="Supprimer la pièce jointe"
                    >
                      <X className="size-4" />
@@ -1094,7 +1096,7 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
 
                {/* 2. Link Paste Popover Input */}
                {showLinkInput && (
-                 <div className="flex gap-2 p-2 bg-slate-50 border border-slate-100 rounded-2xl animate-in slide-in-from-bottom-2 duration-300">
+                 <div className="flex gap-2 p-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-xl animate-in slide-in-from-bottom-2 duration-300">
                    <input 
                      value={linkInputVal}
                      onChange={(e) => setLinkInputVal(e.target.value)}
@@ -1105,20 +1107,20 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                          handleAttachLink();
                        }
                      }}
-                     className="flex-1 bg-transparent border-0 px-3 py-2 text-xs font-medium text-slate-800 outline-hidden"
+                     className="flex-1 bg-transparent border-0 px-3 py-2 text-xs font-medium text-gray-800 dark:text-gray-100 outline-hidden"
                      autoFocus
                    />
                    <button
                      type="button"
                      onClick={handleAttachLink}
-                     className="px-4 py-2 bg-indigo-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all shadow-sm shadow-indigo-100"
+                     className="px-4 py-2 bg-violet-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg hover:bg-violet-700 transition-all shadow-sm"
                    >
                      Attacher
                    </button>
                    <button
                      type="button"
                      onClick={() => { setShowLinkInput(false); setLinkInputVal(""); }}
-                     className="p-2 text-slate-400 hover:text-slate-600 rounded-xl"
+                     className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg"
                    >
                      <X className="size-4" />
                    </button>
@@ -1130,12 +1132,12 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                    e.preventDefault()
                    handleSendMessage()
                  }}
-                 className="flex gap-2.5 bg-slate-50/80 border border-slate-100 p-2 pr-2.5 rounded-2xl shadow-inner focus-within:bg-white focus-within:border-indigo-500/30 transition-all items-center"
+                 className="flex gap-2.5 bg-gray-50/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700/60 p-2 pr-2.5 rounded-xl shadow-sm focus-within:bg-white dark:focus-within:bg-gray-800 focus-within:border-violet-500/50 transition-all items-center"
                >
                   {isRecording ? (
-                    <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-2 bg-rose-50 border border-rose-100 rounded-xl">
-                      <div className="flex items-center gap-3 text-rose-600 font-bold text-xs">
-                        <span className="size-2.5 rounded-full bg-rose-600 animate-ping shrink-0" />
+                    <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-2 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-lg">
+                      <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400 font-bold text-xs">
+                        <span className="size-2.5 rounded-full bg-rose-600 dark:bg-rose-400 animate-ping shrink-0" />
                         <span className="truncate">Enregistrement ({formatTime(recordingTime)})...</span>
                       </div>
                       <button 
@@ -1160,7 +1162,7 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                           : "Décrivez votre concept, ou attachez un fichier/lien..."
                       }
                       disabled={submittingMessage || transcribing || uploadingFile}
-                      className="flex-1 min-w-0 bg-transparent border-0 px-3 py-3 text-xs md:text-sm font-medium text-slate-900 focus:ring-0 outline-hidden placeholder:text-slate-300"
+                      className="flex-1 min-w-0 bg-transparent border-0 px-3 py-2 text-sm font-medium text-gray-800 dark:text-gray-100 focus:ring-0 outline-hidden placeholder:text-gray-400 dark:placeholder:text-gray-500"
                     />
                   )}
                   
@@ -1176,11 +1178,11 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                       />
                       <label 
                         htmlFor="chat-file-upload"
-                        className={`h-10 w-10 shrink-0 border border-slate-200 hover:border-indigo-500/20 rounded-xl flex items-center justify-center transition-all cursor-pointer ${uploadingFile ? 'bg-indigo-50 text-indigo-600 animate-pulse' : 'bg-white text-slate-500 hover:text-slate-900'}`}
+                        className={`h-10 w-10 shrink-0 border border-gray-200 dark:border-gray-700/60 hover:border-violet-500/20 rounded-lg flex items-center justify-center transition-all cursor-pointer ${uploadingFile ? 'bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 animate-pulse' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'}`}
                         title="Importer un fichier (image < 5Mo, autre < 10Mo)"
                       >
                         {uploadingFile ? (
-                          <Loader2 className="size-4 animate-spin text-indigo-600" />
+                          <Loader2 className="size-4 animate-spin text-violet-600" />
                         ) : (
                           <Paperclip className="size-4" />
                         )}
@@ -1191,7 +1193,7 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                         type="button"
                         onClick={() => setShowLinkInput(!showLinkInput)}
                         disabled={submittingMessage || transcribing || uploadingFile}
-                        className={`h-10 w-10 shrink-0 border border-slate-200 hover:border-indigo-500/20 rounded-xl flex items-center justify-center transition-all cursor-pointer ${showLinkInput ? 'bg-indigo-50 text-indigo-600' : 'bg-white text-slate-500 hover:text-slate-900'}`}
+                        className={`h-10 w-10 shrink-0 border border-gray-200 dark:border-gray-700/60 hover:border-violet-500/20 rounded-lg flex items-center justify-center transition-all cursor-pointer ${showLinkInput ? 'bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'}`}
                         title="Attacher un lien internet"
                       >
                         <Link2 className="size-4" />
@@ -1202,11 +1204,11 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                         type="button"
                         onClick={startRecording}
                         disabled={submittingMessage || transcribing || uploadingFile}
-                        className={`h-10 w-10 shrink-0 border border-slate-200 hover:border-indigo-500/20 rounded-xl flex items-center justify-center transition-all cursor-pointer ${transcribing ? 'bg-indigo-50 text-indigo-600' : 'bg-white text-slate-500 hover:text-slate-900'}`}
+                        className={`h-10 w-10 shrink-0 border border-gray-200 dark:border-gray-700/60 hover:border-violet-500/20 rounded-lg flex items-center justify-center transition-all cursor-pointer ${transcribing ? 'bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'}`}
                         title="Enregistrer un message vocal"
                       >
                         {transcribing ? (
-                          <Loader2 className="size-4 animate-spin text-indigo-600" />
+                          <Loader2 className="size-4 animate-spin text-violet-600" />
                         ) : (
                           <Mic className="size-4" />
                         )}
@@ -1217,7 +1219,7 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
                   <button 
                     type="submit"
                     disabled={submittingMessage || transcribing || uploadingFile || (!inputMessage.trim() && !attachedFile)}
-                    className="h-10 w-10 shrink-0 bg-slate-900 hover:bg-indigo-600 disabled:bg-slate-100 disabled:text-slate-300 text-white rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-md"
+                    className="h-10 w-10 shrink-0 bg-gray-900 dark:bg-white hover:bg-violet-600 dark:hover:bg-violet-500 disabled:bg-gray-200 disabled:dark:bg-gray-700 disabled:text-gray-400 text-white dark:text-gray-900 rounded-lg flex items-center justify-center transition-all cursor-pointer shadow-sm"
                   >
                      <Send className="size-4" />
                   </button>
@@ -1238,9 +1240,9 @@ Rédige-moi un script 100% original de A à Z en appliquant les règles d'or d'h
       {/* Auth Modal */}
       {showAuthModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setShowAuthModal(false)} />
-          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 animate-in zoom-in-95 duration-300">
-            <button onClick={() => setShowAuthModal(false)} className="absolute top-6 right-6 text-slate-400"><X /></button>
+          <div className="absolute inset-0 bg-gray-900/60 dark:bg-black/60 backdrop-blur-md" onClick={() => setShowAuthModal(false)} />
+          <div className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 animate-in zoom-in-95 duration-300">
+            <button onClick={() => setShowAuthModal(false)} className="absolute top-6 right-6 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X /></button>
             <AuthForm />
           </div>
         </div>
@@ -1298,7 +1300,7 @@ function ScriptModals({ isOpen, onClose, blocks }: any) {
            <div className="space-y-20 pb-[80vh]">
               {blocks.map((block: any, i: number) => (
                 <div key={i} className="space-y-6">
-                   <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em]">
+                   <div className="text-[10px] font-bold text-violet-400 uppercase tracking-[0.3em]">
                       {(block.type || '').replace(/_/g, ' ')}
                    </div>
                    <p className="text-4xl md:text-6xl font-bold leading-tight">
@@ -1318,17 +1320,17 @@ function ScriptModals({ isOpen, onClose, blocks }: any) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={onClose} />
+      <div className="absolute inset-0 bg-gray-900/60 dark:bg-black/60 backdrop-blur-md" onClick={onClose} />
       
-      <div className="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-300">
-         <div className="p-6 md:p-8 border-b flex items-center justify-between bg-white sticky top-0 z-10">
-            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+      <div className="relative bg-white dark:bg-gray-800 w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden flex flex-col shadow-xl animate-in zoom-in-95 duration-300">
+         <div className="p-6 md:p-8 border-b border-gray-200 dark:border-gray-700/60 flex items-center justify-between bg-white dark:bg-gray-800 sticky top-0 z-10">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 uppercase tracking-tight">
                {isOpen === 'full' ? 'Script Complet' : 'Découpage Technique'}
             </h3>
             <div className="flex items-center gap-3">
                <button 
                  onClick={() => setIsTeleprompter(true)}
-                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100"
+                 className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-xs font-bold hover:bg-violet-700 transition-colors shadow-sm"
                >
                   <Video className="size-3.5" /> Mode Prompteur
                </button>
@@ -1338,12 +1340,12 @@ function ScriptModals({ isOpen, onClose, blocks }: any) {
                     navigator.clipboard.writeText(text)
                     toast.success("Copié !")
                  }}
-                 className="hidden sm:flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-100 transition-all shadow-sm"
+                 className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-600 transition-all shadow-sm"
                >
                   <Copy className="size-3.5" /> Copier
                </button>
-               <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
-                  <X className="size-6 text-slate-400" />
+               <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                  <X className="size-6 text-gray-400 dark:text-gray-500" />
                </button>
             </div>
          </div>
@@ -1353,10 +1355,10 @@ function ScriptModals({ isOpen, onClose, blocks }: any) {
                <div className="space-y-8 max-w-2xl mx-auto">
                   {blocks.map((block: any, i: number) => (
                      <div key={i} className="space-y-3">
-                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+                        <span className="text-[10px] font-bold text-violet-500 uppercase tracking-widest">
                            {(block.type || '').replace(/_/g, ' ')}
                         </span>
-                        <p className="text-lg md:text-xl font-medium text-slate-800 leading-relaxed">
+                        <p className="text-lg md:text-xl font-medium text-gray-800 dark:text-gray-200 leading-relaxed">
                            {block.audio}
                         </p>
                      </div>
@@ -1365,24 +1367,24 @@ function ScriptModals({ isOpen, onClose, blocks }: any) {
             ) : (
                <div className="space-y-6">
                   {blocks.map((block: any, i: number) => (
-                     <Card key={i} className="border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                     <Card key={i} className="border border-gray-200 dark:border-gray-700/60 bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm">
                         <CardContent className="p-6 md:p-8 flex flex-col md:flex-row gap-8">
                            <div className="w-full md:w-36 shrink-0 flex flex-row md:flex-col items-center md:items-start gap-3">
-                              <div className={`size-12 rounded-xl ${block.type === 'HOOK' ? 'bg-indigo-600' : 'bg-slate-900'} flex items-center justify-center text-white shrink-0`}>
+                              <div className={`size-12 rounded-xl ${block.type === 'HOOK' ? 'bg-violet-600' : 'bg-gray-900 dark:bg-gray-700'} flex items-center justify-center text-white shrink-0`}>
                                  {block.type === 'HOOK' ? <Zap className="size-5" /> : <Play className="size-5" />}
                               </div>
-                              <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest break-words max-w-full leading-normal">
+                              <span className="text-[10px] font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest break-words max-w-full leading-normal">
                                  {(block.type || '').replace(/_/g, ' ')}
                               </span>
                            </div>
                            <div className="flex-1 grid md:grid-cols-2 gap-8">
                               <div className="space-y-3">
-                                 <div className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Audio</div>
-                                 <p className="text-slate-700 font-medium leading-relaxed">{block.audio}</p>
+                                 <div className="text-[10px] font-bold text-violet-500 uppercase tracking-widest">Audio</div>
+                                 <p className="text-gray-700 dark:text-gray-300 font-medium leading-relaxed">{block.audio}</p>
                               </div>
                               <div className="space-y-3">
-                                 <div className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Visuel suggéré</div>
-                                 <p className="text-slate-500 text-sm leading-relaxed">{block.visual}</p>
+                                 <div className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">Visuel suggéré</div>
+                                 <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{block.visual}</p>
                               </div>
                            </div>
                         </CardContent>
