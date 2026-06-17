@@ -2,19 +2,10 @@ import { NextResponse } from "next/server";
 import { scrapeVideoData, getUniqueVideoId } from "@/lib/scraper";
 
 const COBALT_INSTANCES = [
-  "https://nuko-c.meowing.de",
-  "https://cobalt.alpha.wolfy.love",
-  "https://cobalt.omega.wolfy.love",
-  "https://grapefruit.clxxped.lol",
-  "https://apicobalt.mgytr.top",
-  "https://cobaltapi.squair.xyz",
   "https://api.cobalt.blackcat.sweeux.org",
   "https://cobaltapi.kittycat.boo",
   "https://dog.kittycat.boo",
-  "https://lime.clxxped.lol",
-  "https://melon.clxxped.lol",
-  "https://fox.kittycat.boo",
-  "https://api.qwkuns.me"
+  "https://fox.kittycat.boo"
 ];
 
 const INVIDIOUS_INSTANCES = [
