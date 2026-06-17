@@ -11,12 +11,14 @@ import {
   ArrowRight,
   Sparkles,
   Link as LinkIcon,
-  RotateCw
+  RotateCw,
+  Download
 } from "lucide-react"
 import { toast } from "sonner"
 export default function TranscriptionPage() {
   const [url, setUrl] = useState("")
   const [loading, setLoading] = useState(false)
+  const [downloadLoading, setDownloadLoading] = useState(false)
   const [transcript, setTranscript] = useState("")
   const [copied, setCopied] = useState(false)
   const [bilingual, setBilingual] = useState<{ original: string, french: string, isBilingual: boolean }>({
@@ -67,6 +69,36 @@ export default function TranscriptionPage() {
       toast.error("Erreur : " + error.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDownload = async () => {
+    if (!url) return
+    setDownloadLoading(true)
+    try {
+      const res = await fetch("/api/download-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url })
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      
+      if (data.downloadUrl) {
+        const link = document.createElement("a")
+        link.href = data.downloadUrl
+        link.setAttribute("download", data.filename || "video.mp4")
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        toast.success("Téléchargement lancé !")
+      } else {
+        throw new Error("Lien de téléchargement indisponible.")
+      }
+    } catch (error: any) {
+      toast.error("Erreur lors du téléchargement : " + error.message)
+    } finally {
+      setDownloadLoading(false)
     }
   }
 
@@ -165,11 +197,11 @@ export default function TranscriptionPage() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+                  <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                     <button 
                       onClick={() => handleTranscribe(true)}
                       disabled={loading}
-                      className="px-5 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                      className="flex-1 sm:flex-initial px-5 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
                     >
                       <RotateCw className="size-3.5" />
                       Réanalyser
@@ -177,10 +209,19 @@ export default function TranscriptionPage() {
 
                     <button 
                       onClick={handleCopy}
-                      className={`px-5 py-3 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${copied ? 'bg-emerald-500 text-white' : 'bg-gray-900 dark:bg-gray-700 text-white hover:bg-violet-600 shadow-sm'}`}
+                      className={`flex-1 sm:flex-initial px-5 py-3 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${copied ? 'bg-emerald-500 text-white' : 'bg-gray-900 dark:bg-gray-700 text-white hover:bg-violet-600 shadow-sm'}`}
                     >
                       {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
                       {copied ? 'Copié' : 'Copier'}
+                    </button>
+
+                    <button 
+                      onClick={handleDownload}
+                      disabled={downloadLoading}
+                      className="flex-1 sm:flex-initial px-5 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                    >
+                      {downloadLoading ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+                      {downloadLoading ? 'Téléchargement...' : 'Télécharger'}
                     </button>
                   </div>
                 </div>

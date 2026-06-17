@@ -382,8 +382,8 @@ export default function VoiceProfilePage() {
                Apprenez à ViralMind comment vous écrivez. Donnez-lui vos meilleurs scripts, emails ou textes, et l'IA imitera votre ton, votre vocabulaire et votre énergie.
             </p>
          </div>
-         <div className="inline-flex items-center gap-2 px-3 py-1 bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 rounded-full text-xs font-bold uppercase tracking-wider border border-violet-100 dark:border-violet-900/50 self-start md:self-center">
-            <Sparkles className="size-3.5" /> Entraînement IA
+         <div className="inline-flex items-center gap-2 px-3 py-1 bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 rounded-full text-xs font-bold uppercase tracking-wider border border-violet-100 dark:border-violet-900/50 self-start md:self-center whitespace-nowrap">
+            <Sparkles className="size-3.5 shrink-0" /> Entraînement IA
          </div>
       </div>
 
