@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 import { scrapeVideoData, getUniqueVideoId } from "@/lib/scraper";
 
+const COBALT_INSTANCES = [
+  "https://api.cobalt.blackcat.sweeux.org",
+  "https://cobaltapi.kittycat.boo",
+  "https://dog.kittycat.boo",
+  "https://fox.kittycat.boo",
+  "https://api.cobalt.liubquanti.click",
+  "https://rue-cobalt.xenon.zone",
+  "https://cobaltapi.cjs.nz"
+];
+
 export async function POST(req: Request) {
   try {
     const { url, platform } = await req.json();
@@ -15,64 +25,44 @@ export async function POST(req: Request) {
     const detectedPlatform = isYT ? "youtube" : (isIG ? "instagram" : (isTT ? "tiktok" : platform));
     let directUrl = "";
 
-    // 1. Essayer d'abord cobalt.tools car il fonctionne extrêmement bien et résout la plupart des plateformes
-    try {
-      const res = await fetch("https://api.cobalt.tools/api/json", {
-        method: "POST",
-        headers: {
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ url, filenamePattern: "basic" })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.url) {
-          directUrl = data.url;
+    // 1. Essayer les instances Cobalt publiques fonctionnelles sans Turnstile
+    for (const instance of COBALT_INSTANCES) {
+      try {
+        console.log(`[DOWNLOAD] Tentative de récupération sur : ${instance}`);
+        const res = await fetch(instance, {
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+          },
+          body: JSON.stringify({ url, filenamePattern: "basic" }),
+          signal: AbortSignal.timeout(6000) // Timeout de 6s par instance pour éviter de bloquer
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url) {
+            directUrl = data.url;
+            console.log(`[DOWNLOAD] Succès avec l'instance : ${instance}`);
+            break;
+          }
         }
+      } catch (err: any) {
+        console.warn(`[DOWNLOAD] Échec de l'instance Cobalt ${instance} :`, err.message);
       }
-    } catch (err: any) {
-      console.error("Cobalt downloader failed:", err.message);
     }
 
-    // 2. Si cobalt échoue, utiliser le scraper interne pour TikTok et Instagram
+    // 2. Si Cobalt échoue, utiliser le scraper interne pour TikTok et Instagram
     if (!directUrl && (detectedPlatform === "tiktok" || detectedPlatform === "instagram")) {
       try {
+        console.log(`[DOWNLOAD] Fallback vers le scraper interne pour ${detectedPlatform}`);
         const scraped = await scrapeVideoData(url);
         if (scraped.audioUrl) {
           directUrl = scraped.audioUrl;
         }
       } catch (err: any) {
-        console.error(`Scraper fallback failed for ${detectedPlatform}:`, err.message);
-      }
-    }
-
-    // 3. Si YouTube et tout le reste a échoué, essayer RapidAPI YouTube Downloader
-    if (!directUrl && detectedPlatform === "youtube") {
-      const apiKey = process.env.RAPIDAPI_KEY;
-      if (apiKey) {
-        try {
-          const videoId = getUniqueVideoId(url);
-          if (videoId) {
-            const ytDownhost = "youtube-media-downloader.p.rapidapi.com";
-            const res = await fetch(`https://${ytDownhost}/v2/video/details?videoId=${videoId}`, {
-              headers: {
-                'X-RapidAPI-Key': apiKey,
-                'X-RapidAPI-Host': ytDownhost
-              }
-            });
-            if (res.ok) {
-              const data = await res.json();
-              const items = data.videos?.items || data.videos || [];
-              const format = items.find((item: any) => item.quality === "720p" || item.quality === "1080p") || items[0];
-              if (format?.url) {
-                directUrl = format.url;
-              }
-            }
-          }
-        } catch (err: any) {
-          console.error("RapidAPI YouTube Downloader failed:", err.message);
-        }
+        console.error(`[DOWNLOAD] Échec du scraper interne :`, err.message);
       }
     }
 
@@ -81,7 +71,7 @@ export async function POST(req: Request) {
     }
 
     const filename = `${detectedPlatform}_video_${Date.now()}.mp4`;
-    // Retourner un lien proxy vers notre propre API pour forcer le téléchargement
+    // Proxy URL locale
     const proxyUrl = `/api/download-video?proxyUrl=${encodeURIComponent(directUrl)}&filename=${encodeURIComponent(filename)}`;
 
     return NextResponse.json({ downloadUrl: proxyUrl, filename });
