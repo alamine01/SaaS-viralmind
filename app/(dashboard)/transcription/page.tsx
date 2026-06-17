@@ -101,21 +101,28 @@ export default function TranscriptionPage() {
         let resolvedUrl = "";
         const promises = COBALT_INSTANCES.map(async (instance) => {
           try {
+            console.log(`[CLIENT-DOWNLOAD] Tente Cobalt: ${instance} pour URL: ${targetUrl}`);
             const cobRes = await fetch(instance, {
               method: "POST",
               headers: {
                 "Accept": "application/json",
                 "Content-Type": "application/json"
               },
-              body: JSON.stringify({ url: targetUrl, filenamePattern: "basic" })
+              body: JSON.stringify({ url: targetUrl })
             });
             if (cobRes.ok) {
               const cobData = await cobRes.json();
               if (cobData.url) {
+                console.log(`[CLIENT-DOWNLOAD] Succès Cobalt ${instance} : ${cobData.url}`);
                 return { url: cobData.url, filename: cobData.filename };
               }
+            } else {
+              const errText = await cobRes.text();
+              console.warn(`[CLIENT-DOWNLOAD] Échec Cobalt ${instance} avec status ${cobRes.status}: ${errText}`);
             }
-          } catch (e) {}
+          } catch (e: any) {
+            console.error(`[CLIENT-DOWNLOAD] Erreur Cobalt ${instance}:`, e);
+          }
           throw new Error("failed");
         });
 
@@ -123,8 +130,8 @@ export default function TranscriptionPage() {
           const result = await Promise.any(promises);
           resolvedUrl = result.url;
           if (result.filename) filename = result.filename;
-        } catch (e) {
-          console.error("Toutes les requêtes Cobalt du navigateur ont échoué.");
+        } catch (e: any) {
+          console.error("Toutes les requêtes Cobalt du navigateur ont échoué.", e);
         }
         
         if (resolvedUrl) {

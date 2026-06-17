@@ -163,10 +163,16 @@ export async function POST(req: Request) {
           if (res.ok) {
             const data = await res.json();
             if (data.url) {
+              console.log(`[DOWNLOAD] Cobalt ${instance} SUCCEEDED. URL: ${data.url}`);
               return data.url;
             }
+          } else {
+            const text = await res.text();
+            console.warn(`[DOWNLOAD] Cobalt ${instance} failed with status ${res.status}: ${text}`);
           }
-        } catch (err) {}
+        } catch (err: any) {
+          console.warn(`[DOWNLOAD] Cobalt ${instance} error: ${err.message}`);
+        }
         throw new Error("failed");
       });
 
