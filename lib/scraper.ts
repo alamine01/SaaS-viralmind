@@ -155,8 +155,36 @@ export async function scrapeVideoData(url: string) {
             throw new Error(`API B non-ok: ${response.statusText}`);
           }
         } catch (errorB) {
-          console.error("DEBUG: Les deux API Instagram A et B ont échoué", errorB);
-          throw new Error("Impossible de récupérer les données Instagram : les deux serveurs Scraper ont échoué.");
+          console.warn("DEBUG: API Instagram B (Stable API) également échouée. Passage au secours local youtube-dl-exec...", errorB);
+          try {
+            const youtubedl = require("youtube-dl-exec");
+            const output = await youtubedl(url, {
+              dumpSingleJson: true,
+              noWarnings: true,
+              noCheckCertificates: true,
+            }) as any;
+            
+            if (output) {
+              console.log("DEBUG: Secours youtube-dl-exec Instagram réussi !");
+              return {
+                title: output.description || output.title || "Reel Instagram",
+                transcript: output.description || output.title || "Analyse basée sur le contenu visuel.",
+                thumbnail: output.thumbnail || "",
+                niche: output.uploader || "Instagram Content",
+                views: output.view_count || 0,
+                likes: output.like_count || 0,
+                comments: output.comment_count || 0,
+                followers: 0,
+                videoId: output.id || url.split("/").filter(Boolean).pop(),
+                finalUrl: url,
+                audioUrl: output.url
+              };
+            }
+            throw new Error("Aucun résultat retourné par le secours local.");
+          } catch (errorC: any) {
+            console.error("DEBUG: Le secours youtube-dl-exec Instagram a également échoué:", errorC.message);
+            throw new Error("Impossible de récupérer les données Instagram : les deux serveurs Scraper et le secours local ont échoué.");
+          }
         }
       }
 
@@ -214,65 +242,98 @@ export async function scrapeVideoData(url: string) {
       };
     } else {
       // TikTok Logic - Restauration de la logique complète
-      const host = "tiktok-video-no-watermark2.p.rapidapi.com";
-      const apiUrl = `https://${host}/?url=${encodeURIComponent(finalUrl)}`;
+      try {
+        const host = "tiktok-video-no-watermark2.p.rapidapi.com";
+        const apiUrl = `https://${host}/?url=${encodeURIComponent(finalUrl)}`;
 
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'X-RapidAPI-Key': apiKey || "",
-          'X-RapidAPI-Host': host
-        }
-      });
-
-      const data = await response.json();
-      const videoInfo = data.data || data;
-      const realId = getUniqueVideoId(finalUrl) || videoInfo.aweme_id || videoInfo.id || videoInfo.video_id;
-      
-      // Recherche exhaustive des followers TikTok
-      let followersCount = videoInfo.author?.follower_count || 
-                           videoInfo.author?.followerCount || 
-                           videoInfo.author?.followers || 
-                           videoInfo.author_stats?.followerCount || 
-                           videoInfo.author_stats?.follower_count || 
-                           videoInfo.stats?.followerCount || 0;
-
-      // Si toujours à 0, on tente l'appel secondaire pour les infos de l'utilisateur
-      if (followersCount === 0 && videoInfo.author?.unique_id) {
-        try {
-          const userApiUrl = `https://${host}/user/info?unique_id=${videoInfo.author.unique_id}`;
-          const userResponse = await fetch(userApiUrl, {
-            method: 'GET',
-            headers: { 'X-RapidAPI-Key': apiKey || "", 'X-RapidAPI-Host': host }
-          });
-          if (userResponse.ok) {
-            const userData = await userResponse.json();
-            const stats = userData.data?.stats || userData.data || {};
-            followersCount = stats.followerCount || stats.follower_count || stats.followers || 0;
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'X-RapidAPI-Key': apiKey || "",
+            'X-RapidAPI-Host': host
           }
-        } catch (e) {
-          console.error("TikTok secondary followers fetch failed", e);
+        });
+
+        const data = await response.json();
+        const videoInfo = data.data || data;
+        const realId = getUniqueVideoId(finalUrl) || videoInfo.aweme_id || videoInfo.id || videoInfo.video_id;
+        
+        // Recherche exhaustive des followers TikTok
+        let followersCount = videoInfo.author?.follower_count || 
+                             videoInfo.author?.followerCount || 
+                             videoInfo.author?.followers || 
+                             videoInfo.author_stats?.followerCount || 
+                             videoInfo.author_stats?.follower_count || 
+                             videoInfo.stats?.followerCount || 0;
+
+        // Si toujours à 0, on tente l'appel secondaire pour les infos de l'utilisateur
+        if (followersCount === 0 && videoInfo.author?.unique_id) {
+          try {
+            const userApiUrl = `https://${host}/user/info?unique_id=${videoInfo.author.unique_id}`;
+            const userResponse = await fetch(userApiUrl, {
+              method: 'GET',
+              headers: { 'X-RapidAPI-Key': apiKey || "", 'X-RapidAPI-Host': host }
+            });
+            if (userResponse.ok) {
+              const userData = await userResponse.json();
+              const stats = userData.data?.stats || userData.data || {};
+              followersCount = stats.followerCount || stats.follower_count || stats.followers || 0;
+            }
+          } catch (e) {
+            console.error("TikTok secondary followers fetch failed", e);
+          }
+        }
+
+        const captions = videoInfo.v_captions || videoInfo.captions || [];
+        const captionText = Array.isArray(captions) 
+          ? captions.map((c: any) => c.text || c.caption_text).join(" ") 
+          : "";
+
+        return {
+          title: videoInfo.title || videoInfo.description || "Vidéo TikTok",
+          transcript: captionText || videoInfo.description || "Analyse visuelle.",
+          thumbnail: videoInfo.cover || videoInfo.origin_cover || "",
+          niche: videoInfo.author?.nickname || "TikTok Viral",
+          audioUrl: videoInfo.play || videoInfo.music || "", 
+          videoId: realId,
+          finalUrl: finalUrl,
+          views: videoInfo.play_count || videoInfo.view_count || 0,
+          likes: videoInfo.digg_count || 0,
+          comments: videoInfo.comment_count || 0,
+          followers: followersCount
+        };
+      } catch (err: any) {
+        console.warn("DEBUG: API TikTok échouée. Passage au secours local youtube-dl-exec...", err.message);
+        try {
+          const youtubedl = require("youtube-dl-exec");
+          const output = await youtubedl(finalUrl, {
+            dumpSingleJson: true,
+            noWarnings: true,
+            noCheckCertificates: true,
+          }) as any;
+
+          if (output) {
+            console.log("DEBUG: Secours youtube-dl-exec TikTok réussi !");
+            return {
+              title: output.description || output.title || "Vidéo TikTok",
+              transcript: output.description || output.title || "Analyse visuelle.",
+              thumbnail: output.thumbnail || "",
+              niche: output.uploader || "TikTok Viral",
+              audioUrl: output.url || "",
+              videoId: output.id || getUniqueVideoId(finalUrl),
+              finalUrl: finalUrl,
+              views: output.view_count || 0,
+              likes: output.like_count || 0,
+              comments: output.comment_count || 0,
+              followers: 0
+            };
+          }
+          throw new Error("Aucun résultat retourné par le secours local.");
+        } catch (errorC: any) {
+          console.error("DEBUG: Le secours youtube-dl-exec TikTok a également échoué:", errorC.message);
+          throw new Error("Impossible de récupérer les données TikTok : l'API et le secours local ont échoué.");
         }
       }
-
-      const captions = videoInfo.v_captions || videoInfo.captions || [];
-      const captionText = Array.isArray(captions) 
-        ? captions.map((c: any) => c.text || c.caption_text).join(" ") 
-        : "";
-
-      return {
-        title: videoInfo.title || videoInfo.description || "Vidéo TikTok",
-        transcript: captionText || videoInfo.description || "Analyse visuelle.",
-        thumbnail: videoInfo.cover || videoInfo.origin_cover || "",
-        niche: videoInfo.author?.nickname || "TikTok Viral",
-        audioUrl: videoInfo.play || videoInfo.music || "", 
-        videoId: realId,
-        finalUrl: finalUrl,
-        views: videoInfo.play_count || videoInfo.view_count || 0,
-        likes: videoInfo.digg_count || 0,
-        comments: videoInfo.comment_count || 0,
-        followers: followersCount
-      };
     }
   } catch (error: any) {
     console.error("Scraping Error:", error);
