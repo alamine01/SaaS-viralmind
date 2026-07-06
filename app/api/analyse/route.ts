@@ -19,11 +19,35 @@ export async function POST(req: Request) {
 
     // 0. VÉRIFICATION DU CACHE : charger l'analyse si déjà existante pour économiser les quotas
     const trimmedUrl = url.trim();
-    const { data: existingVideo } = await supabase
+    let existingVideo = null;
+    
+    // 1. Essai avec l'URL brute
+    const { data: videoByRaw } = await supabase
       .from("videos")
       .select("*")
-      .eq("url", trimmedUrl)
+      .eq("url", rawUrl.trim())
       .maybeSingle();
+    existingVideo = videoByRaw;
+
+    // 2. Si non trouvé, essai avec l'URL nettoyée (cleanUrl)
+    if (!existingVideo) {
+      const { data: videoByClean } = await supabase
+        .from("videos")
+        .select("*")
+        .eq("url", trimmedUrl)
+        .maybeSingle();
+      existingVideo = videoByClean;
+    }
+
+    // 3. Si toujours non trouvé, recherche partielle (ilike)
+    if (!existingVideo && detectedPlatform !== "youtube") {
+      const { data: videoByLike } = await supabase
+        .from("videos")
+        .select("*")
+        .ilike("url", `%${trimmedUrl}%`)
+        .maybeSingle();
+      existingVideo = videoByLike;
+    }
 
     if (existingVideo && !forceRefresh && existingVideo.transcript && existingVideo.transcript.trim() !== "" && existingVideo.transcript !== "Analyse visuelle." && existingVideo.transcript !== "Transcription non disponible.") {
       // Associer automatiquement la vidéo existante à l'historique de l'utilisateur si nécessaire
@@ -80,7 +104,7 @@ export async function POST(req: Request) {
     }
 
     // 1. SCRAPING : Récupérer les vraies données de la vidéo
-    const scrapedData = await scrapeVideoData(url);
+    const scrapedData = await scrapeVideoData(rawUrl);
     const views = (scrapedData as any).views || 0;
     const scrapedFollowers = (scrapedData as any).followers || 0;
     
@@ -104,10 +128,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const isYT = url.includes("youtube.com") || url.includes("youtu.be");
-    const isIG = url.includes("instagram.com");
+    const isYT = rawUrl.includes("youtube.com") || rawUrl.includes("youtu.be");
+    const isIG = rawUrl.includes("instagram.com");
     const platform = detectedPlatform !== "unknown" ? detectedPlatform : (isYT ? "youtube" : (isIG ? "instagram" : "tiktok"));
-    const analysis = await analyzeVideo(url, scrapedData.title || "Vidéo Virale", cleanTranscript, (scrapedData as any).audioUrl, (scrapedData as any).images);
+    const analysis = await analyzeVideo(rawUrl, scrapedData.title || "Vidéo Virale", cleanTranscript, (scrapedData as any).audioUrl, (scrapedData as any).images);
 
     // Normalisation des patterns pour Supabase (doit être un tableau)
     let patterns = analysis.patterns;
@@ -140,7 +164,7 @@ export async function POST(req: Request) {
         {
           platform,
           title: scrapedData.title || "Analyse Vidéo",
-          url: (scrapedData as any).finalUrl || url, // Sauvegarder l'URL finale (longue)
+          url: (scrapedData as any).finalUrl || rawUrl, // Sauvegarder l'URL finale (longue)
           thumbnail: scrapedData.thumbnail || "",
           niche: scrapedData.niche || "Général",
           transcript: (() => {

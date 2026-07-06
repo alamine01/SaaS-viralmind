@@ -132,18 +132,40 @@ export async function POST(req: Request) {
         const { cleanUrl, platform: detectedPlatform } = getCleanVideoUrl(videoUrlToAnalyze);
         const trimmedUrl = cleanUrl.trim();
 
-        // Vérifier le cache en base de données
-        const { data: existingVideo } = await supabase
+        // Vérifier le cache en base de données de manière robuste
+        let videoData = null;
+
+        // 1. Essai avec l'URL brute
+        const { data: videoByRaw } = await supabase
           .from("videos")
           .select("*")
-          .eq("url", trimmedUrl)
+          .eq("url", videoUrlToAnalyze.trim())
           .maybeSingle();
+        videoData = videoByRaw;
 
-        let videoData = existingVideo;
+        // 2. Si non trouvé, essai avec l'URL nettoyée (cleanUrl)
+        if (!videoData) {
+          const { data: videoByClean } = await supabase
+            .from("videos")
+            .select("*")
+            .eq("url", trimmedUrl)
+            .maybeSingle();
+          videoData = videoByClean;
+        }
+
+        // 3. Si toujours non trouvé, recherche partielle (ilike)
+        if (!videoData && detectedPlatform !== "youtube") {
+          const { data: videoByLike } = await supabase
+            .from("videos")
+            .select("*")
+            .ilike("url", `%${trimmedUrl}%`)
+            .maybeSingle();
+          videoData = videoByLike;
+        }
 
         if (!videoData) {
-          console.log(`[CHAT-SCRAPE] Non trouvé en cache. Démarrage du scraping pour: ${cleanUrl}`);
-          const scrapedData = await scrapeVideoData(cleanUrl);
+          console.log(`[CHAT-SCRAPE] Non trouvé en cache. Démarrage du scraping pour: ${videoUrlToAnalyze}`);
+          const scrapedData = await scrapeVideoData(videoUrlToAnalyze);
           const views = (scrapedData as any).views || 0;
           const scrapedFollowers = (scrapedData as any).followers || 0;
           const effectiveFollowers = scrapedFollowers > 0 ? scrapedFollowers : 0;
@@ -153,10 +175,10 @@ export async function POST(req: Request) {
           const cleanTranscript = (scrapedData.transcript || "").trim();
 
           if (!transcriptQuotaExhausted) {
-            const isYT = cleanUrl.includes("youtube.com") || cleanUrl.includes("youtu.be");
-            const isIG = cleanUrl.includes("instagram.com");
+            const isYT = videoUrlToAnalyze.includes("youtube.com") || videoUrlToAnalyze.includes("youtu.be");
+            const isIG = videoUrlToAnalyze.includes("instagram.com");
             const platform = detectedPlatform !== "unknown" ? detectedPlatform : (isYT ? "youtube" : (isIG ? "instagram" : "tiktok"));
-            const analysis = await analyzeVideo(cleanUrl, scrapedData.title || "Vidéo Virale", cleanTranscript, (scrapedData as any).audioUrl, (scrapedData as any).images);
+            const analysis = await analyzeVideo(videoUrlToAnalyze, scrapedData.title || "Vidéo Virale", cleanTranscript, (scrapedData as any).audioUrl, (scrapedData as any).images);
 
             // Normalisation des patterns
             let patterns = analysis.patterns;
@@ -184,7 +206,7 @@ export async function POST(req: Request) {
                 {
                   platform,
                   title: scrapedData.title || "Analyse Vidéo",
-                  url: (scrapedData as any).finalUrl || cleanUrl,
+                  url: (scrapedData as any).finalUrl || videoUrlToAnalyze,
                   thumbnail: scrapedData.thumbnail || "",
                   niche: scrapedData.niche || "Général",
                   transcript: (() => {
