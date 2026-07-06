@@ -25,7 +25,7 @@ export async function POST(req: Request) {
       .eq("url", trimmedUrl)
       .maybeSingle();
 
-    if (existingVideo && !forceRefresh) {
+    if (existingVideo && !forceRefresh && existingVideo.transcript && existingVideo.transcript.trim() !== "" && existingVideo.transcript !== "Analyse visuelle." && existingVideo.transcript !== "Transcription non disponible.") {
       // Associer automatiquement la vidéo existante à l'historique de l'utilisateur si nécessaire
       const targetUserId = userId || (await supabase.auth.getUser()).data.user?.id;
       if (targetUserId) {
@@ -107,7 +107,7 @@ export async function POST(req: Request) {
     const isYT = url.includes("youtube.com") || url.includes("youtu.be");
     const isIG = url.includes("instagram.com");
     const platform = detectedPlatform !== "unknown" ? detectedPlatform : (isYT ? "youtube" : (isIG ? "instagram" : "tiktok"));
-    const analysis = await analyzeVideo(url, scrapedData.title || "Vidéo Virale", cleanTranscript, (scrapedData as any).audioUrl);
+    const analysis = await analyzeVideo(url, scrapedData.title || "Vidéo Virale", cleanTranscript, (scrapedData as any).audioUrl, (scrapedData as any).images);
 
     // Normalisation des patterns pour Supabase (doit être un tableau)
     let patterns = analysis.patterns;

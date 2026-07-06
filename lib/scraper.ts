@@ -314,7 +314,8 @@ export async function scrapeVideoData(url: string) {
           views: videoInfo.play_count || videoInfo.view_count || 0,
           likes: videoInfo.digg_count || 0,
           comments: videoInfo.comment_count || 0,
-          followers: followersCount
+          followers: followersCount,
+          images: videoInfo.images || []
         };
       } catch (err: any) {
         console.warn("DEBUG: API TikTok échouée. Passage au secours local youtube-dl-exec...", err.message);
@@ -339,7 +340,8 @@ export async function scrapeVideoData(url: string) {
               views: output.view_count || 0,
               likes: output.like_count || 0,
               comments: output.comment_count || 0,
-              followers: 0
+              followers: 0,
+              images: []
             };
           }
           throw new Error("Aucun résultat retourné par le secours local.");

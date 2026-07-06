@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-export const analyzeVideo = async (videoUrl: string, title: string, transcript: string, audioUrl?: string) => {
+export const analyzeVideo = async (videoUrl: string, title: string, transcript: string, audioUrl?: string, images?: string[]) => {
   console.log("DEBUG: GEMINI_API_KEY présent ?", !!process.env.GEMINI_API_KEY);
   
   const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
@@ -27,15 +27,48 @@ export const analyzeVideo = async (videoUrl: string, title: string, transcript: 
         console.warn("ATTENTION: Le fichier semble trop petit pour une vidéo. C'est peut-être une erreur 403 ou 404.");
       }
 
+      let mimeType = videoResp.headers.get('content-type')?.split(';')[0].trim() || 'video/mp4';
+      if (mimeType === 'application/octet-stream') {
+        if (audioUrl.includes('mime_type=audio_mpeg') || audioUrl.includes('.mp3')) {
+          mimeType = 'audio/mpeg';
+        } else {
+          mimeType = 'video/mp4';
+        }
+      }
+      console.log("DEBUG: MimeType final utilisé pour Gemini:", mimeType);
+
       const base64Video = Buffer.from(videoBuffer).toString('base64');
       promptParts.push({
         inlineData: {
           data: base64Video,
-          mimeType: "video/mp4"
+          mimeType: mimeType
         }
       });
     } catch (e) {
       console.error("Failed to fetch video for AI", e);
+    }
+  }
+
+  if (images && images.length > 0) {
+    const imagesToProcess = images.slice(0, 10);
+    console.log(`DEBUG: Tentative de téléchargement de ${imagesToProcess.length} images de diaporama...`);
+    for (let i = 0; i < imagesToProcess.length; i++) {
+      try {
+        const imgResp = await fetch(imagesToProcess[i]);
+        if (imgResp.ok) {
+          const imgBuffer = await imgResp.arrayBuffer();
+          const base64Img = Buffer.from(imgBuffer).toString('base64');
+          const mimeType = imgResp.headers.get('content-type') || 'image/jpeg';
+          promptParts.push({
+            inlineData: {
+              data: base64Img,
+              mimeType: mimeType
+            }
+          });
+        }
+      } catch (e) {
+        console.error(`Failed to fetch image ${i} for AI`, e);
+      }
     }
   }
 
@@ -50,12 +83,13 @@ export const analyzeVideo = async (videoUrl: string, title: string, transcript: 
     - Titre : "${title}"
     - Transcription réelle mot à mot : "${transcript}"
     ${audioUrl ? "- Un fichier vidéo a également été joint pour l'analyse visuelle." : ""}
+    ${images && images.length > 0 ? "- Les images du diaporama (slideshow/carousel) ont été jointes à ce prompt." : ""}
     
     INSTRUCTIONS STRICTES :
     1. RÉPONDS EXCLUSIVEMENT EN FRANÇAIS (sauf pour le champ "original_transcript").
     2. BASE-TOI UNIQUEMENT sur la transcription fournie. Ne complète pas, n'invente pas.
-    3. Si un fichier vidéo est joint, analyse les textes incrustés et le style visuel SANS inventer de dialogue.
-    4. Tous les champs doivent être remplis avec des données extraites de la transcription réelle.
+    3. Si un fichier vidéo ou des images de diaporama sont joints, analyse-les pour en extraire TOUT le texte incrusté (OCR) et l'intégrer fidèlement dans la transcription (champs "full_transcript" et "original_transcript"). Si la transcription textuelle fournie est vide ou contient "Analyse visuelle.", utilise les textes extraits des images pour composer la transcription complète.
+    4. Tous les champs doivent être remplis avec des données extraites de la transcription réelle ou des textes lus sur les images/diapositives.
     
     Réponds au format JSON strict :
     {
