@@ -150,6 +150,13 @@ function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
 
   const fallback = getFallbackGradient()
 
+  const isVertical = 
+    item.platform?.toLowerCase() === "tiktok" || 
+    item.platform?.toLowerCase() === "instagram" ||
+    item.url?.includes("tiktok.com") ||
+    item.url?.includes("instagram.com") ||
+    item.url?.includes("/shorts/");
+
   return (
     <Card
       className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col hover:border-violet-500/50 dark:hover:border-violet-500/50"
@@ -161,11 +168,22 @@ function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
         onMouseLeave={handleMouseLeave}
       >
         {shouldPlay && item.embed_url ? (
-          <iframe
-            src={getHoverEmbedUrl(item.embed_url, item.url, item.platform)}
-            className="size-full border-0 pointer-events-none animate-in fade-in duration-300"
-            allow="autoplay; encrypted-media"
-          />
+          <div className="relative size-full bg-slate-950 flex items-center justify-center overflow-hidden">
+            {thumbnailSrc && (
+              <img
+                src={thumbnailSrc}
+                alt=""
+                className="absolute inset-0 size-full object-cover blur-xl opacity-40 scale-110 pointer-events-none"
+              />
+            )}
+            <iframe
+              src={getHoverEmbedUrl(item.embed_url, item.url, item.platform)}
+              className={`h-full border-0 pointer-events-none animate-in fade-in duration-300 relative z-10 ${
+                isVertical ? "aspect-[9/16]" : "w-full"
+              }`}
+              allow="autoplay; encrypted-media"
+            />
+          </div>
         ) : (
           <>
             {thumbnailSrc && !imageError ? (
@@ -454,14 +472,31 @@ export default function ViralFeedPage() {
               <X className="size-4" />
             </button>
 
-            <div className="aspect-video bg-black">
+            <div className="aspect-video bg-slate-950 relative overflow-hidden flex items-center justify-center">
               {previewVideo.embed_url ? (
-                <iframe
-                  src={`${previewVideo.embed_url}?autoplay=1`}
-                  className="size-full"
-                  allow="autoplay; encrypted-media"
-                  allowFullScreen
-                />
+                <>
+                  {previewVideo.thumbnail && (
+                    <img
+                      src={previewVideo.thumbnail}
+                      alt=""
+                      className="absolute inset-0 size-full object-cover blur-xl opacity-40 scale-110 pointer-events-none"
+                    />
+                  )}
+                  <iframe
+                    src={`${previewVideo.embed_url}?autoplay=1`}
+                    className={`h-full border-0 relative z-10 ${
+                      (previewVideo.platform?.toLowerCase() === "tiktok" || 
+                       previewVideo.platform?.toLowerCase() === "instagram" ||
+                       previewVideo.url?.includes("tiktok.com") ||
+                       previewVideo.url?.includes("instagram.com") ||
+                       previewVideo.url?.includes("/shorts/")) 
+                        ? "aspect-[9/16]" 
+                        : "w-full"
+                    }`}
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen
+                  />
+                </>
               ) : (
                 <div className="size-full flex items-center justify-center text-gray-500">
                   <Play className="size-16" />
