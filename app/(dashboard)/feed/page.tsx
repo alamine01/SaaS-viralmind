@@ -59,11 +59,37 @@ const getScoreLabel = (score: number) => {
 function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
   const [imageError, setImageError] = useState(false)
   const [thumbnailSrc, setThumbnailSrc] = useState(item.thumbnail || "")
+  const [shouldPlay, setShouldPlay] = useState(false)
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     setImageError(false)
     setThumbnailSrc(item.thumbnail || "")
   }, [item])
+
+  const handleMouseEnter = () => {
+    // Debounce to avoid playing videos when scrolling quickly past them
+    hoverTimeoutRef.current = setTimeout(() => {
+      setShouldPlay(true)
+    }, 500)
+  }
+
+  const handleMouseLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+      hoverTimeoutRef.current = null
+    }
+    setShouldPlay(false)
+  }
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleImageError = () => {
     if (imageError) return
@@ -101,33 +127,68 @@ function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
     }
   }
 
+  const getHoverEmbedUrl = (embedUrl: string, url: string, platform: string) => {
+    if (!embedUrl) return ""
+    const isYt = url?.includes("youtube.com") || url?.includes("youtu.be") || platform?.toLowerCase() === "youtube"
+    const isInsta = url?.includes("instagram.com") || platform?.toLowerCase() === "instagram"
+    const isTikTok = url?.includes("tiktok.com") || platform?.toLowerCase() === "tiktok"
+
+    const hasQueryParams = embedUrl.includes("?")
+    const separator = hasQueryParams ? "&" : "?"
+    
+    if (isYt) {
+      return `${embedUrl}${separator}autoplay=1&mute=1&controls=0&modestbranding=1&loop=1`
+    }
+    if (isTikTok) {
+      return `${embedUrl}${separator}autoplay=1&mute=1`
+    }
+    if (isInsta) {
+      return `${embedUrl}${separator}autoplay=1&muted=1`
+    }
+    return `${embedUrl}${separator}autoplay=1&mute=1`
+  }
+
   const fallback = getFallbackGradient()
 
   return (
     <Card
-      className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col"
+      className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col hover:border-violet-500/50 dark:hover:border-violet-500/50"
       onClick={onClick}
     >
-      <div className="relative aspect-video bg-slate-100 overflow-hidden">
-        {thumbnailSrc && !imageError ? (
-          <img
-            src={thumbnailSrc}
-            alt={item.title}
-            onError={handleImageError}
-            className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+      <div 
+        className="relative aspect-video bg-slate-100 overflow-hidden"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {shouldPlay && item.embed_url ? (
+          <iframe
+            src={getHoverEmbedUrl(item.embed_url, item.url, item.platform)}
+            className="size-full border-0 pointer-events-none animate-in fade-in duration-300"
+            allow="autoplay; encrypted-media"
           />
         ) : (
-          <div className={`size-full flex flex-col items-center justify-center p-4 text-center ${fallback.className}`}>
-            {fallback.icon}
-            <span className="text-[10px] font-bold text-white/80 mt-2 line-clamp-1">{item.author}</span>
-          </div>
-        )}
+          <>
+            {thumbnailSrc && !imageError ? (
+              <img
+                src={thumbnailSrc}
+                alt={item.title}
+                onError={handleImageError}
+                className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+            ) : (
+              <div className={`size-full flex flex-col items-center justify-center p-4 text-center ${fallback.className}`}>
+                {fallback.icon}
+                <span className="text-[10px] font-bold text-white/80 mt-2 line-clamp-1">{item.author}</span>
+              </div>
+            )}
 
-        <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-          <div className="size-14 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-xl">
-            <Play className="size-6 text-slate-900 ml-0.5" />
-          </div>
-        </div>
+            <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+              <div className="size-14 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-xl">
+                <Play className="size-6 text-slate-900 ml-0.5" />
+              </div>
+            </div>
+          </>
+        )}
 
         <div className={`absolute top-3 left-3 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 ${getScoreColor(item.viral_score)}`}>
           <Zap className="size-3" />
@@ -151,7 +212,7 @@ function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700/60">
+        <div className="flex items-center justify-between pt-2 border-t border-t-gray-100 dark:border-t-gray-700/60">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
                <Eye className="size-3 text-gray-400 dark:text-gray-500" />
