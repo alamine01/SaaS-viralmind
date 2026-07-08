@@ -163,13 +163,13 @@ function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
       onClick={onClick}
     >
       <div 
-        className="relative aspect-video bg-slate-100 overflow-hidden"
+        className="relative aspect-[9/16] bg-slate-100 overflow-hidden"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
         {shouldPlay && item.embed_url ? (
           <div className="relative size-full bg-slate-950 flex items-center justify-center overflow-hidden">
-            {thumbnailSrc && (
+            {!isVertical && thumbnailSrc && (
               <img
                 src={thumbnailSrc}
                 alt=""
@@ -178,8 +178,8 @@ function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
             )}
             <iframe
               src={getHoverEmbedUrl(item.embed_url, item.url, item.platform)}
-              className={`h-full border-0 pointer-events-none animate-in fade-in duration-300 relative z-10 ${
-                isVertical ? "aspect-[9/16]" : "w-full"
+              className={`border-0 pointer-events-none animate-in fade-in duration-300 relative z-10 ${
+                isVertical ? "size-full" : "w-full aspect-video"
               }`}
               allow="autoplay; encrypted-media"
             />
@@ -436,7 +436,7 @@ export default function ViralFeedPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {visibleItems.map((item) => (
               <VideoCard
                 key={item.id}
@@ -472,10 +472,22 @@ export default function ViralFeedPage() {
               <X className="size-4" />
             </button>
 
-            <div className="aspect-video bg-slate-950 relative overflow-hidden flex items-center justify-center">
+            <div className={`bg-slate-950 relative overflow-hidden flex items-center justify-center ${
+              (previewVideo.platform?.toLowerCase() === "tiktok" || 
+               previewVideo.platform?.toLowerCase() === "instagram" ||
+               previewVideo.url?.includes("tiktok.com") ||
+               previewVideo.url?.includes("instagram.com") ||
+               previewVideo.url?.includes("/shorts/")) 
+                ? "max-h-[60vh] aspect-[9/16] mx-auto rounded-t-2xl" 
+                : "aspect-video"
+            }`}>
               {previewVideo.embed_url ? (
                 <>
-                  {previewVideo.thumbnail && (
+                  {!(previewVideo.platform?.toLowerCase() === "tiktok" || 
+                     previewVideo.platform?.toLowerCase() === "instagram" ||
+                     previewVideo.url?.includes("tiktok.com") ||
+                     previewVideo.url?.includes("instagram.com") ||
+                     previewVideo.url?.includes("/shorts/")) && previewVideo.thumbnail && (
                     <img
                       src={previewVideo.thumbnail}
                       alt=""
@@ -484,15 +496,7 @@ export default function ViralFeedPage() {
                   )}
                   <iframe
                     src={`${previewVideo.embed_url}?autoplay=1`}
-                    className={`h-full border-0 relative z-10 ${
-                      (previewVideo.platform?.toLowerCase() === "tiktok" || 
-                       previewVideo.platform?.toLowerCase() === "instagram" ||
-                       previewVideo.url?.includes("tiktok.com") ||
-                       previewVideo.url?.includes("instagram.com") ||
-                       previewVideo.url?.includes("/shorts/")) 
-                        ? "aspect-[9/16]" 
-                        : "w-full"
-                    }`}
+                    className="size-full border-0 relative z-10"
                     allow="autoplay; encrypted-media"
                     allowFullScreen
                   />
