@@ -18,7 +18,9 @@ import {
   ChevronDown,
   Flame,
   Globe,
-  MonitorPlay
+  MonitorPlay,
+  Volume2,
+  VolumeX
 } from "lucide-react"
 
 // YouTube icon (lucide doesn't have one)
@@ -56,7 +58,7 @@ const getScoreLabel = (score: number) => {
   return "Normal"
 }
 
-function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
+function VideoCard({ item, onClick, isMuted, setIsMuted }: { item: any; onClick: () => void; isMuted: boolean; setIsMuted: (m: boolean) => void }) {
   const [imageError, setImageError] = useState(false)
   const [thumbnailSrc, setThumbnailSrc] = useState(item.thumbnail || "")
   const [shouldPlay, setShouldPlay] = useState(false)
@@ -209,7 +211,7 @@ function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
               <video
                 src={directVideoUrl}
                 autoPlay
-                muted
+                muted={isMuted}
                 loop
                 playsInline
                 className={`border-0 pointer-events-none animate-in fade-in duration-300 relative z-10 ${
@@ -252,6 +254,19 @@ function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
               </div>
             </div>
           </>
+        )}
+
+        {shouldPlay && directVideoUrl && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMuted(!isMuted);
+            }}
+            className="absolute bottom-3 right-3 z-30 size-8 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm flex items-center justify-center text-white transition-all shadow-md active:scale-95 border border-white/10"
+            title={isMuted ? "Activer le son" : "Couper le son"}
+          >
+            {isMuted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+          </button>
         )}
 
         <div className={`absolute top-3 left-3 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 ${getScoreColor(item.viral_score)}`}>
@@ -333,6 +348,7 @@ export default function ViralFeedPage() {
   const [previewVideo, setPreviewVideo] = useState<any | null>(null)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const [visibleCount, setVisibleCount] = useState(24)
+  const [isMuted, setIsMuted] = useState(true)
   const sortRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -488,6 +504,8 @@ export default function ViralFeedPage() {
                 key={item.id}
                 item={item}
                 onClick={() => setPreviewVideo(item)}
+                isMuted={isMuted}
+                setIsMuted={setIsMuted}
               />
             ))}
           </div>
