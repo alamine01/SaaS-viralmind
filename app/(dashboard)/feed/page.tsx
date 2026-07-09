@@ -60,21 +60,45 @@ function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
   const [imageError, setImageError] = useState(false)
   const [thumbnailSrc, setThumbnailSrc] = useState(item.thumbnail || "")
   const [shouldPlay, setShouldPlay] = useState(false)
+  const [directVideoUrl, setDirectVideoUrl] = useState<string | null>(null)
+  const [loadingVideo, setLoadingVideo] = useState(false)
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isHoveredRef = useRef(false)
 
   useEffect(() => {
     setImageError(false)
     setThumbnailSrc(item.thumbnail || "")
+    setDirectVideoUrl(null)
   }, [item])
 
   const handleMouseEnter = () => {
+    isHoveredRef.current = true
     // Debounce to avoid playing videos when scrolling quickly past them
-    hoverTimeoutRef.current = setTimeout(() => {
+    hoverTimeoutRef.current = setTimeout(async () => {
       setShouldPlay(true)
+      if (!directVideoUrl && !loadingVideo) {
+        setLoadingVideo(true)
+        try {
+          const res = await fetch("/api/download-video", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: item.url || item.video_url })
+          })
+          const data = await res.json()
+          if (isHoveredRef.current && data.downloadUrl) {
+            setDirectVideoUrl(data.downloadUrl)
+          }
+        } catch (e) {
+          console.error("Failed to fetch direct video URL", e)
+        } finally {
+          setLoadingVideo(false)
+        }
+      }
     }, 500)
   }
 
   const handleMouseLeave = () => {
+    isHoveredRef.current = false
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current)
       hoverTimeoutRef.current = null
@@ -167,22 +191,44 @@ function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {shouldPlay && item.embed_url ? (
+        {shouldPlay ? (
           <div className="relative size-full bg-slate-950 flex items-center justify-center overflow-hidden">
-            {!isVertical && thumbnailSrc && (
+            {(!isVertical || loadingVideo || !directVideoUrl) && thumbnailSrc && (
               <img
                 src={thumbnailSrc}
                 alt=""
                 className="absolute inset-0 size-full object-cover blur-xl opacity-40 scale-110 pointer-events-none"
               />
             )}
-            <iframe
-              src={getHoverEmbedUrl(item.embed_url, item.url, item.platform)}
-              className={`border-0 pointer-events-none animate-in fade-in duration-300 relative z-10 ${
-                isVertical ? "size-full" : "w-full aspect-video"
-              }`}
-              allow="autoplay; encrypted-media"
-            />
+
+            {loadingVideo ? (
+              <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/30 backdrop-blur-xs">
+                <Loader2 className="size-8 text-white animate-spin" />
+              </div>
+            ) : directVideoUrl ? (
+              <video
+                src={directVideoUrl}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className={`border-0 pointer-events-none animate-in fade-in duration-300 relative z-10 ${
+                  isVertical ? "size-full object-cover" : "w-full aspect-video object-contain"
+                }`}
+              />
+            ) : item.embed_url ? (
+              <iframe
+                src={getHoverEmbedUrl(item.embed_url, item.url, item.platform)}
+                className={`border-0 pointer-events-none animate-in fade-in duration-300 relative z-10 ${
+                  isVertical ? "size-full" : "w-full aspect-video"
+                }`}
+                allow="autoplay; encrypted-media"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                <Play className="size-16" />
+              </div>
+            )}
           </div>
         ) : (
           <>
