@@ -189,7 +189,7 @@ export async function scrapeVideoData(url: string) {
                 likes: output.like_count || 0,
                 comments: output.comment_count || 0,
                 followers: 0,
-                videoId: output.id || url.split("/").filter(Boolean).pop(),
+                videoId: output.id || getUniqueVideoId(url),
                 finalUrl: url,
                 audioUrl: output.url
               };
@@ -210,7 +210,7 @@ export async function scrapeVideoData(url: string) {
       const username = owner.username || owner.user_name;
       console.log("DEBUG: Instagram Owner trouvé :", username);
       
-      const videoId = item.shortcode || item.id || url.split("/").filter(Boolean).pop();
+      const videoId = item.shortcode || item.id || getUniqueVideoId(url);
       const caption = item.edge_media_to_caption?.edges?.[0]?.node?.text || item.caption?.text || "";
 
       let followers = owner.follower_count || owner.followers || owner.edge_followed_by?.count || 0;

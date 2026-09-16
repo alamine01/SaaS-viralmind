@@ -49,7 +49,18 @@ export async function POST(req: Request) {
       existingVideo = videoByLike;
     }
 
-    if (existingVideo && !forceRefresh && existingVideo.transcript && existingVideo.transcript.trim() !== "" && existingVideo.transcript !== "Analyse visuelle." && existingVideo.transcript !== "Transcription non disponible.") {
+    const isValidCacheTranscript = (t?: string) => {
+      if (!t || !t.trim()) return false;
+      const lower = t.trim().toLowerCase();
+      return (
+        lower !== "analyse visuelle." &&
+        lower !== "analyse basée sur le contenu visuel." &&
+        lower !== "transcription non disponible." &&
+        lower !== "aucune transcription trouvée."
+      );
+    };
+
+    if (existingVideo && !forceRefresh && isValidCacheTranscript(existingVideo.transcript)) {
       // Associer automatiquement la vidéo existante à l'historique de l'utilisateur si nécessaire
       const targetUserId = userId || (await supabase.auth.getUser()).data.user?.id;
       if (targetUserId) {
@@ -170,7 +181,7 @@ export async function POST(req: Request) {
           transcript: (() => {
             const original = analysis.original_transcript || scrapedData.transcript;
             const french = analysis.full_transcript;
-            if (original && french && original.trim().toLowerCase() !== french.trim().toLowerCase() && original.trim().toLowerCase() !== "analyse visuelle." && original.trim().toLowerCase() !== "transcription non disponible.") {
+            if (original && french && original.trim().toLowerCase() !== french.trim().toLowerCase() && isValidCacheTranscript(original) && isValidCacheTranscript(french)) {
               return JSON.stringify({ original: original.trim(), french: french.trim() });
             }
             return french || original || "";
