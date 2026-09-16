@@ -241,6 +241,13 @@ export async function scrapeVideoData(url: string) {
         }
       }
 
+      const extractedAudioUrl = item.video_url || 
+        item.video_versions?.[0]?.url || 
+        item.video_resources?.[0]?.src || 
+        item.media?.video_url || 
+        item.display_url || 
+        "";
+
       return {
         title: caption || "Reel Instagram",
         transcript: caption || "Analyse basée sur le contenu visuel.",
@@ -252,7 +259,7 @@ export async function scrapeVideoData(url: string) {
         followers: followers,
         videoId: videoId,
         finalUrl: url,
-        audioUrl: item.video_url
+        audioUrl: extractedAudioUrl
       };
     } else {
       // TikTok Logic - Restauration de la logique complète

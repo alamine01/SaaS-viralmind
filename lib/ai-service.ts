@@ -13,37 +13,48 @@ export const analyzeVideo = async (videoUrl: string, title: string, transcript: 
   if (audioUrl) {
     console.log("DEBUG: Tentative de téléchargement de la vidéo depuis :", audioUrl);
     try {
+      let referer = 'https://www.instagram.com/';
+      if (audioUrl.includes('tiktok') || videoUrl.includes('tiktok')) {
+        referer = 'https://www.tiktok.com/';
+      } else if (audioUrl.includes('youtube') || audioUrl.includes('googlevideo') || videoUrl.includes('youtube') || videoUrl.includes('youtu.be')) {
+        referer = 'https://www.youtube.com/';
+      }
+
       const videoResp = await fetch(audioUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          'Referer': 'https://www.tiktok.com/'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Referer': referer
         }
       });
-      const videoBuffer = await videoResp.arrayBuffer();
-      const firstBytes = Buffer.from(videoBuffer.slice(0, 50)).toString('hex');
-      console.log("DEBUG: Taille vidéo:", videoBuffer.byteLength, "octets. Premiers octets (hex):", firstBytes);
-      
-      if (videoBuffer.byteLength < 5000) {
-        console.warn("ATTENTION: Le fichier semble trop petit pour une vidéo. C'est peut-être une erreur 403 ou 404.");
-      }
 
-      let mimeType = videoResp.headers.get('content-type')?.split(';')[0].trim() || 'video/mp4';
-      if (mimeType === 'application/octet-stream') {
-        if (audioUrl.includes('mime_type=audio_mpeg') || audioUrl.includes('.mp3')) {
-          mimeType = 'audio/mpeg';
+      if (videoResp.ok) {
+        const videoBuffer = await videoResp.arrayBuffer();
+        console.log("DEBUG: Taille vidéo:", videoBuffer.byteLength, "octets.");
+        
+        if (videoBuffer.byteLength >= 5000) {
+          let mimeType = videoResp.headers.get('content-type')?.split(';')[0].trim() || 'video/mp4';
+          if (mimeType.includes('html') || !mimeType || mimeType === 'application/octet-stream') {
+            if (audioUrl.includes('mime_type=audio_mpeg') || audioUrl.includes('.mp3')) {
+              mimeType = 'audio/mpeg';
+            } else {
+              mimeType = 'video/mp4';
+            }
+          }
+          console.log("DEBUG: MimeType final utilisé pour Gemini:", mimeType);
+
+          const base64Video = Buffer.from(videoBuffer).toString('base64');
+          promptParts.push({
+            inlineData: {
+              data: base64Video,
+              mimeType: mimeType
+            }
+          });
         } else {
-          mimeType = 'video/mp4';
+          console.warn("ATTENTION: Le fichier téléchargé est trop petit (< 5 Ko), ignoré pour l'IA.");
         }
+      } else {
+        console.warn(`ATTENTION: Échec du téléchargement vidéo (HTTP status ${videoResp.status}).`);
       }
-      console.log("DEBUG: MimeType final utilisé pour Gemini:", mimeType);
-
-      const base64Video = Buffer.from(videoBuffer).toString('base64');
-      promptParts.push({
-        inlineData: {
-          data: base64Video,
-          mimeType: mimeType
-        }
-      });
     } catch (e) {
       console.error("Failed to fetch video for AI", e);
     }
@@ -73,35 +84,34 @@ export const analyzeVideo = async (videoUrl: string, title: string, transcript: 
   }
 
   const prompt = `
-    Tu es un expert en analyse de contenu viral et en stratégie marketing de contenu court.
+    Tu es un expert en analyse de contenu viral et en transcription audio/vidéo.
     
-    Analyse cette vidéo virale en te basant UNIQUEMENT sur les données réelles fournies ci-dessous.
-    NE RIEN INVENTER. NE PAS DÉDUIRE. NE PAS EXTRAPOLER au-delà de ce qui est dit dans la transcription.
+    Analyse cette vidéo virale.
     
     Données de la vidéo :
     - URL : ${videoUrl}
     - Titre : "${title}"
-    - Transcription réelle mot à mot : "${transcript}"
-    ${audioUrl ? "- Un fichier vidéo a également été joint pour l'analyse visuelle." : ""}
-    ${images && images.length > 0 ? "- Les images du diaporama (slideshow/carousel) ont été jointes à ce prompt." : ""}
+    - Légende / Description fournies : "${transcript}"
+    ${audioUrl ? "- Un fichier vidéo/audio complet a été joint à ce prompt pour l'analyse vocale." : ""}
+    ${images && images.length > 0 ? "- Les images du diaporama ont été jointes à ce prompt." : ""}
     
     INSTRUCTIONS STRICTES :
-    1. RÉPONDS EXCLUSIVEMENT EN FRANÇAIS (sauf pour le champ "original_transcript").
-    2. BASE-TOI UNIQUEMENT sur la transcription fournie. Ne complète pas, n'invente pas.
-    3. Si un fichier vidéo ou des images de diaporama sont joints, analyse-les pour en extraire TOUT le texte incrusté (OCR) et l'intégrer fidèlement dans la transcription (champs "full_transcript" et "original_transcript"). Si la transcription textuelle fournie est vide ou contient "Analyse visuelle.", utilise les textes extraits des images pour composer la transcription complète.
-    4. Tous les champs doivent être remplis avec des données extraites de la transcription réelle ou des textes lus sur les images/diapositives.
+    1. RÉPONDS EXCLUSIVEMENT EN FRANÇAIS (sauf pour le champ "original_transcript" qui conserve la langue d'origine).
+    2. SI UN FICHIER VIDÉO/AUDIO EST JOINT : ÉCOUTE attentivement la bande sonore et la voix humaine parlée. Transcris INTÉGRALEMENT tout le discours mot à mot en français (champ "full_transcript") et dans sa langue originale (champ "original_transcript"). Si du texte apparaît à l'écran (sous-titres/OCR), combine-le avec la parole vocale.
+    3. NE RENVOIE "Analyse basée sur le contenu visuel." QUE SI la vidéo ne contient absolument AUCUNE parole parlée et aucun texte.
+    4. Tous les champs du JSON doivent être soigneusement remplis.
     
     Réponds au format JSON strict :
     {
       "visual_description": "Description du style visuel observé ou déduit du titre (1 phrase).",
-      "hook": "L'accroche EXACTE telle qu'elle apparaît dans la transcription (premières secondes).",
-      "whyItWorks": "Pourquoi cette vidéo fonctionne — basé sur la transcription (en français).",
+      "hook": "L'accroche EXACTE telle qu'elle apparaît dans la transcription ou au début de la vidéo.",
+      "whyItWorks": "Pourquoi cette vidéo fonctionne (en français).",
       "structure": {
         "Hook": "...",
         "Développement": "...",
         "Conclusion": "..."
       },
-      "summary": "Résumé stratégique de 3-4 phrases décrivant le message, le positionnement, le ton et l'audience cible.",
+      "summary": "Résumé stratégique de 3-4 phrases décrivant le message, le positionnement et l'audience.",
       "action_plan": [
         "Étape 1 : ...",
         "Étape 2 : ...",
@@ -110,8 +120,8 @@ export const analyzeVideo = async (videoUrl: string, title: string, transcript: 
       "emotion": "L'émotion principale déclenchée chez le spectateur.",
       "patterns": ["pattern 1", "pattern 2", "pattern 3"],
       "viral_score": 0,
-      "full_transcript": "Transcription intégrale mot à mot EN FRANÇAIS avec \"...\" pour les pauses.",
-      "original_transcript": "Transcription mot à mot dans la langue originale avec \"...\" pour les pauses."
+      "full_transcript": "Transcription intégrale mot à mot EN FRANÇAIS.",
+      "original_transcript": "Transcription mot à mot dans la langue originale."
     }
     
     Réponds UNIQUEMENT avec le JSON brut valide, sans markdown.
@@ -124,7 +134,6 @@ export const analyzeVideo = async (videoUrl: string, title: string, transcript: 
   const text = response.text();
   
   try {
-     // Basic cleanup in case Gemini adds markdown code blocks
      const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
      return JSON.parse(jsonStr);
   } catch (e) {
