@@ -358,20 +358,20 @@ export async function scrapeVideoData(url: string) {
 }
 
 export function getUniqueVideoId(url: string) {
-  if (url.includes("v=")) return url.split("v=")[1].split("&")[0];
-  if (url.includes("youtu.be/")) return url.split("youtu.be/")[1].split("?")[0];
-  if (url.includes("youtube.com/shorts/")) return url.split("shorts/")[1].split("?")[0];
-  if (url.includes("instagram.com")) {
-    const parts = url.split("/");
-    // Les URLs Instagram sont souvent /reels/ID/ ou /p/ID/
+  if (!url) return "";
+  const cleanUrl = url.trim().replace(/\/$/, "");
+  if (cleanUrl.includes("v=")) return cleanUrl.split("v=")[1].split("&")[0];
+  if (cleanUrl.includes("youtu.be/")) return cleanUrl.split("youtu.be/")[1].split("?")[0];
+  if (cleanUrl.includes("youtube.com/shorts/")) return cleanUrl.split("shorts/")[1].split("?")[0];
+  if (cleanUrl.includes("instagram.com")) {
+    const parts = cleanUrl.split("/").filter(Boolean);
     const index = parts.findIndex(p => p === "reels" || p === "p" || p === "reel");
-    return index !== -1 ? parts[index + 1] : parts[parts.length - 1];
+    return (index !== -1 && parts[index + 1]) ? parts[index + 1].split("?")[0] : parts[parts.length - 1].split("?")[0];
   }
-  if (url.includes("tiktok.com")) {
-    const cleanUrl = url.replace(/\/$/, "");
-    const parts = cleanUrl.split("/");
+  if (cleanUrl.includes("tiktok.com")) {
+    const parts = cleanUrl.split("/").filter(Boolean);
     return parts[parts.length - 1].split("?")[0];
   }
-  return url;
+  return cleanUrl;
 }
 

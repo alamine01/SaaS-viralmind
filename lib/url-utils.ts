@@ -1,26 +1,41 @@
 export function getCleanVideoUrl(url: string): { cleanUrl: string; platform: string } {
-  const isYT = url.includes('youtube.com') || url.includes('youtu.be');
-  const isIG = url.includes('instagram.com');
-  const isTT = url.includes('tiktok.com');
-  let clean = url;
-  // Remove tracking params
-  try {
-    const urlObj = new URL(url);
-    urlObj.search = '';
-    clean = urlObj.toString();
-  } catch (e) {
-    // ignore invalid URL parsing
+  if (!url || typeof url !== 'string') {
+    return { cleanUrl: '', platform: 'unknown' };
   }
-  // Extract shortcodes/ids for IG and TT
-  if (isIG) {
-    const parts = clean.split('/');
-    const last = parts[parts.length - 1];
-    clean = last.replace('@', '');
-  }
-  if (isTT) {
-    const match = clean.match(/tiktok.com\/@?([^?]+)/);
-    if (match) clean = match[1];
-  }
+
+  const trimmed = url.trim();
+  const isYT = trimmed.includes('youtube.com') || trimmed.includes('youtu.be');
+  const isIG = trimmed.includes('instagram.com');
+  const isTT = trimmed.includes('tiktok.com');
   const platform = isYT ? 'youtube' : isIG ? 'instagram' : isTT ? 'tiktok' : 'unknown';
+
+  let clean = trimmed;
+
+  try {
+    const urlObj = new URL(trimmed);
+
+    if (isYT) {
+      if (urlObj.hostname.includes('youtu.be')) {
+        urlObj.search = '';
+        clean = urlObj.toString();
+      } else if (urlObj.pathname.includes('/shorts/')) {
+        urlObj.search = '';
+        clean = urlObj.toString();
+      } else if (urlObj.searchParams.has('v')) {
+        const videoId = urlObj.searchParams.get('v');
+        clean = `https://www.youtube.com/watch?v=${videoId}`;
+      } else {
+        urlObj.search = '';
+        clean = urlObj.toString();
+      }
+    } else {
+      urlObj.search = '';
+      clean = urlObj.toString();
+    }
+  } catch (e) {
+    clean = trimmed.split('?')[0];
+  }
+
   return { cleanUrl: clean, platform };
 }
+
