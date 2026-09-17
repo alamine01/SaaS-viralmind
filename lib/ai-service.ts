@@ -97,8 +97,8 @@ export const analyzeVideo = async (videoUrl: string, title: string, transcript: 
     
     INSTRUCTIONS STRICTES :
     1. RÉPONDS EXCLUSIVEMENT EN FRANÇAIS (sauf pour le champ "original_transcript" qui conserve la langue d'origine).
-    2. SI UN FICHIER VIDÉO/AUDIO EST JOINT : ÉCOUTE attentivement la bande sonore et la voix humaine parlée. Transcris INTÉGRALEMENT tout le discours mot à mot en français (champ "full_transcript") et dans sa langue originale (champ "original_transcript"). Si du texte apparaît à l'écran (sous-titres/OCR), combine-le avec la parole vocale.
-    3. NE RENVOIE "Analyse basée sur le contenu visuel." QUE SI la vidéo ne contient absolument AUCUNE parole parlée et aucun texte.
+    2. SI UN FICHIER VIDÉO/AUDIO EST JOINT : ÉCOUTE attentivement la bande sonore et la voix humaine parlée. Transcris INTÉGRALEMENT tout le discours mot à mot en français (champ "full_transcript") et dans sa langue originale (champ "original_transcript"). Si du texte apparaît à l'écran (sous-titres/OCR), inclus-le également.
+    3. SI AUCUN FICHIER VIDÉO/AUDIO N'EST JOINT et que la description fournie est générique ("Analyse basée sur le contenu visuel.") ou vide : NE PAS INVENTER OU GÉNÉRER DE TRANSCRIPTION FICTIVE. Indique exactement "Transcription non disponible (impossible d'extraire la bande audio de cette vidéo)." dans "full_transcript" et "original_transcript".
     4. Tous les champs du JSON doivent être soigneusement remplis.
     
     Réponds au format JSON strict :
