@@ -432,8 +432,8 @@ export default function MonitoringPage() {
                            className="fixed inset-0 z-40" 
                            onClick={() => setIsPlatformDropdownOpen(false)}
                          />
-                         {/* Dropdown Options List */}
-                         <div className="absolute left-0 right-0 mt-2 bg-gray-900 dark:bg-gray-800 border border-gray-700/60 rounded-xl py-1.5 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
+                         {/* Dropdown Options List - Opening Upwards */}
+                         <div className="absolute left-0 right-0 bottom-full mb-2 bg-gray-900 dark:bg-gray-800 border border-gray-700/60 rounded-xl py-1.5 shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200 overflow-hidden">
                            {[
                              { id: "instagram", name: "Instagram" },
                              { id: "tiktok", name: "TikTok" },
@@ -446,10 +446,10 @@ export default function MonitoringPage() {
                                  setPlatform(opt.id)
                                  setIsPlatformDropdownOpen(false)
                                }}
-                               className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors flex items-center justify-between ${
+                               className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors flex items-center justify-between cursor-pointer ${
                                  platform === opt.id 
                                    ? 'bg-violet-600 text-white' 
-                                   : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                                   : 'text-gray-300 hover:bg-white/10 hover:text-white'
                                }`}
                              >
                                {opt.name}
