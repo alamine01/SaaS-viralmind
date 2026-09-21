@@ -18,7 +18,21 @@ import {
   Check, 
   Copy,
   Bookmark,
-  RotateCw
+  RotateCw,
+  Brain,
+  Activity,
+  Flame,
+  TrendingUp,
+  Clock,
+  Play,
+  CheckCircle2,
+  ChevronRight,
+  Layers,
+  Heart,
+  BarChart3,
+  Eye,
+  ShieldCheck,
+  Lightbulb
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useWorkspace } from "@/lib/workspace-context"
@@ -560,54 +574,114 @@ export default function AnalysePage() {
                            </section>
 
                            <div className="flex flex-col gap-4">
-                              {/* Section Psychologie */}
-                              <button 
-                                onClick={() => setShowPsychologyModal(true)}
-                                className="w-full flex items-center justify-between p-6 bg-gray-50/50 dark:bg-gray-950/30 rounded-xl border border-gray-200 dark:border-gray-800 hover:bg-white dark:hover:bg-gray-900 hover:border-violet-200 dark:hover:border-violet-800 hover:shadow-sm transition-all group text-left"
-                              >
-                                 <div className="flex items-center gap-5">
-                                    <div className="size-12 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-500 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                                       <Sparkles className="size-6" />
+                              {/* Section Psychologie Virale (Enriched UI) */}
+                              <div className="p-6 md:p-8 bg-gradient-to-br from-amber-50/50 via-white to-orange-50/30 dark:from-amber-950/20 dark:via-gray-900 dark:to-orange-950/10 rounded-2xl border border-amber-200/80 dark:border-amber-900/40 shadow-sm space-y-6">
+                                 <div className="flex items-center justify-between flex-wrap gap-4">
+                                    <div className="flex items-center gap-4">
+                                       <div className="size-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
+                                          <Brain className="size-6" />
+                                       </div>
+                                       <div>
+                                          <div className="flex items-center gap-2 flex-wrap">
+                                             <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest">Psychologie Virale</h3>
+                                             <span className="text-[10px] font-extrabold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/60 px-2.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+                                                Déclencheurs Cognitifs
+                                             </span>
+                                          </div>
+                                          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">
+                                             Biais psychologiques et leviers d'attention identifiés dans cette vidéo.
+                                          </p>
+                                       </div>
                                     </div>
-                                    <div>
-                                       <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-1">Psychologie Virale</h3>
-                                       <p className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">Découvrez les déclencheurs cognitifs utilisés.</p>
-                                    </div>
+                                    <button 
+                                      onClick={() => setShowPsychologyModal(true)}
+                                      className="px-4 py-2.5 bg-white dark:bg-gray-800 hover:bg-amber-100/50 dark:hover:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-xs group"
+                                    >
+                                       Exploration Profonde <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
+                                    </button>
                                  </div>
-                                 <div className="size-10 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-400 dark:text-gray-500 group-hover:bg-gray-900 dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-gray-900 transition-all">
-                                    <ArrowRight className="size-5" />
-                                 </div>
-                              </button>
 
-                              {/* Section Pacing & Rétention */}
-                              <button 
-                                onClick={() => setShowRetentionModal(true)}
-                                className="w-full flex items-center justify-between p-6 bg-gray-50/50 dark:bg-gray-950/30 rounded-xl border border-gray-200 dark:border-gray-800 hover:bg-white dark:hover:bg-gray-905 hover:border-violet-200 dark:hover:border-violet-800 hover:shadow-sm transition-all group text-left"
-                              >
-                                 <div className="flex items-center gap-5">
-                                    <div className="size-12 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-500 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                                       <Layout className="size-6" />
+                                 {/* Grid of Patterns */}
+                                 {selectedAnalysis.patterns && selectedAnalysis.patterns.length > 0 ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                       {selectedAnalysis.patterns.map((pattern: string, idx: number) => (
+                                          <div key={idx} className="flex items-start gap-3 p-4 bg-white/90 dark:bg-gray-900/90 rounded-xl border border-amber-100 dark:border-gray-800 shadow-xs backdrop-blur-xs transition-all hover:border-amber-300 dark:hover:border-amber-800">
+                                             <div className="size-8 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 mt-0.5 font-bold border border-amber-200/50 dark:border-amber-800/40">
+                                                {idx % 3 === 0 ? <Sparkles className="size-4" /> : idx % 3 === 1 ? <Flame className="size-4" /> : <Zap className="size-4" />}
+                                             </div>
+                                             <div className="space-y-0.5">
+                                                <p className="text-xs font-bold text-gray-900 dark:text-gray-100">{pattern}</p>
+                                                <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Levier de rétention d'attention & dopamine</p>
+                                             </div>
+                                          </div>
+                                       ))}
                                     </div>
-                                    <div>
-                                       <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-1">Pacing & Rétention</h3>
-                                       <p className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">Analyse du rythme et de la structure narrative.</p>
-                                    </div>
-                                 </div>
-                                 <div className="size-10 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-400 dark:text-gray-500 group-hover:bg-gray-900 dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-gray-900 transition-all">
-                                    <ArrowRight className="size-5" />
-                                 </div>
-                              </button>
+                                 ) : (
+                                    <p className="text-xs text-gray-400 dark:text-gray-500 italic">Aucun motif spécifique extrait.</p>
+                                 )}
+                              </div>
 
-                              <div className="flex gap-4 pt-4">
+                              {/* Section Pacing & Rétention (Enriched UI) */}
+                              <div className="p-6 md:p-8 bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/30 dark:from-blue-950/20 dark:via-gray-900 dark:to-indigo-950/10 rounded-2xl border border-blue-200/80 dark:border-blue-900/40 shadow-sm space-y-6">
+                                 <div className="flex items-center justify-between flex-wrap gap-4">
+                                    <div className="flex items-center gap-4">
+                                       <div className="size-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+                                          <Activity className="size-6" />
+                                       </div>
+                                       <div>
+                                          <div className="flex items-center gap-2 flex-wrap">
+                                             <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest">Pacing & Rétention</h3>
+                                             <span className="text-[10px] font-extrabold text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/60 px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
+                                                Structure Narrative
+                                             </span>
+                                          </div>
+                                          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">
+                                             Analyse du tempo, des coupures de rythme et du déroulé narratif.
+                                          </p>
+                                       </div>
+                                    </div>
+                                    <button 
+                                      onClick={() => setShowRetentionModal(true)}
+                                      className="px-4 py-2.5 bg-white dark:bg-gray-800 hover:bg-blue-100/50 dark:hover:bg-blue-950/40 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-xs group"
+                                    >
+                                       Timeline Complète <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
+                                    </button>
+                                 </div>
+
+                                 {/* Narrative steps inline view */}
+                                 {selectedAnalysis.structure ? (
+                                    <div className="space-y-3">
+                                       {Object.entries(selectedAnalysis.structure)
+                                          .filter(([key]) => key !== "summary" && key !== "action_plan")
+                                          .slice(0, 3)
+                                          .map(([key, val]: [string, any], i: number) => (
+                                             <div key={key} className="flex gap-4 p-4 bg-white/90 dark:bg-gray-900/90 rounded-xl border border-blue-100 dark:border-gray-800 shadow-xs transition-all hover:border-blue-300 dark:hover:border-blue-800">
+                                                <div className="size-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 border border-blue-200/50 dark:border-blue-800/40">
+                                                   0{i + 1}
+                                                </div>
+                                                <div className="space-y-1 flex-1">
+                                                   <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">{key}</span>
+                                                   <div className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
+                                                      <MarkdownRenderer content={typeof val === 'string' ? val : JSON.stringify(val)} />
+                                                   </div>
+                                                </div>
+                                             </div>
+                                          ))}
+                                    </div>
+                                 ) : null}
+                              </div>
+
+                              <div className="flex gap-4 pt-2">
                                  <button 
                                    onClick={() => setShowTranscript(true)}
-                                   className="flex-1 h-16 bg-gray-50 dark:bg-gray-950 text-gray-600 dark:text-gray-300 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-gray-100 dark:hover:bg-gray-900 transition-all flex items-center justify-center gap-3 border border-gray-200 dark:border-gray-800"
+                                   className="flex-1 h-14 bg-gray-900 dark:bg-gray-800 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-violet-600 dark:hover:bg-violet-600 transition-all flex items-center justify-center gap-3 shadow-sm"
                                  >
-                                    <FileText className="size-4" /> Voir la Transcription
+                                    <FileText className="size-4" /> Voir la Transcription Intégrale
                                  </button>
                                  <button 
                                    onClick={() => window.open(selectedAnalysis.url, '_blank')}
-                                   className="h-16 w-16 bg-white dark:bg-gray-900 border border-gray-250/60 dark:border-gray-800 text-gray-400 dark:text-gray-550 rounded-xl hover:text-gray-900 dark:hover:text-gray-100 transition-all flex items-center justify-center shadow-sm"
+                                   className="h-14 w-14 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 rounded-xl hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center justify-center shadow-sm"
+                                   title="Ouvrir la vidéo originale"
                                  >
                                     <ArrowRight className="size-5" />
                                  </button>
@@ -645,30 +719,52 @@ export default function AnalysePage() {
       {/* MODALS */}
       {showPsychologyModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 bg-gray-950/80 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-           <Card className="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-300 border border-gray-200 dark:border-gray-700/60">
-              <div className="p-8 border-b border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+           <Card className="w-full max-w-3xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-gray-200 dark:border-gray-800">
+              <div className="p-6 md:p-8 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gradient-to-r from-amber-500/10 via-transparent to-orange-500/10">
                  <div className="flex items-center gap-4">
-                    <div className="size-12 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                       <Sparkles className="size-6" />
+                    <div className="size-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
+                       <Brain className="size-6" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Psychologie Virale</h3>
+                    <div>
+                       <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Psychologie Virale & Leviers Cognitifs</h3>
+                       <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Analyse comportementale approfondie du contenu</p>
+                    </div>
                  </div>
-                 <button onClick={() => setShowPsychologyModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+                 <button onClick={() => setShowPsychologyModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
                     <X className="size-6 text-gray-400 dark:text-gray-500" />
                  </button>
               </div>
-              <div className="p-10 space-y-4">
-                 <p className="text-gray-500 dark:text-gray-400 font-medium mb-6">Voici les mécanismes psychologiques détectés dans cette vidéo :</p>
-                 <div className="flex flex-wrap gap-3">
-                    {(selectedAnalysis.patterns || []).map((p: string) => (
-                       <div key={p} className="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold border border-gray-200 dark:border-gray-700 shadow-sm">
-                          {p}
-                       </div>
-                    ))}
+              <div className="p-6 md:p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+                 <div className="p-5 bg-amber-50/60 dark:bg-amber-950/30 rounded-xl border border-amber-200/60 dark:border-amber-900/40 space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                       <Sparkles className="size-4" /> Mécanique d'Engagement Détectée
+                    </div>
+                    <p className="text-xs text-amber-900 dark:text-amber-200 leading-relaxed font-medium">
+                       Cette vidéo applique des déclencheurs neuro-émotionnels conçus pour maximiser l'attention immédiate et encourager les partages impulsifs.
+                    </p>
+                 </div>
+
+                 <div className="space-y-4">
+                    <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Motifs Psychologiques de Virabilité</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       {(selectedAnalysis.patterns || []).map((p: string, idx: number) => (
+                          <div key={idx} className="p-5 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700/60 space-y-2 hover:border-amber-400 transition-colors">
+                             <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-sm">
+                                <Zap className="size-4" />
+                                <span>{p}</span>
+                             </div>
+                             <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed font-medium">
+                                Déclencheur d'attention captant l'intérêt du cerveau émotionnel dès les premières secondes.
+                             </p>
+                          </div>
+                       ))}
+                    </div>
                  </div>
               </div>
-              <div className="p-8 bg-gray-50/50 dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 flex justify-end">
-                 <button onClick={() => setShowPsychologyModal(false)} className="px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-[11px] font-bold uppercase tracking-widest">Fermer</button>
+              <div className="p-6 bg-gray-50 dark:bg-gray-800/80 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+                 <button onClick={() => setShowPsychologyModal(false)} className="px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-[11px] font-bold uppercase tracking-widest">
+                    Fermer
+                 </button>
               </div>
            </Card>
         </div>
@@ -676,32 +772,47 @@ export default function AnalysePage() {
 
       {showRetentionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 bg-gray-950/80 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-           <Card className="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-300 border border-gray-200 dark:border-gray-700/60">
-              <div className="p-8 border-b border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+           <Card className="w-full max-w-3xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-gray-200 dark:border-gray-800">
+              <div className="p-6 md:p-8 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gradient-to-r from-blue-500/10 via-transparent to-indigo-500/10">
                  <div className="flex items-center gap-4">
-                    <div className="size-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-500 flex items-center justify-center">
-                       <Layout className="size-6" />
+                    <div className="size-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
+                       <Activity className="size-6" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Pacing & Rétention</h3>
+                    <div>
+                       <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Timeline Pacing & Structure Narrative</h3>
+                       <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Découpage de la courbe de rétention</p>
+                    </div>
                  </div>
-                 <button onClick={() => setShowRetentionModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+                 <button onClick={() => setShowRetentionModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
                     <X className="size-6 text-gray-400 dark:text-gray-500" />
                  </button>
               </div>
-              <div className="p-10 space-y-4 max-h-[60vh] overflow-y-auto">
-                 {Object.entries(selectedAnalysis.structure || {})
-                   .filter(([key]) => key !== "summary" && key !== "action_plan")
-                   .map(([key, value]: [string, any]) => (
-                      <div key={key} className="p-6 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2">
-                         <div className="text-[10px] font-bold text-violet-500 uppercase tracking-widest">{key}</div>
-                         <div className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                            <MarkdownRenderer content={typeof value === 'string' ? value : JSON.stringify(value)} />
+              <div className="p-6 md:p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+                 <div className="space-y-4 relative before:absolute before:left-4 before:top-4 before:bottom-4 before:w-0.5 before:bg-blue-200 dark:before:bg-blue-900/50">
+                    {Object.entries(selectedAnalysis.structure || {})
+                      .filter(([key]) => key !== "summary" && key !== "action_plan")
+                      .map(([key, value]: [string, any], index: number) => (
+                         <div key={key} className="relative pl-10 space-y-2">
+                            <div className="absolute left-2 top-1.5 size-4 rounded-full bg-blue-600 ring-4 ring-blue-100 dark:ring-blue-950 flex items-center justify-center">
+                               <div className="size-1.5 rounded-full bg-white" />
+                            </div>
+                            <div className="p-5 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700/60 space-y-2">
+                               <div className="flex items-center justify-between">
+                                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">{key}</span>
+                                  <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-900 px-2 py-0.5 rounded-md border border-gray-200 dark:border-gray-800">Phase 0{index + 1}</span>
+                               </div>
+                               <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
+                                  <MarkdownRenderer content={typeof value === 'string' ? value : JSON.stringify(value)} />
+                               </div>
+                            </div>
                          </div>
-                      </div>
-                 ))}
+                    ))}
+                 </div>
               </div>
-              <div className="p-8 bg-gray-50/50 dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 flex justify-end">
-                 <button onClick={() => setShowRetentionModal(false)} className="px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-[11px] font-bold uppercase tracking-widest">Fermer</button>
+              <div className="p-6 bg-gray-50 dark:bg-gray-800/80 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+                 <button onClick={() => setShowRetentionModal(false)} className="px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-[11px] font-bold uppercase tracking-widest">
+                    Fermer
+                 </button>
               </div>
            </Card>
         </div>
