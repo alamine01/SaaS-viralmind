@@ -30,6 +30,7 @@ import {
   Phone,
   Mail,
   Hash,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -369,17 +370,17 @@ export default function AdminPaymentsPage() {
         </div>
       </div>
 
-      {/* Toolbar & Filters */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl p-4 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
+      {/* Toolbar & Filters - 100% Responsive & Clean Custom Dropdowns */}
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl p-4 shadow-xs flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
         {/* Search */}
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <div className="relative w-full lg:w-96 flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           <input
             type="text"
             placeholder="Rechercher créateur, email, téléphone, opérateur..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:ring-violet-500 transition-all"
+            className="w-full pl-10 pr-9 py-2.5 text-xs sm:text-sm bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:ring-violet-500 transition-all"
           />
           {searchQuery && (
             <button
@@ -392,33 +393,41 @@ export default function AdminPaymentsPage() {
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 shrink-0 mr-1">
-            <Filter className="w-3.5 h-3.5" />
+        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 shrink-0">
+            <Filter className="w-3.5 h-3.5 text-violet-500" />
             <span>Filtres :</span>
           </div>
 
-          <select
-            value={selectedPlanFilter}
-            onChange={(e) => setSelectedPlanFilter(e.target.value)}
-            className="px-3 py-1.5 text-xs font-medium bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
-          >
-            <option value="all">Tous les plans</option>
-            <option value="monthly">Mensuel (4 900 FCFA)</option>
-            <option value="quarterly">Trimestriel (12 900 FCFA)</option>
-            <option value="yearly">Annuel (39 900 FCFA)</option>
-          </select>
+          {/* Plan Filter Custom Select */}
+          <div className="relative inline-block flex-1 sm:flex-none min-w-[140px]">
+            <select
+              value={selectedPlanFilter}
+              onChange={(e) => setSelectedPlanFilter(e.target.value)}
+              className="w-full appearance-none pl-3.5 pr-8 py-2 text-xs font-semibold bg-gray-50 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 focus:outline-hidden focus:ring-2 focus:ring-violet-500 shadow-2xs cursor-pointer hover:bg-gray-100/80 dark:hover:bg-gray-700 transition-all"
+            >
+              <option value="all">Tous les plans</option>
+              <option value="monthly">Mensuel (4 900 F)</option>
+              <option value="quarterly">Trimestriel (12 900 F)</option>
+              <option value="yearly">Annuel (39 900 F)</option>
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          </div>
 
-          <select
-            value={selectedStatusFilter}
-            onChange={(e) => setSelectedStatusFilter(e.target.value)}
-            className="px-3 py-1.5 text-xs font-medium bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
-          >
-            <option value="all">Tous les statuts</option>
-            <option value="completed">Validé / Complété</option>
-            <option value="pending">En attente</option>
-            <option value="failed">Échoué</option>
-          </select>
+          {/* Status Filter Custom Select */}
+          <div className="relative inline-block flex-1 sm:flex-none min-w-[130px]">
+            <select
+              value={selectedStatusFilter}
+              onChange={(e) => setSelectedStatusFilter(e.target.value)}
+              className="w-full appearance-none pl-3.5 pr-8 py-2 text-xs font-semibold bg-gray-50 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 focus:outline-hidden focus:ring-2 focus:ring-violet-500 shadow-2xs cursor-pointer hover:bg-gray-100/80 dark:hover:bg-gray-700 transition-all"
+            >
+              <option value="all">Tous les statuts</option>
+              <option value="completed">Validé / Complété</option>
+              <option value="pending">En attente</option>
+              <option value="failed">Échoué</option>
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          </div>
 
           {(searchQuery || selectedPlanFilter !== "all" || selectedStatusFilter !== "all") && (
             <button
@@ -427,7 +436,7 @@ export default function AdminPaymentsPage() {
                 setSelectedPlanFilter("all");
                 setSelectedStatusFilter("all");
               }}
-              className="text-xs text-violet-600 dark:text-violet-400 hover:underline px-2 shrink-0"
+              className="text-xs font-semibold text-violet-600 dark:text-violet-400 hover:underline px-2 shrink-0 ml-auto sm:ml-0"
             >
               Réinitialiser
             </button>
