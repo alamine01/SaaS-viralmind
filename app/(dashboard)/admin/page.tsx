@@ -210,6 +210,7 @@ export default function AdminDashboardPage() {
       iconBg: "bg-blue-50",
       badgeText: "Tous",
       badgeColor: "bg-blue-50 text-blue-600 border-blue-100",
+      href: "/admin/users",
     },
     {
       label: "MRR estimé",
@@ -222,6 +223,7 @@ export default function AdminDashboardPage() {
       iconBg: "bg-emerald-50",
       badgeText: "Revenu",
       badgeColor: "bg-emerald-50 text-emerald-600 border-emerald-100",
+      href: "/admin/payments",
     },
     {
       label: "Abonnements actifs",
@@ -234,6 +236,7 @@ export default function AdminDashboardPage() {
       iconBg: "bg-amber-50",
       badgeText: totalSubscribersCount > 0 ? `${totalSubscribersCount} actif${totalSubscribersCount > 1 ? "s" : ""}` : "0 actif",
       badgeColor: "bg-amber-50 text-amber-600 border-amber-100",
+      href: "/admin/payments",
     },
     {
       label: "Analyses IA",
@@ -347,10 +350,9 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {kpiCards.map((card, i) => {
           const Icon = card.icon;
-          return (
+          const content = (
             <div 
-              key={i} 
-              className="bg-white rounded-2xl p-5 border border-gray-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_6px_16px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between"
+              className="bg-white rounded-2xl p-5 border border-gray-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_6px_16px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between h-full"
             >
               <div className="flex items-center justify-between gap-3 mb-3">
                 <span className="text-[13px] font-semibold text-gray-600">{card.label}</span>
@@ -375,6 +377,16 @@ export default function AdminDashboardPage() {
                   </span>
                 </div>
               </div>
+            </div>
+          );
+
+          return card.href ? (
+            <Link key={i} href={card.href} className="block h-full">
+              {content}
+            </Link>
+          ) : (
+            <div key={i} className="h-full">
+              {content}
             </div>
           );
         })}
@@ -707,15 +719,15 @@ export default function AdminDashboardPage() {
               </div>
               <span className="text-[13px] font-medium text-gray-700 group-hover:text-blue-600 transition-colors">Gérer les créateurs</span>
             </Link>
-            <button
-              onClick={fetchAnalytics}
-              className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-gray-100 hover:border-emerald-200 hover:bg-emerald-50/50 transition-all group"
+            <Link
+              href="/admin/payments"
+              className="flex items-center gap-3 p-3.5 rounded-xl border border-gray-100 hover:border-emerald-200 hover:bg-emerald-50/50 transition-all group"
             >
               <div className="size-9 rounded-lg bg-emerald-50 flex items-center justify-center">
-                <TrendingUp className="size-4 text-emerald-500" />
+                <CreditCard className="size-4 text-emerald-500" />
               </div>
-              <span className="text-[13px] font-medium text-gray-700 group-hover:text-emerald-600 transition-colors">Actualiser les données</span>
-            </button>
+              <span className="text-[13px] font-medium text-gray-700 group-hover:text-emerald-600 transition-colors">Suivre les paiements & Mobile Money</span>
+            </Link>
             <Link
               href="/admin/users"
               className="flex items-center gap-3 p-3.5 rounded-xl border border-gray-100 hover:border-amber-200 hover:bg-amber-50/50 transition-all group"
