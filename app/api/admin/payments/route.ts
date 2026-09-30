@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db as firestoreDb } from "../../../../lib/firebase";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 
 export interface AdminPaymentTransaction {
   id: string;
@@ -15,6 +15,7 @@ export interface AdminPaymentTransaction {
   refCommand: string;
   itemName: string;
   gateway: string;
+  paymentMethod: string;
   status: "completed" | "pending" | "failed" | "refunded";
   createdAt: string;
   rawDate: string;
@@ -32,11 +33,12 @@ export async function GET() {
         id: docSnap.id,
         email: data.email || "Non renseigné",
         displayName: data.displayName || data.full_name || (data.email ? data.email.split("@")[0] : "Créateur"),
-        phoneNumber: data.phoneNumber || data.phone || null,
+        phoneNumber: data.phoneNumber || data.phone || data.lastPaymentPhone || null,
         plan: (data.plan || "free").toLowerCase(),
         lastPaymentDate: data.lastPaymentDate || null,
         lastPaymentRef: data.lastPaymentRef || null,
         lastPaymentAmount: data.lastPaymentAmount || null,
+        lastPaymentMethod: data.lastPaymentMethod || null,
       });
     });
 
@@ -81,19 +83,23 @@ export async function GET() {
       const ref = d.refCommand || docSnap.id;
       seenRefs.add(ref);
 
+      const resolvedMethod = d.paymentMethod || d.payment_method || user.lastPaymentMethod || "Wave / Orange Money";
+      const resolvedPhone = d.customerPhone || d.phoneNumber || d.phone || user.phoneNumber || undefined;
+
       transactions.push({
         id: docSnap.id,
         userId: d.userId || "inconnu",
         userName: user.displayName || d.customerName || "Créateur Mobile",
         userEmail: user.email || d.userEmail || d.customerEmail || "Email non spécifié",
-        userPhone: user.phoneNumber || d.phoneNumber || d.phone || undefined,
+        userPhone: resolvedPhone,
         plan: normalizedPlan,
         planLabel,
         amount: Number(d.amount) || (normalizedPlan === "yearly" ? 39900 : normalizedPlan === "quarterly" ? 12900 : 4900),
         currency: d.currency || "XOF",
         refCommand: ref,
         itemName: d.itemName || `Abonnement ViralMind ${planLabel}`,
-        gateway: d.gateway || "PayTech Mobile Money",
+        gateway: d.gateway || "PayTech",
+        paymentMethod: resolvedMethod,
         status: (d.status || "completed") as any,
         createdAt: new Date(rawDateStr).toLocaleDateString("fr-FR", {
           day: "2-digit",
@@ -138,14 +144,15 @@ export async function GET() {
             userId: docSnap.id,
             userName: data.displayName || data.full_name || (data.email ? data.email.split("@")[0] : "Créateur"),
             userEmail: data.email || "Non renseigné",
-            userPhone: data.phoneNumber || null,
+            userPhone: data.phoneNumber || data.lastPaymentPhone || null,
             plan: normalizedPlan,
             planLabel,
             amount: Number(data.lastPaymentAmount) || defaultAmount,
             currency: "XOF",
             refCommand: ref,
             itemName: `Abonnement Actif ${planLabel}`,
-            gateway: "PayTech / Mobile Money",
+            gateway: "PayTech",
+            paymentMethod: data.lastPaymentMethod || "Wave / Orange Money",
             status: "completed",
             createdAt: new Date(rawDateStr).toLocaleDateString("fr-FR", {
               day: "2-digit",
