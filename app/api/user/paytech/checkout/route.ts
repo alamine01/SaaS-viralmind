@@ -167,9 +167,20 @@ export async function POST(req: Request) {
       }, { status: 500 });
     }
 
+    let finalRedirectUrl = data.redirect_url;
+    if (targetPayment) {
+      const urlParams = new URLSearchParams();
+      urlParams.set("tp", targetPayment);
+      if (phoneNumber) {
+        urlParams.set("pn", phoneNumber.trim());
+      }
+      urlParams.set("nac", "1");
+      finalRedirectUrl = `${data.redirect_url}?${urlParams.toString()}`;
+    }
+
     return NextResponse.json({
       success: true,
-      redirectUrl: data.redirect_url,
+      redirectUrl: finalRedirectUrl,
       token: data.token,
       refCommand: payload.ref_command,
     });
