@@ -96,15 +96,27 @@ export async function POST(req: Request) {
     const paytechEnv = (rawEnv === "live" || rawEnv === "prod" || rawEnv === "production") ? "prod" : "test";
 
     // Ciblage direct du moyen de paiement (Bypass du premier écran de sélection PayTech)
+    const c = (country || "SN").toUpperCase();
+    const p = String(provider || "").toLowerCase();
+
     let targetPayment: string | undefined = undefined;
-    if (provider) {
-      const p = String(provider).toLowerCase();
-      if (p === "wave") targetPayment = "Wave";
-      else if (p === "orange" || p === "orange_money") targetPayment = "Orange Money";
-      else if (p === "mtn" || p === "mtn_momo") targetPayment = "MTN";
-      else if (p === "moov" || p === "moov_money") targetPayment = "Moov";
-      else if (p === "free" || p === "free_money") targetPayment = "Free Money";
-      else if (p === "card" || p === "carte") targetPayment = "Carte Bancaire";
+    if (p === "wave") {
+      targetPayment = (c === "CI") ? "Wave CI" : "Wave";
+    } else if (p === "orange" || p === "orange_money") {
+      if (c === "CI") targetPayment = "Orange Money CI";
+      else if (c === "ML") targetPayment = "Orange Money ML";
+      else targetPayment = "Orange Money";
+    } else if (p === "mtn" || p === "mtn_momo") {
+      if (c === "BJ") targetPayment = "Mtn Money BJ";
+      else targetPayment = "Mtn Money CI";
+    } else if (p === "moov" || p === "moov_money") {
+      if (c === "BJ") targetPayment = "Moov Money BJ";
+      else if (c === "ML") targetPayment = "Moov Money ML";
+      else targetPayment = "Moov Money CI";
+    } else if (p === "free" || p === "free_money") {
+      targetPayment = "Free Money";
+    } else if (p === "card" || p === "carte") {
+      targetPayment = "Carte Bancaire";
     }
 
     // Payload de paiement PayTech
