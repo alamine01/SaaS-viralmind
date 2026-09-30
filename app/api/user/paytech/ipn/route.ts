@@ -50,6 +50,11 @@ export async function POST(req: Request) {
         plan = "monthly";
       }
 
+      const paymentMethod = body.payment_method || body.type_event || metadata.paymentMethod || "Wave / Orange Money";
+      const customerPhone = body.client_phone || body.phone_number || body.phone || metadata.phoneNumber || null;
+      const customerEmail = body.client_email || body.email || metadata.userEmail || null;
+      const customerName = body.client_name || metadata.userName || null;
+
       if (userId) {
         const quotaConfig = {
           monthly: { analyses: 50, scripts: 20 },
@@ -69,6 +74,8 @@ export async function POST(req: Request) {
           lastPaymentDate: new Date().toISOString(),
           lastPaymentRef: ref_command || `VM-PAY-${Date.now()}`,
           lastPaymentAmount: Number(item_price) || (plan === "yearly" ? 39900 : plan === "quarterly" ? 12900 : 4900),
+          lastPaymentMethod: paymentMethod,
+          lastPaymentPhone: customerPhone,
           updated_at: new Date().toISOString(),
           updatedAt: serverTimestamp(),
         });
@@ -84,6 +91,10 @@ export async function POST(req: Request) {
           itemName: item_name || `Abonnement ViralMind ${plan}`,
           status: "completed",
           gateway: "paytech",
+          paymentMethod,
+          customerPhone,
+          customerEmail,
+          customerName,
           createdAt: serverTimestamp(),
           created_at: new Date().toISOString(),
         }, { merge: true });
