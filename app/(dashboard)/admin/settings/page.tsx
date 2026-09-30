@@ -18,6 +18,9 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 
+import { db } from "@/lib/firebase";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+
 export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -34,15 +37,41 @@ export default function AdminSettingsPage() {
     fetchPricing();
   }, []);
 
+  const parseNumber = (val: any, fallback: number) => {
+    if (typeof val === "number" && !isNaN(val)) return val;
+    if (typeof val === "string") {
+      const digits = val.replace(/\D/g, "").trim();
+      const num = parseInt(digits, 10);
+      return isNaN(num) ? fallback : num;
+    }
+    return fallback;
+  };
+
   const fetchPricing = async () => {
     setLoading(true);
     try {
+      // 1. Lecture directe depuis Firestore
+      const docRef = doc(db, "settings", "pricing");
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        setMonthlyPrice(parseNumber(data.monthlyPrice, 4900).toLocaleString("fr-FR"));
+        setQuarterlyPrice(parseNumber(data.quarterlyPrice, 12900).toLocaleString("fr-FR"));
+        setYearlyPrice(parseNumber(data.yearlyPrice, 39900).toLocaleString("fr-FR"));
+        setCurrency(data.currency || "FCFA");
+        setFreeQuotas(data.freeQuotas ?? 3);
+        setPaidQuotas(data.paidQuotas ?? 30);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Fallback via API
       const res = await fetch("/api/admin/pricing");
       const data = await res.json();
       if (data.pricing) {
-        setMonthlyPrice(Number(data.pricing.monthlyPrice).toLocaleString("fr-FR"));
-        setQuarterlyPrice(Number(data.pricing.quarterlyPrice).toLocaleString("fr-FR"));
-        setYearlyPrice(Number(data.pricing.yearlyPrice).toLocaleString("fr-FR"));
+        setMonthlyPrice(parseNumber(data.pricing.monthlyPrice, 4900).toLocaleString("fr-FR"));
+        setQuarterlyPrice(parseNumber(data.pricing.quarterlyPrice, 12900).toLocaleString("fr-FR"));
+        setYearlyPrice(parseNumber(data.pricing.yearlyPrice, 39900).toLocaleString("fr-FR"));
         setCurrency(data.pricing.currency || "FCFA");
         setFreeQuotas(data.pricing.freeQuotas ?? 3);
         setPaidQuotas(data.pricing.paidQuotas ?? 30);
@@ -58,25 +87,37 @@ export default function AdminSettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch("/api/admin/pricing", {
+      const mNum = parseNumber(monthlyPrice, 4900);
+      const qNum = parseNumber(quarterlyPrice, 12900);
+      const yNum = parseNumber(yearlyPrice, 39900);
+
+      const payload = {
+        monthlyPrice: mNum,
+        quarterlyPrice: qNum,
+        yearlyPrice: yNum,
+        currency: currency || "FCFA",
+        freeQuotas: Number(freeQuotas) || 3,
+        paidQuotas: Number(paidQuotas) || 30,
+        updatedAt: serverTimestamp(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // 1. Écriture directe immédiate dans Firestore (mise à jour instantanée mobile + web)
+      const docRef = doc(db, "settings", "pricing");
+      await setDoc(docRef, payload, { merge: true });
+
+      // 2. Également notifier l'API si disponible
+      fetch("/api/admin/pricing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          monthlyPrice,
-          quarterlyPrice,
-          yearlyPrice,
-          currency,
-          freeQuotas,
-          paidQuotas,
-        }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+        body: JSON.stringify(payload),
+      }).catch((err) => console.log("API save notice:", err));
 
-      toast.success("Tarifs et quotas enregistrés !", {
-        description: "Synchronisation immédiate sur l'application mobile et le site web.",
+      toast.success("Tarifs et quotas enregistrés avec succès !", {
+        description: `Mensuel: ${mNum.toLocaleString('fr-FR')} FCFA | Trimestriel: ${qNum.toLocaleString('fr-FR')} FCFA | Annuel: ${yNum.toLocaleString('fr-FR')} FCFA`,
       });
     } catch (e: any) {
+      console.error("Erreur d'enregistrement:", e);
       toast.error("Erreur d'enregistrement : " + e.message);
     } finally {
       setSaving(false);

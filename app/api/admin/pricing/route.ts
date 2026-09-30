@@ -48,10 +48,10 @@ export async function POST(req: Request) {
     const { monthlyPrice, quarterlyPrice, yearlyPrice, currency, freeQuotas, paidQuotas } = body;
 
     const parsePrice = (val: any, fallback: number) => {
-      if (typeof val === "number") return val;
+      if (typeof val === "number" && !isNaN(val)) return val;
       if (typeof val === "string") {
-        const clean = val.replace(/\s+/g, "").replace(/FCFA/gi, "").replace(/XOF/gi, "").trim();
-        const num = parseInt(clean, 10);
+        const digits = val.replace(/\D/g, "").trim();
+        const num = parseInt(digits, 10);
         return isNaN(num) ? fallback : num;
       }
       return fallback;
