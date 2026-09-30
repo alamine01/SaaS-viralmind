@@ -95,31 +95,7 @@ export async function POST(req: Request) {
     const rawEnv = (process.env.PAYTECH_ENV || "").toLowerCase();
     const paytechEnv = (rawEnv === "live" || rawEnv === "prod" || rawEnv === "production") ? "prod" : "test";
 
-    // Ciblage direct du moyen de paiement (Bypass du premier écran de sélection PayTech)
-    const c = (country || "SN").toUpperCase();
-    const p = String(provider || "").toLowerCase();
-
-    let targetPayment: string | undefined = undefined;
-    if (p === "wave") {
-      targetPayment = (c === "CI") ? "Wave CI" : "Wave";
-    } else if (p === "orange" || p === "orange_money") {
-      if (c === "CI") targetPayment = "Orange Money CI";
-      else if (c === "ML") targetPayment = "Orange Money ML";
-      else targetPayment = "Orange Money";
-    } else if (p === "mtn" || p === "mtn_momo") {
-      if (c === "BJ") targetPayment = "Mtn Money BJ";
-      else targetPayment = "Mtn Money CI";
-    } else if (p === "moov" || p === "moov_money") {
-      if (c === "BJ") targetPayment = "Moov Money BJ";
-      else if (c === "ML") targetPayment = "Moov Money ML";
-      else targetPayment = "Moov Money CI";
-    } else if (p === "free" || p === "free_money") {
-      targetPayment = "Free Money";
-    } else if (p === "card" || p === "carte") {
-      targetPayment = "Carte Bancaire";
-    }
-
-    // Payload de paiement PayTech
+    // Payload standard de paiement PayTech (ouvre la passerelle complète avec tous les moyens Mobile Money)
     const payload: Record<string, any> = {
       item_name: `ViralMind - ${currentConfig.name} (${currentConfig.period})`,
       item_price: String(price),
@@ -141,11 +117,7 @@ export async function POST(req: Request) {
       ipn_url: `${appUrl}/api/user/paytech/ipn`,
     };
 
-    if (targetPayment) {
-      payload.target_payment = targetPayment;
-    }
-
-    console.log("Initialisation paiement PayTech:", payload);
+    console.log("Initialisation paiement PayTech standard:", payload);
 
     const res = await fetch("https://paytech.sn/api/payment/request-payment", {
       method: "POST",
@@ -167,20 +139,9 @@ export async function POST(req: Request) {
       }, { status: 500 });
     }
 
-    let finalRedirectUrl = data.redirect_url;
-    if (targetPayment) {
-      const urlParams = new URLSearchParams();
-      urlParams.set("tp", targetPayment);
-      if (phoneNumber) {
-        urlParams.set("pn", phoneNumber.trim());
-      }
-      urlParams.set("nac", "1");
-      finalRedirectUrl = `${data.redirect_url}?${urlParams.toString()}`;
-    }
-
     return NextResponse.json({
       success: true,
-      redirectUrl: finalRedirectUrl,
+      redirectUrl: data.redirect_url,
       token: data.token,
       refCommand: payload.ref_command,
     });
