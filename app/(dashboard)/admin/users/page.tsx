@@ -22,6 +22,7 @@ import {
   Calendar,
   Sparkles,
   Download,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -63,6 +64,7 @@ export default function AdminUsersPage() {
   
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [savingUser, setSavingUser] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [stats, setStats] = useState<PlatformStats | null>(null);
   
@@ -152,6 +154,37 @@ export default function AdminUsersPage() {
       });
     } finally {
       setSavingUser(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, userNameOrEmail: string) => {
+    const confirmed = window.confirm(
+      `Êtes-vous sûr de vouloir supprimer définitivement l'utilisateur "${userNameOrEmail}" de la base de données ?\n\nCette action est irréversible et effacera toutes ses données dans Firebase.`
+    );
+    if (!confirmed) return;
+
+    setDeletingUserId(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      toast.success("Utilisateur supprimé", {
+        description: `Le compte ${userNameOrEmail} a été définitivement supprimé de la base de données.`,
+      });
+
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      if (editingUser?.id === userId) {
+        setEditingUser(null);
+      }
+    } catch (err: any) {
+      toast.error("Erreur de suppression", {
+        description: err.message || "Impossible de supprimer l'utilisateur.",
+      });
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
@@ -542,13 +575,27 @@ export default function AdminUsersPage() {
                       </td>
 
                       <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={() => handleOpenEdit(u)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 transition-all text-xs font-medium"
-                        >
-                          <Edit3 className="size-3.5" />
-                          Modifier
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleOpenEdit(u)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 transition-all text-xs font-medium"
+                          >
+                            <Edit3 className="size-3.5" />
+                            Modifier
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(u.id, u.email || u.full_name)}
+                            disabled={deletingUserId === u.id}
+                            className="inline-flex items-center justify-center size-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-all disabled:opacity-50"
+                            title="Supprimer définitivement"
+                          >
+                            {deletingUserId === u.id ? (
+                              <Loader2 className="size-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="size-3.5" />
+                            )}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -690,23 +737,39 @@ export default function AdminUsersPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-between gap-3 mt-6 pt-4 border-t border-gray-200">
               <button
                 type="button"
-                onClick={() => setEditingUser(null)}
-                className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 text-sm font-medium transition-colors"
+                onClick={() => handleDeleteUser(editingUser.id, editingUser.email || editingUser.full_name)}
+                disabled={deletingUserId === editingUser.id}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-semibold transition-colors disabled:opacity-50"
               >
-                Annuler
+                {deletingUserId === editingUser.id ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Trash2 className="size-4" />
+                )}
+                Supprimer le compte
               </button>
-              <button
-                type="button"
-                onClick={handleSaveUser}
-                disabled={savingUser}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold shadow-sm transition-all"
-              >
-                {savingUser ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                Enregistrer
-              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 text-sm font-medium transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveUser}
+                  disabled={savingUser}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold shadow-sm transition-all"
+                >
+                  {savingUser ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+                  Enregistrer
+                </button>
+              </div>
             </div>
           </div>
         </div>
