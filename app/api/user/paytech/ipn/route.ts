@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { db } from "@/lib/firebase";
+import { doc, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
 export async function POST(req: Request) {
   try {
@@ -13,51 +15,89 @@ export async function POST(req: Request) {
       try {
         body = await req.json();
       } catch (e) {
-        // En cas de corps brut ou vide
         const text = await req.text();
         const params = new URLSearchParams(text);
         body = Object.fromEntries(params.entries());
       }
     }
 
-    console.log("PayTech IPN Webhook Recieved Payload:", body);
+    console.log("PayTech IPN Webhook Reçu:", body);
 
-    const { type_event, ref_command, custom_field } = body;
+    const { type_event, ref_command, item_price, item_name, custom_field } = body;
 
-    // PayTech envoie 'sale_complete' ou 'paid' lors d'un paiement réussi
-    if (type_event === "sale_complete" || type_event === "paid") {
-      if (!custom_field) {
-        console.error("PayTech Webhook Error: custom_field was missing from payload.");
-        return NextResponse.json({ error: "custom_field metadata missing" }, { status: 400 });
+    // PayTech notifie avec 'sale_complete' ou 'paid'
+    const isPaymentSuccess = type_event === "sale_complete" || type_event === "paid" || body.status === "success";
+
+    if (isPaymentSuccess) {
+      let metadata: any = {};
+      if (custom_field) {
+        try {
+          metadata = typeof custom_field === "string" ? JSON.parse(custom_field) : custom_field;
+        } catch (e) {
+          console.warn("Erreur parsing custom_field:", e);
+        }
       }
 
-      // Décoder les métadonnées de la transaction (userId, plan, isAnnual)
-      const metadata = JSON.parse(custom_field);
-      const { userId, plan, isAnnual } = metadata;
+      const userId = metadata.userId || body.client_id;
+      let plan = (metadata.plan || "monthly").toLowerCase();
 
-      if (!userId || !plan) {
-        console.error("PayTech Webhook Error: userId or plan was missing inside custom_field.");
-        return NextResponse.json({ error: "Invalid metadata structure" }, { status: 400 });
+      // Normalisation du plan
+      if (plan.includes("year") || plan.includes("annuel")) {
+        plan = "yearly";
+      } else if (plan.includes("quarter") || plan.includes("trimestriel")) {
+        plan = "quarterly";
+      } else {
+        plan = "monthly";
       }
 
-      // Mettre à jour le forfait du créateur dans Firebase Firestore
-      const { db } = await import("@/lib/firebase");
-      const { doc, updateDoc, serverTimestamp } = await import("firebase/firestore");
+      if (userId) {
+        const quotaConfig = {
+          monthly: { analyses: 50, scripts: 20 },
+          quarterly: { analyses: 150, scripts: 50 },
+          yearly: { analyses: 500, scripts: 100 },
+        };
 
-      await updateDoc(doc(db, "users", userId), {
-        plan: plan.toLowerCase(),
-        isAnnual: !!isAnnual,
-        updatedAt: serverTimestamp(),
-        lastPaymentDate: new Date().toISOString()
-      });
+        const quotas = quotaConfig[plan as keyof typeof quotaConfig] || quotaConfig.monthly;
 
-      console.log(`[PayTech success] Utilisateur ${userId} promu au plan ${plan.toUpperCase()} dans Firebase Firestore (${isAnnual ? "Annuel" : "Mensuel"}) !`);
+        // 1. Mettre à jour l'utilisateur dans Firestore
+        await updateDoc(doc(db, "users", userId), {
+          plan,
+          subscriptionStatus: "active",
+          subscriptionPlan: plan,
+          monthly_analysis_count: quotas.analyses,
+          daily_script_count: quotas.scripts,
+          lastPaymentDate: new Date().toISOString(),
+          lastPaymentRef: ref_command || `VM-PAY-${Date.now()}`,
+          lastPaymentAmount: Number(item_price) || (plan === "yearly" ? 39900 : plan === "quarterly" ? 12900 : 4900),
+          updated_at: new Date().toISOString(),
+          updatedAt: serverTimestamp(),
+        });
+
+        // 2. Enregistrer la transaction dans la collection 'payments' pour l'historique
+        const paymentId = ref_command || `pay_${Date.now()}`;
+        await setDoc(doc(db, "payments", paymentId), {
+          userId,
+          plan,
+          amount: Number(item_price) || (plan === "yearly" ? 39900 : plan === "quarterly" ? 12900 : 4900),
+          currency: "XOF",
+          refCommand: ref_command || paymentId,
+          itemName: item_name || `Abonnement ViralMind ${plan}`,
+          status: "completed",
+          gateway: "paytech",
+          createdAt: serverTimestamp(),
+          created_at: new Date().toISOString(),
+        }, { merge: true });
+
+        console.log(`[PayTech Success] Utilisateur ${userId} mis à niveau avec succès au plan ${plan.toUpperCase()} !`);
+      } else {
+        console.warn("[PayTech Notice] Impossible d'extraire le userId du webhook PayTech:", body);
+      }
     }
 
-    // Répondre systématiquement HTTP 200 OK à PayTech pour accuser réception de la notification
+    // Toujours répondre HTTP 200 à PayTech
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error("PayTech IPN Webhook Route Main Error:", error);
+    console.error("PayTech IPN Webhook Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
