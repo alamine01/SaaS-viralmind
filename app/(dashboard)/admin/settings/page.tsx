@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Settings, 
   CreditCard, 
@@ -12,24 +12,75 @@ import {
   ArrowLeft,
   Calendar,
   Sparkles,
-  Crown
+  Crown,
+  Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
 export default function AdminSettingsPage() {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
   const [monthlyPrice, setMonthlyPrice] = useState("4 900");
   const [quarterlyPrice, setQuarterlyPrice] = useState("12 900");
-  const [yearlyPrice, setYearlyPrice] = useState("39 000");
+  const [yearlyPrice, setYearlyPrice] = useState("39 900");
   const [currency, setCurrency] = useState("FCFA");
 
   const [freeQuotas, setFreeQuotas] = useState(3);
   const [paidQuotas, setPaidQuotas] = useState(30);
 
-  const handleSave = () => {
-    toast.success("Paramètres enregistrés", {
-      description: "La configuration des plans et quotas a été mise à jour avec succès."
-    });
+  useEffect(() => {
+    fetchPricing();
+  }, []);
+
+  const fetchPricing = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/pricing");
+      const data = await res.json();
+      if (data.pricing) {
+        setMonthlyPrice(Number(data.pricing.monthlyPrice).toLocaleString("fr-FR"));
+        setQuarterlyPrice(Number(data.pricing.quarterlyPrice).toLocaleString("fr-FR"));
+        setYearlyPrice(Number(data.pricing.yearlyPrice).toLocaleString("fr-FR"));
+        setCurrency(data.pricing.currency || "FCFA");
+        setFreeQuotas(data.pricing.freeQuotas ?? 3);
+        setPaidQuotas(data.pricing.paidQuotas ?? 30);
+      }
+    } catch (e: any) {
+      console.error("Error loading pricing:", e);
+      toast.error("Impossible de charger les tarifs depuis Firestore.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/pricing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          monthlyPrice,
+          quarterlyPrice,
+          yearlyPrice,
+          currency,
+          freeQuotas,
+          paidQuotas,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      toast.success("Tarifs et quotas enregistrés !", {
+        description: "Synchronisation immédiate sur l'application mobile et le site web.",
+      });
+    } catch (e: any) {
+      toast.error("Erreur d'enregistrement : " + e.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -54,10 +105,11 @@ export default function AdminSettingsPage() {
         </div>
         <button
           onClick={handleSave}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold shadow-sm transition-all"
+          disabled={saving || loading}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white text-sm font-semibold shadow-sm transition-all cursor-pointer"
         >
-          <Save className="size-4" />
-          <span>Enregistrer les modifications</span>
+          {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+          <span>{saving ? "Synchronisation..." : "Enregistrer les modifications"}</span>
         </button>
       </div>
 

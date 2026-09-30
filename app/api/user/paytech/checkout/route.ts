@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 export async function POST(req: Request) {
   try {
@@ -46,21 +48,38 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Utilisateur non authentifié. Veuillez vous connecter." }, { status: 401 });
     }
 
+    // Récupération des tarifs dynamiques synchronisés depuis Firestore
+    let dynamicMonthly = 4900;
+    let dynamicQuarterly = 12900;
+    let dynamicYearly = 39900;
+
+    try {
+      const pricingSnap = await getDoc(doc(db, "settings", "pricing"));
+      if (pricingSnap.exists()) {
+        const pData = pricingSnap.data();
+        if (pData.monthlyPrice) dynamicMonthly = Number(pData.monthlyPrice);
+        if (pData.quarterlyPrice) dynamicQuarterly = Number(pData.quarterlyPrice);
+        if (pData.yearlyPrice) dynamicYearly = Number(pData.yearlyPrice);
+      }
+    } catch (e) {
+      console.warn("Firestore pricing fetch fallback notice:", e);
+    }
+
     // Calcul du tarif exact en Franc CFA (XOF)
     const planConfig = {
       monthly: {
         name: "Plan Mensuel",
-        price: 4900,
+        price: dynamicMonthly,
         period: "1 mois",
       },
       quarterly: {
         name: "Plan Trimestriel",
-        price: 12900,
+        price: dynamicQuarterly,
         period: "3 mois",
       },
       yearly: {
         name: "Plan Annuel",
-        price: 39900,
+        price: dynamicYearly,
         period: "1 an",
       },
     };
