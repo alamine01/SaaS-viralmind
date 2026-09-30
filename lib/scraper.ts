@@ -189,7 +189,7 @@ export async function scrapeVideoData(url: string) {
                 likes: output.like_count || 0,
                 comments: output.comment_count || 0,
                 followers: 0,
-                videoId: output.id || url.split("/").filter(Boolean).pop(),
+                videoId: output.id || getUniqueVideoId(url),
                 finalUrl: url,
                 audioUrl: output.url
               };
@@ -210,7 +210,7 @@ export async function scrapeVideoData(url: string) {
       const username = owner.username || owner.user_name;
       console.log("DEBUG: Instagram Owner trouvé :", username);
       
-      const videoId = item.shortcode || item.id || url.split("/").filter(Boolean).pop();
+      const videoId = item.shortcode || item.id || getUniqueVideoId(url);
       const caption = item.edge_media_to_caption?.edges?.[0]?.node?.text || item.caption?.text || "";
 
       let followers = owner.follower_count || owner.followers || owner.edge_followed_by?.count || 0;
@@ -241,6 +241,13 @@ export async function scrapeVideoData(url: string) {
         }
       }
 
+      const extractedAudioUrl = item.video_url || 
+        item.video_versions?.[0]?.url || 
+        item.video_resources?.[0]?.src || 
+        item.media?.video_url || 
+        item.display_url || 
+        "";
+
       return {
         title: caption || "Reel Instagram",
         transcript: caption || "Analyse basée sur le contenu visuel.",
@@ -252,7 +259,7 @@ export async function scrapeVideoData(url: string) {
         followers: followers,
         videoId: videoId,
         finalUrl: url,
-        audioUrl: item.video_url
+        audioUrl: extractedAudioUrl
       };
     } else {
       // TikTok Logic - Restauration de la logique complète
@@ -314,7 +321,8 @@ export async function scrapeVideoData(url: string) {
           views: videoInfo.play_count || videoInfo.view_count || 0,
           likes: videoInfo.digg_count || 0,
           comments: videoInfo.comment_count || 0,
-          followers: followersCount
+          followers: followersCount,
+          images: videoInfo.images || []
         };
       } catch (err: any) {
         console.warn("DEBUG: API TikTok échouée. Passage au secours local youtube-dl-exec...", err.message);
@@ -339,7 +347,8 @@ export async function scrapeVideoData(url: string) {
               views: output.view_count || 0,
               likes: output.like_count || 0,
               comments: output.comment_count || 0,
-              followers: 0
+              followers: 0,
+              images: []
             };
           }
           throw new Error("Aucun résultat retourné par le secours local.");
@@ -356,20 +365,20 @@ export async function scrapeVideoData(url: string) {
 }
 
 export function getUniqueVideoId(url: string) {
-  if (url.includes("v=")) return url.split("v=")[1].split("&")[0];
-  if (url.includes("youtu.be/")) return url.split("youtu.be/")[1].split("?")[0];
-  if (url.includes("youtube.com/shorts/")) return url.split("shorts/")[1].split("?")[0];
-  if (url.includes("instagram.com")) {
-    const parts = url.split("/");
-    // Les URLs Instagram sont souvent /reels/ID/ ou /p/ID/
+  if (!url) return "";
+  const cleanUrl = url.trim().replace(/\/$/, "");
+  if (cleanUrl.includes("v=")) return cleanUrl.split("v=")[1].split("&")[0];
+  if (cleanUrl.includes("youtu.be/")) return cleanUrl.split("youtu.be/")[1].split("?")[0];
+  if (cleanUrl.includes("youtube.com/shorts/")) return cleanUrl.split("shorts/")[1].split("?")[0];
+  if (cleanUrl.includes("instagram.com")) {
+    const parts = cleanUrl.split("/").filter(Boolean);
     const index = parts.findIndex(p => p === "reels" || p === "p" || p === "reel");
-    return index !== -1 ? parts[index + 1] : parts[parts.length - 1];
+    return (index !== -1 && parts[index + 1]) ? parts[index + 1].split("?")[0] : parts[parts.length - 1].split("?")[0];
   }
-  if (url.includes("tiktok.com")) {
-    const cleanUrl = url.replace(/\/$/, "");
-    const parts = cleanUrl.split("/");
+  if (cleanUrl.includes("tiktok.com")) {
+    const parts = cleanUrl.split("/").filter(Boolean);
     return parts[parts.length - 1].split("?")[0];
   }
-  return url;
+  return cleanUrl;
 }
 

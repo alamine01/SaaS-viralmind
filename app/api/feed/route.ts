@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { db } from "../../../lib/firebase"
+import { collection, getDocs, query, limit as firestoreLimit, orderBy } from "firebase/firestore"
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY
 
@@ -1222,7 +1218,7 @@ async function fetchInstagramReelsForCreator(username: string, apiKey: string): 
         "X-RapidAPI-Host": "instagram-public-bulk-scraper.p.rapidapi.com",
       },
       next: { revalidate: 86400 } // Cache 24h
-    })
+    } as any)
     
     if (!res.ok) {
       throw new Error(`Scraper A HTTP error: ${res.status}`)
@@ -1246,7 +1242,7 @@ async function fetchInstagramReelsForCreator(username: string, apiKey: string): 
           "X-RapidAPI-Host": "instagram-scraper-stable-api.p.rapidapi.com",
         },
         next: { revalidate: 86400 } // Cache 24h
-      })
+      } as any)
       if (!res.ok) {
         throw new Error(`Scraper B HTTP error: ${res.status}`)
       }
@@ -1281,14 +1277,14 @@ export async function GET(req: NextRequest) {
 
         const ytUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&order=viewCount&maxResults=${Math.min(limit, 50)}&videoDuration=short&relevanceLanguage=fr&regionCode=FR&key=${YOUTUBE_API_KEY}`
 
-        const ytRes = await fetch(ytUrl, { next: { revalidate: 86400 } }) // Cache 24h
+        const ytRes = await fetch(ytUrl, { next: { revalidate: 86400 } } as any) // Cache 24h
         const ytData = await ytRes.json()
 
         if (ytData.items && ytData.items.length > 0) {
           // Get video statistics for view counts
           const videoIds = ytData.items.map((item: any) => item.id.videoId).join(",")
           const statsUrl = `https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails&id=${videoIds}&key=${YOUTUBE_API_KEY}`
-          const statsRes = await fetch(statsUrl, { next: { revalidate: 86400 } }) // Cache 24h
+          const statsRes = await fetch(statsUrl, { next: { revalidate: 86400 } } as any) // Cache 24h
           const statsData = await statsRes.json()
 
           const statsMap: Record<string, any> = {}
@@ -1364,7 +1360,7 @@ export async function GET(req: NextRequest) {
           const response = await fetch(tiktokUrl, {
             ...options,
             next: { revalidate: 86400 } // Cache results for 24 hours to preserve RapidAPI quota!
-          })
+          } as any)
           const data = await response.json()
 
           const videos = data.data?.videos || data.data || []
@@ -1513,53 +1509,44 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 2. Fetch community-analyzed videos from Supabase
+    // 2. Fetch community-analyzed videos from Firestore
     if (source === "community") {
       try {
-        let query = supabase
-          .from("videos")
-          .select("*")
-          .gt("viral_score", 0)
-          .order("viral_score", { ascending: false })
-          .limit(Math.min(limit, 20))
-
-        if (niche !== "all") {
-          query = query.ilike("niche", `%${niche}%`)
-        }
-
-        const { data: videos, error } = await query
-
-        if (!error && videos) {
-          for (const v of videos) {
-            // Extract YouTube video ID from URL if possible for embed
-            let embedUrl = ""
-            const ytMatch = v.url?.match(/(?:v=|\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
-            if (ytMatch) {
-              embedUrl = `https://www.youtube.com/embed/${ytMatch[1]}`
-            }
-
-            results.push({
-              id: `cm-${v.id}`,
-              source: "community",
-              platform: v.platform || "YouTube",
-              title: v.title,
-              author: v.url ? new URL(v.url).hostname : "Communauté",
-              thumbnail: v.thumbnail || "",
-              url: v.url,
-              embed_url: embedUrl,
-              views: v.views || 0,
-              views_formatted: formatViewCount(v.views || 0),
-              likes: v.likes || 0,
-              niche: v.niche || "divers",
-              viral_score: Math.round(v.viral_score || 0),
-              hook: v.hook || "",
-              published_at: v.created_at,
-              time_ago: timeAgo(v.created_at),
-            })
+        const q = query(
+          collection(db, "videos"),
+          orderBy("viral_score", "desc"),
+          firestoreLimit(Math.min(limit, 20))
+        )
+        const snap = await getDocs(q)
+        snap.forEach((docSnap: any) => {
+          const v = docSnap.data() as any
+          let embedUrl = ""
+          const ytMatch = v.url?.match(/(?:v=|\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+          if (ytMatch) {
+            embedUrl = `https://www.youtube.com/embed/${ytMatch[1]}`
           }
-        }
+
+          results.push({
+            id: `cm-${docSnap.id}`,
+            source: "community",
+            platform: v.platform || "TikTok",
+            title: v.title || "Vidéo virale",
+            author: v.author || "Créateur",
+            thumbnail: v.thumbnail || "",
+            url: v.url,
+            embed_url: embedUrl,
+            views: v.views || 0,
+            views_formatted: formatViewCount(v.views || 0),
+            likes: v.likes || 0,
+            niche: v.niche || "divers",
+            viral_score: Math.round(v.viral_score || 0),
+            hook: v.hook || "",
+            published_at: v.created_at || new Date().toISOString(),
+            time_ago: timeAgo(v.created_at || new Date().toISOString()),
+          })
+        })
       } catch (dbError) {
-        console.error("Supabase feed error:", dbError)
+        console.warn("Firestore community feed query notice:", dbError)
       }
     }
 

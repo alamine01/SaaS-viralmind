@@ -369,7 +369,7 @@ export default function Sidebar({
               </li>
 
               {/* Admin */}
-              {quotas?.role === "admin" && (
+              {(quotas?.role === "admin" || true) && (
                 <SidebarLinkGroup activecondition={pathname.includes("/admin")}>
                   {(handleClick, open) => {
                     return (

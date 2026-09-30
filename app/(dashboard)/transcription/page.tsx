@@ -11,14 +11,13 @@ import {
   ArrowRight,
   Sparkles,
   Link as LinkIcon,
-  RotateCw,
-  Download
+  RotateCw
 } from "lucide-react"
 import { toast } from "sonner"
+import { getCleanVideoUrl } from "@/lib/url-utils";
 export default function TranscriptionPage() {
   const [url, setUrl] = useState("")
   const [loading, setLoading] = useState(false)
-  const [downloadLoading, setDownloadLoading] = useState(false)
   const [transcript, setTranscript] = useState("")
   const [copied, setCopied] = useState(false)
   const [bilingual, setBilingual] = useState<{ original: string, french: string, isBilingual: boolean }>({
@@ -28,16 +27,19 @@ export default function TranscriptionPage() {
   })
   const [activeLang, setActiveLang] = useState<'original' | 'french'>('original')
 
+
+
   const handleTranscribe = async (forceRefresh = false) => {
     if (!url) return
     setLoading(true)
     setTranscript("")
     setBilingual({ original: "", french: "", isBilingual: false })
     try {
+      const cleaned = getCleanVideoUrl(url);
       const res = await fetch("/api/analyse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, forceRefresh })
+        body: JSON.stringify({ url: cleaned.cleanUrl, platform: cleaned.platform, forceRefresh })
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
@@ -69,91 +71,6 @@ export default function TranscriptionPage() {
       toast.error("Erreur : " + error.message)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleDownload = async () => {
-    if (!url) return
-    setDownloadLoading(true)
-    try {
-      // 1. Tenter d'abord la résolution via le backend
-      const res = await fetch("/api/download-video", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url })
-      })
-      const data = await res.json()
-      
-      let downloadUrl = data.downloadUrl
-      let filename = data.filename || "video.mp4"
-      
-      // 2. Si le backend échoue (ex: Vercel bloqué), tenter l'extraction Cobalt en direct depuis le navigateur (en parallèle)
-      if (data.error || !downloadUrl) {
-        console.warn("Échec serveur (Vercel bloqué ?). Passage à l'extraction directe depuis le navigateur...");
-        const targetUrl = data.cleanUrl || url;
-        const COBALT_INSTANCES = [
-          "https://api.cobalt.blackcat.sweeux.org",
-          "https://cobaltapi.kittycat.boo",
-          "https://dog.kittycat.boo",
-          "https://fox.kittycat.boo"
-        ];
-        
-        let resolvedUrl = "";
-        const promises = COBALT_INSTANCES.map(async (instance) => {
-          try {
-            console.log(`[CLIENT-DOWNLOAD] Tente Cobalt: ${instance} pour URL: ${targetUrl}`);
-            const cobRes = await fetch(instance, {
-              method: "POST",
-              headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({ url: targetUrl })
-            });
-            if (cobRes.ok) {
-              const cobData = await cobRes.json();
-              if (cobData.url) {
-                console.log(`[CLIENT-DOWNLOAD] Succès Cobalt ${instance} : ${cobData.url}`);
-                return { url: cobData.url, filename: cobData.filename };
-              }
-            } else {
-              const errText = await cobRes.text();
-              console.warn(`[CLIENT-DOWNLOAD] Échec Cobalt ${instance} avec status ${cobRes.status}: ${errText}`);
-            }
-          } catch (e: any) {
-            console.error(`[CLIENT-DOWNLOAD] Erreur Cobalt ${instance}:`, e);
-          }
-          throw new Error("failed");
-        });
-
-        try {
-          const result = await Promise.any(promises);
-          resolvedUrl = result.url;
-          if (result.filename) filename = result.filename;
-        } catch (e: any) {
-          console.error("Toutes les requêtes Cobalt du navigateur ont échoué.", e);
-        }
-        
-        if (resolvedUrl) {
-          downloadUrl = resolvedUrl;
-        } else {
-          throw new Error(data.error || "Impossible de récupérer le lien de la vidéo.");
-        }
-      }
-      
-      if (downloadUrl) {
-        const link = document.createElement("a")
-        link.href = downloadUrl
-        link.setAttribute("download", filename)
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        toast.success("Téléchargement lancé !")
-      }
-    } catch (error: any) {
-      toast.error("Erreur lors du téléchargement : " + error.message)
-    } finally {
-      setDownloadLoading(false)
     }
   }
 
@@ -221,7 +138,7 @@ export default function TranscriptionPage() {
         ) : transcript ? (
           <Card className="border-none shadow-md rounded-2xl bg-white dark:bg-gray-800 overflow-hidden border border-gray-200 dark:border-gray-700/60 animate-in slide-in-from-bottom-8 duration-500">
             <CardContent className="p-8 md:p-12 space-y-10">
-              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
                   <div className="size-12 rounded-xl bg-violet-600 text-white flex items-center justify-center shadow-sm">
                     <FileText className="size-6" />
@@ -234,7 +151,7 @@ export default function TranscriptionPage() {
                   </div>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto justify-end">
                   {bilingual.isBilingual && (
                     <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-lg flex items-center border border-gray-200 dark:border-gray-700/60 w-full sm:w-auto">
                       <button 
@@ -252,7 +169,7 @@ export default function TranscriptionPage() {
                     </div>
                   )}
 
-                  <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                  <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto justify-end">
                     <button 
                       onClick={() => handleTranscribe(true)}
                       disabled={loading}
@@ -268,15 +185,6 @@ export default function TranscriptionPage() {
                     >
                       {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
                       {copied ? 'Copié' : 'Copier'}
-                    </button>
-
-                    <button 
-                      onClick={handleDownload}
-                      disabled={downloadLoading}
-                      className="flex-1 sm:flex-initial px-5 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
-                    >
-                      {downloadLoading ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
-                      {downloadLoading ? 'Téléchargement...' : 'Télécharger'}
                     </button>
                   </div>
                 </div>

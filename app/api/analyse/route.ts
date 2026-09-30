@@ -3,10 +3,13 @@ import { analyzeVideo } from "@/lib/ai-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { scrapeVideoData, getUniqueVideoId } from "@/lib/scraper";
 import { checkAndIncrementAnalysisQuota } from "@/lib/quota-service";
+import { getCleanVideoUrl } from "@/lib/url-utils";
 
 export async function POST(req: Request) {
   try {
-    const { url, followers, userId, collectionName, forceRefresh } = await req.json();
+    const { url: rawUrl, followers, userId, collectionName, forceRefresh } = await req.json();
+  const { cleanUrl, platform: detectedPlatform } = getCleanVideoUrl(rawUrl);
+  const url = cleanUrl;
 
     if (!url) {
       return NextResponse.json({ error: "URL manquante" }, { status: 400 });
@@ -15,14 +18,49 @@ export async function POST(req: Request) {
     const supabase = await createSupabaseServerClient();
 
     // 0. VÉRIFICATION DU CACHE : charger l'analyse si déjà existante pour économiser les quotas
-    const cleanUrl = url.trim();
-    const { data: existingVideo } = await supabase
+    const trimmedUrl = url.trim();
+    let existingVideo = null;
+    
+    // 1. Essai avec l'URL brute
+    const { data: videoByRaw } = await supabase
       .from("videos")
       .select("*")
-      .eq("url", cleanUrl)
+      .eq("url", rawUrl.trim())
       .maybeSingle();
+    existingVideo = videoByRaw;
 
-    if (existingVideo && !forceRefresh) {
+    // 2. Si non trouvé, essai avec l'URL nettoyée (cleanUrl)
+    if (!existingVideo) {
+      const { data: videoByClean } = await supabase
+        .from("videos")
+        .select("*")
+        .eq("url", trimmedUrl)
+        .maybeSingle();
+      existingVideo = videoByClean;
+    }
+
+    // 3. Si toujours non trouvé, recherche partielle (ilike)
+    if (!existingVideo && detectedPlatform !== "youtube") {
+      const { data: videoByLike } = await supabase
+        .from("videos")
+        .select("*")
+        .ilike("url", `%${trimmedUrl}%`)
+        .maybeSingle();
+      existingVideo = videoByLike;
+    }
+
+    const isValidCacheTranscript = (t?: string) => {
+      if (!t || !t.trim()) return false;
+      const lower = t.trim().toLowerCase();
+      return (
+        lower !== "analyse visuelle." &&
+        lower !== "analyse basée sur le contenu visuel." &&
+        lower !== "transcription non disponible." &&
+        lower !== "aucune transcription trouvée."
+      );
+    };
+
+    if (existingVideo && !forceRefresh && isValidCacheTranscript(existingVideo.transcript)) {
       // Associer automatiquement la vidéo existante à l'historique de l'utilisateur si nécessaire
       const targetUserId = userId || (await supabase.auth.getUser()).data.user?.id;
       if (targetUserId) {
@@ -52,7 +90,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         ...existingVideo,
-        video_id: existingVideo.video_id || getUniqueVideoId(cleanUrl),
+        video_id: existingVideo.video_id || getUniqueVideoId(trimmedUrl),
         cached: true
       });
     }
@@ -77,7 +115,7 @@ export async function POST(req: Request) {
     }
 
     // 1. SCRAPING : Récupérer les vraies données de la vidéo
-    const scrapedData = await scrapeVideoData(url);
+    const scrapedData = await scrapeVideoData(rawUrl);
     const views = (scrapedData as any).views || 0;
     const scrapedFollowers = (scrapedData as any).followers || 0;
     
@@ -101,10 +139,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const isYT = url.includes("youtube.com") || url.includes("youtu.be");
-    const isIG = url.includes("instagram.com");
-    const platform = isYT ? "youtube" : (isIG ? "instagram" : "tiktok");
-    const analysis = await analyzeVideo(url, scrapedData.title || "Vidéo Virale", cleanTranscript, (scrapedData as any).audioUrl);
+    const isYT = rawUrl.includes("youtube.com") || rawUrl.includes("youtu.be");
+    const isIG = rawUrl.includes("instagram.com");
+    const platform = detectedPlatform !== "unknown" ? detectedPlatform : (isYT ? "youtube" : (isIG ? "instagram" : "tiktok"));
+    const analysis = await analyzeVideo(rawUrl, scrapedData.title || "Vidéo Virale", cleanTranscript, (scrapedData as any).audioUrl, (scrapedData as any).images);
 
     // Normalisation des patterns pour Supabase (doit être un tableau)
     let patterns = analysis.patterns;
@@ -137,13 +175,13 @@ export async function POST(req: Request) {
         {
           platform,
           title: scrapedData.title || "Analyse Vidéo",
-          url: (scrapedData as any).finalUrl || url, // Sauvegarder l'URL finale (longue)
+          url: (scrapedData as any).finalUrl || rawUrl, // Sauvegarder l'URL finale (longue)
           thumbnail: scrapedData.thumbnail || "",
           niche: scrapedData.niche || "Général",
           transcript: (() => {
             const original = analysis.original_transcript || scrapedData.transcript;
             const french = analysis.full_transcript;
-            if (original && french && original.trim().toLowerCase() !== french.trim().toLowerCase() && original.trim().toLowerCase() !== "analyse visuelle." && original.trim().toLowerCase() !== "transcription non disponible.") {
+            if (original && french && original.trim().toLowerCase() !== french.trim().toLowerCase() && isValidCacheTranscript(original) && isValidCacheTranscript(french)) {
               return JSON.stringify({ original: original.trim(), french: french.trim() });
             }
             return french || original || "";

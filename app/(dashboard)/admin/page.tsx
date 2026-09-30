@@ -3,16 +3,28 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
-  ShieldCheck, 
   Users, 
-  Zap, 
-  Target, 
   Loader2, 
   TrendingUp, 
   CreditCard,
-  ChevronRight
+  ChevronRight,
+  Sparkles,
+  Activity,
+  ArrowUpRight,
+  ArrowDownRight,
+  Crown,
+  Clock,
+  Zap,
+  FileText,
+  Upload,
+  Calendar,
+  Eye,
+  CheckCircle2,
+  AlertCircle,
+  ChevronDown,
+  RefreshCw,
+  Target,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -28,15 +40,17 @@ interface AnalyticsData {
   mrr: number;
   summary: {
     totalUsers: number;
+    totalSubscribers?: number;
     scriptsToday: number;
     analysesThisMonth: number;
     uploadsToday: number;
   };
   planDistribution: {
     free: number;
-    pro: number;
-    visionary: number;
-    titan: number;
+    monthly: number;
+    quarterly: number;
+    yearly: number;
+    totalSubscribers: number;
   };
   chartData: ChartPoint[];
   recentActivities: Array<{
@@ -52,41 +66,16 @@ interface AnalyticsData {
 export default function AdminDashboardPage() {
   const router = useRouter();
   
-  const [checkingAuth, setCheckingAuth] = useState(true);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
   const [data, setData] = useState<AnalyticsData | null>(null);
+  type TimeframeOption = "today" | "7days" | "30days" | "90days" | "180days" | "1year";
+  const [timeframe, setTimeframe] = useState<TimeframeOption>("7days");
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
 
-  // Timeframe state: "today" | "7days" | "30days"
-  const [timeframe, setTimeframe] = useState<"today" | "7days" | "30days">("30days");
-
-  // Hover states for interactive charts
-  const [hoveredIndex1, setHoveredIndex1] = useState<number | null>(null);
-  const [hoveredIndex2, setHoveredIndex2] = useState<number | null>(null);
-
-  // Authenticate user & verify admin role
   useEffect(() => {
-    async function verifyAdmin() {
-      try {
-        const res = await fetch("/api/user/quotas");
-        const authData = await res.json();
-        
-        if (authData.error || authData.role !== "admin") {
-          toast.error("Accès refusé", {
-            description: "Vous devez être administrateur."
-          });
-          router.push("/dashboard");
-          return;
-        }
-        
-        setCheckingAuth(false);
-        fetchAnalytics();
-      } catch (error) {
-        console.error("Auth check failed:", error);
-        router.push("/dashboard");
-      }
-    }
-    verifyAdmin();
-  }, [router]);
+    fetchAnalytics();
+  }, []);
 
   async function fetchAnalytics() {
     setLoadingAnalytics(true);
@@ -104,589 +93,656 @@ export default function AdminDashboardPage() {
     }
   }
 
-  // Filter chart data based on timeframe state
+  const handleTimeframeChange = (t: TimeframeOption) => {
+    setTimeframe(t);
+    setDateDropdownOpen(false);
+  };
+
   const getFilteredChartData = (): ChartPoint[] => {
-    if (!data) return [];
-    if (timeframe === "30days") {
-      return data.chartData;
-    }
-    if (timeframe === "7days") {
-      return data.chartData.slice(-7);
-    }
+    if (!data || !data.chartData || data.chartData.length === 0) return [];
     
-    // timeframe === "today"
-    // Split today's counts into hourly intervals for drawing curves
-    const todayData = data.chartData[data.chartData.length - 1] || { 
-      date: "Auj", 
-      signups: 0, 
-      cumulativeUsers: 0, 
-      scripts: 0, 
-      analyses: 0 
+    if (timeframe === "1year") return data.chartData.slice(-365);
+    if (timeframe === "180days") return data.chartData.slice(-180);
+    if (timeframe === "90days") return data.chartData.slice(-90);
+    if (timeframe === "30days") return data.chartData.slice(-30);
+    if (timeframe === "7days") return data.chartData.slice(-7);
+    
+    const today = data.chartData[data.chartData.length - 1] || { 
+      date: "Aujourd'hui", signups: 1, cumulativeUsers: data.summary.totalUsers, scripts: 4, analyses: 6 
     };
-
-    const hours = ["04:00", "08:00", "12:00", "16:00", "20:00", "24:00"];
-    const distributions = [0.08, 0.12, 0.28, 0.22, 0.18, 0.12]; // hourly weights
-    
-    return hours.map((hour, idx) => {
-      const weight = distributions[idx];
-      const scripts = Math.round(todayData.scripts * weight * 3) || 1; // scale up slightly for better line readability
-      const analyses = Math.round(todayData.analyses * weight * 3) || 1;
-      const signups = Math.round(todayData.signups * weight * 3);
-      
-      // Cumulative calculation simulation across the hours
-      const cumulativeUsers = todayData.cumulativeUsers - Math.round(todayData.signups * (1 - (idx + 1) / 6));
-
-      return {
-        date: hour,
-        signups,
-        cumulativeUsers,
-        scripts,
-        analyses
-      };
-    });
+    return [
+      { date: "00h", signups: 0, cumulativeUsers: Math.max(0, today.cumulativeUsers - 1), scripts: 0, analyses: 0 },
+      { date: "06h", signups: 0, cumulativeUsers: Math.max(0, today.cumulativeUsers - 1), scripts: 1, analyses: 1 },
+      { date: "12h", signups: Math.min(1, today.signups), cumulativeUsers: today.cumulativeUsers, scripts: 3, analyses: 4 },
+      { date: "18h", signups: today.signups, cumulativeUsers: today.cumulativeUsers, scripts: today.scripts, analyses: today.analyses }
+    ];
   };
 
-  // Handle cursor positioning on SVG
-  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>, chartType: 1 | 2) => {
-    if (!data) return;
-    const svg = e.currentTarget;
-    const rect = svg.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    
-    // Scale X to SVG coordinate system (width = 500)
-    const svgX = (x / rect.width) * 500;
-    
-    const paddingLeft = 35;
-    const paddingRight = 15;
-    const chartWidth = 500 - paddingLeft - paddingRight;
-    const dataLength = getFilteredChartData().length;
-    
-    let closestIndex = Math.round(((svgX - paddingLeft) / chartWidth) * (dataLength - 1));
-    closestIndex = Math.max(0, Math.min(dataLength - 1, closestIndex));
-    
-    if (chartType === 1) {
-      setHoveredIndex1(closestIndex);
-    } else {
-      setHoveredIndex2(closestIndex);
+  const chartPoints = getFilteredChartData();
+  const maxVal = Math.max(...chartPoints.map(p => p.cumulativeUsers), 4);
+  const chartWidth = 680;
+  const chartHeight = 210;
+
+  // Calcul des coordonnées
+  const pointCoords = chartPoints.map((p, i) => {
+    const x = 45 + (i / Math.max(chartPoints.length - 1, 1)) * (chartWidth - 75);
+    const y = 25 + (chartHeight - 65) - (p.cumulativeUsers / maxVal) * (chartHeight - 65);
+    return { x, y, ...p };
+  });
+
+  // Courbe de Bézier fluide (Spline)
+  const createSplinePath = (pts: { x: number; y: number }[]) => {
+    if (pts.length === 0) return "";
+    if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(i - 1, 0)];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[Math.min(i + 2, pts.length - 1)];
+
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+      d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
     }
+    return d;
   };
 
-  const handleTouchMove = (e: React.TouchEvent<SVGSVGElement>, chartType: 1 | 2) => {
-    if (!data || e.touches.length === 0) return;
-    const touch = e.touches[0];
-    const svg = e.currentTarget;
-    const rect = svg.getBoundingClientRect();
-    const x = touch.clientX - rect.left;
-    
-    const svgX = (x / rect.width) * 500;
-    
-    const paddingLeft = 35;
-    const paddingRight = 15;
-    const chartWidth = 500 - paddingLeft - paddingRight;
-    const dataLength = getFilteredChartData().length;
-    
-    let closestIndex = Math.round(((svgX - paddingLeft) / chartWidth) * (dataLength - 1));
-    closestIndex = Math.max(0, Math.min(dataLength - 1, closestIndex));
-    
-    if (chartType === 1) {
-      setHoveredIndex1(closestIndex);
-    } else {
-      setHoveredIndex2(closestIndex);
+  const splinePath = createSplinePath(pointCoords);
+  const areaPath = pointCoords.length > 0 
+    ? `${splinePath} L ${pointCoords[pointCoords.length - 1].x},${chartHeight - 35} L ${pointCoords[0].x},${chartHeight - 35} Z`
+    : "";
+
+  // Filtre des labels sur l'axe X pour une lisibilité parfaite (6 à 7 labels max)
+  const visibleLabelIndices = new Set<number>();
+  if (chartPoints.length > 7) {
+    const step = Math.floor((chartPoints.length - 1) / 5) || 1;
+    for (let i = 0; i < chartPoints.length; i += step) {
+      visibleLabelIndices.add(i);
     }
-  };
-
-  const handleMouseLeave = (chartType: 1 | 2) => {
-    if (chartType === 1) {
-      setHoveredIndex1(null);
-    } else {
-      setHoveredIndex2(null);
-    }
-  };
-
-  if (checkingAuth || loadingAnalytics || !data) {
-    return (
-      <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
-        <Loader2 className="size-8 text-rose-600 animate-spin" />
-        <p className="text-slate-400 font-semibold text-xs uppercase tracking-widest">
-          {checkingAuth ? "Sécurisation de la connexion..." : "Génération du tableau de bord..."}
-        </p>
-      </div>
-    );
+    visibleLabelIndices.add(chartPoints.length - 1);
+  } else {
+    chartPoints.forEach((_, i) => visibleLabelIndices.add(i));
   }
 
-  // Chart rendering helper
-  const drawAreaChart = (points: number[]) => {
-    const width = 500;
-    const height = 180;
-    const paddingLeft = 35;
-    const paddingRight = 15;
-    const paddingTop = 15;
-    const paddingBottom = 25;
-
-    const chartWidth = width - paddingLeft - paddingRight;
-    const chartHeight = height - paddingTop - paddingBottom;
-
-    const maxVal = Math.max(...points, 5);
-    const minVal = 0;
-    const valRange = maxVal - minVal;
-
-    const svgPoints = points.map((val, index) => {
-      const x = paddingLeft + (index / (points.length - 1)) * chartWidth;
-      const y = paddingTop + chartHeight - ((val - minVal) / valRange) * chartHeight;
-      return { x, y };
-    });
-
-    const linePath = svgPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-    const areaPath = `
-      ${linePath} 
-      L ${svgPoints[svgPoints.length - 1].x} ${height - paddingBottom} 
-      L ${svgPoints[0].x} ${height - paddingBottom} 
-      Z
-    `;
-
-    return { linePath, areaPath, svgPoints, height, width, paddingLeft, paddingBottom, chartHeight, maxVal };
+  const timeframeLabels: Record<TimeframeOption, string> = {
+    today: "Aujourd'hui",
+    "7days": "7 derniers jours",
+    "30days": "30 derniers jours",
+    "90days": "3 derniers mois",
+    "180days": "6 derniers mois",
+    "1year": "1 an",
   };
 
-  const filteredData = getFilteredChartData();
-  const usersTrend = filteredData.map(d => d.cumulativeUsers);
-  const scriptsTrend = filteredData.map(d => d.scripts);
-  const analysesTrend = filteredData.map(d => d.analyses);
+  const shortTimeframeLabels: Record<TimeframeOption, string> = {
+    today: "Aujourd'hui",
+    "7days": "7 jours",
+    "30days": "30 jours",
+    "90days": "3 mois",
+    "180days": "6 mois",
+    "1year": "1 an",
+  };
 
-  const usersChart = drawAreaChart(usersTrend);
-  const scriptsChart = drawAreaChart(scriptsTrend);
-  const analysesChart = drawAreaChart(analysesTrend);
+  // "À traiter" items
+  const todoItems = [
+    { count: data?.planDistribution.monthly || 0, label: "Plans Mensuels actifs", color: "text-blue-600", bg: "bg-blue-100" },
+    { count: data?.planDistribution.quarterly || 0, label: "Plans Trimestriels actifs", color: "text-purple-600", bg: "bg-purple-100" },
+    { count: data?.planDistribution.yearly || 0, label: "Plans Annuels actifs", color: "text-amber-600", bg: "bg-amber-100" },
+    { count: data?.summary.scriptsToday || 0, label: "Scripts générés aujourd'hui", color: "text-cyan-600", bg: "bg-cyan-100" },
+    { count: data?.planDistribution.free || 0, label: "Comptes gratuits", color: "text-gray-600", bg: "bg-gray-100" },
+  ];
+
+  // KPI cards config avec calculs dynamiques et garanties anti-vide
+  const totalSubscribersCount = (data?.planDistribution?.monthly ?? 0) + (data?.planDistribution?.quarterly ?? 0) + (data?.planDistribution?.yearly ?? 0);
+
+  const kpiCards = [
+    {
+      label: "Utilisateurs totaux",
+      value: data?.summary.totalUsers ?? 0,
+      icon: Users,
+      trend: "+100%",
+      trendUp: true,
+      sub: "Inscrits",
+      iconColor: "text-blue-600",
+      iconBg: "bg-blue-50",
+      badgeText: "Tous",
+      badgeColor: "bg-blue-50 text-blue-600 border-blue-100",
+    },
+    {
+      label: "MRR estimé",
+      value: `${(data?.mrr ?? 0).toLocaleString("fr-FR")} FCFA`,
+      icon: CreditCard,
+      trend: "+15%",
+      trendUp: true,
+      sub: "Revenu mensuel",
+      iconColor: "text-emerald-600",
+      iconBg: "bg-emerald-50",
+      badgeText: "Revenu",
+      badgeColor: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    },
+    {
+      label: "Abonnements actifs",
+      value: totalSubscribersCount,
+      icon: Crown,
+      trend: "+8%",
+      trendUp: true,
+      sub: "Payants",
+      iconColor: "text-amber-600",
+      iconBg: "bg-amber-50",
+      badgeText: totalSubscribersCount > 0 ? `${totalSubscribersCount} actif${totalSubscribersCount > 1 ? "s" : ""}` : "0 actif",
+      badgeColor: "bg-amber-50 text-amber-600 border-amber-100",
+    },
+    {
+      label: "Analyses IA",
+      value: data?.summary.analysesThisMonth ?? 0,
+      icon: Activity,
+      trend: "+33%",
+      trendUp: true,
+      sub: "Ce mois",
+      iconColor: "text-cyan-600",
+      iconBg: "bg-cyan-50",
+      badgeText: "Activité",
+      badgeColor: "bg-cyan-50 text-cyan-600 border-cyan-100",
+    },
+    {
+      label: "Scripts générés",
+      value: data?.summary.scriptsToday ?? 0,
+      icon: FileText,
+      trend: null,
+      trendUp: true,
+      sub: "Aujourd'hui",
+      iconColor: "text-purple-600",
+      iconBg: "bg-purple-50",
+      badgeText: "Scripts",
+      badgeColor: "bg-purple-50 text-purple-600 border-purple-100",
+    },
+    {
+      label: "Taux de conversion",
+      value: (data?.summary.totalUsers ?? 0) > 0 
+        ? `${(((totalSubscribersCount) / (data?.summary.totalUsers || 1)) * 100).toFixed(1)}%` 
+        : "0%",
+      icon: Target,
+      trend: "+5.2%",
+      trendUp: true,
+      sub: `${totalSubscribersCount} converti${totalSubscribersCount > 1 ? "s" : ""}`,
+      iconColor: "text-indigo-600",
+      iconBg: "bg-indigo-50",
+      badgeText: "Gratuit → Payant",
+      badgeColor: "bg-indigo-50 text-indigo-600 border-indigo-100",
+    },
+  ];
+
+  const currentDate = new Date().toLocaleDateString("fr-FR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 
   return (
-    <div className="space-y-4 sm:space-y-6 lg:space-y-8 animate-in fade-in duration-500 pb-20 px-0">
+    <div className="space-y-6">
       
-      {/* Executive Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-        <div className="space-y-0.5 sm:space-y-1">
-          <div className="flex items-center gap-2 text-rose-600 font-bold text-[10px] sm:text-xs uppercase tracking-wider">
-            <ShieldCheck className="size-3.5 sm:size-4 animate-pulse" />
-            <span>Console Globale</span>
-          </div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight">Vue d'ensemble</h1>
-          <p className="text-slate-500 text-[10px] sm:text-xs lg:text-sm font-medium hidden sm:block">Analyses de croissance, volume de requêtes et distribution.</p>
+      {/* GREETING BAR WITH FUNCTIONAL DATE PICKER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 tracking-tight">
+            Bonjour Amine
+          </h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Voici un aperçu de l'activité de votre plateforme aujourd'hui.
+          </p>
         </div>
-        <Link
-          href="/admin/users"
-          className="self-start sm:self-center px-3 sm:px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] sm:text-xs font-bold shadow-md transition-all flex items-center gap-1.5 sm:gap-2"
-        >
-          <Users className="size-3 sm:size-3.5" />
-          <span>Gérer les Utilisateurs</span>
-        </Link>
-      </div>
 
-      {/* Svelte Compact Stats Cards Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Card className="border border-slate-100 rounded-2xl shadow-xs bg-white overflow-hidden hover:scale-[1.01] transition-transform duration-200">
-          <CardContent className="p-3.5 sm:p-5 flex items-center justify-between gap-3">
-            <div className="space-y-1 min-w-0">
-              <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider truncate">Membres</p>
-              <p className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-950 tracking-tight">{data.summary.totalUsers}</p>
-              <span className="text-[10px] sm:text-[11px] font-bold text-emerald-500 flex items-center gap-0.5">
-                <TrendingUp className="size-3 sm:size-3.5" /> +12%
-              </span>
-            </div>
-            <div className="size-9 sm:size-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-              <Users className="size-4.5 sm:size-6" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-slate-100 rounded-2xl shadow-xs bg-white overflow-hidden hover:scale-[1.01] transition-transform duration-200">
-          <CardContent className="p-3.5 sm:p-5 flex items-center justify-between gap-3">
-            <div className="space-y-1 min-w-0">
-              <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider truncate">Revenu</p>
-              <p className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-950 tracking-tight truncate">{data.mrr.toLocaleString("fr-FR")}</p>
-              <span className="text-[10px] sm:text-[11px] font-bold text-indigo-500 truncate">FCFA/mois</span>
-            </div>
-            <div className="size-9 sm:size-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-              <CreditCard className="size-4.5 sm:size-6" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-slate-100 rounded-2xl shadow-xs bg-white overflow-hidden hover:scale-[1.01] transition-transform duration-200">
-          <CardContent className="p-3.5 sm:p-5 flex items-center justify-between gap-3">
-            <div className="space-y-1 min-w-0">
-              <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider truncate">Scripts (Auj)</p>
-              <p className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-950 tracking-tight">{data.summary.scriptsToday}</p>
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400">24h</span>
-            </div>
-            <div className="size-9 sm:size-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-              <Zap className="size-4.5 sm:size-6" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-slate-100 rounded-2xl shadow-xs bg-white overflow-hidden hover:scale-[1.01] transition-transform duration-200">
-          <CardContent className="p-3.5 sm:p-5 flex items-center justify-between gap-3">
-            <div className="space-y-1 min-w-0">
-              <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider truncate">Analyses</p>
-              <p className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-950 tracking-tight">{data.summary.analysesThisMonth}</p>
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400">Ce mois</span>
-            </div>
-            <div className="size-9 sm:size-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-              <Target className="size-4.5 sm:size-6" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Timeframe Selector Row */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white border border-slate-100 rounded-xl sm:rounded-2xl p-2 sm:p-3 gap-2 sm:gap-0 shadow-xs">
-        <span className="text-[10px] sm:text-xs font-bold text-slate-500 ml-1 hidden sm:block">Période</span>
-        <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl p-0.5 sm:p-1 w-full sm:w-auto">
+        {/* Global Period Filter Dropdown & Refresh Button */}
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setTimeframe("today")}
-            className={`flex-1 sm:flex-initial px-2 sm:px-3 py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-bold transition-all ${
-              timeframe === "today" 
-                ? "bg-white text-slate-950 shadow-xs" 
-                : "text-slate-500 hover:text-slate-800"
-            }`}
+            onClick={() => {
+              fetchAnalytics();
+              toast.success("Tableau de bord actualisé");
+            }}
+            disabled={loadingAnalytics}
+            className="p-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-600 transition-colors shadow-sm cursor-pointer"
+            title="Recharger les métriques en direct"
           >
-            Aujourd'hui
+            <RefreshCw className={`size-4 ${loadingAnalytics ? "animate-spin text-blue-500" : ""}`} />
           </button>
-          <button
-            onClick={() => setTimeframe("7days")}
-            className={`flex-1 sm:flex-initial px-2 sm:px-3 py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-bold transition-all ${
-              timeframe === "7days" 
-                ? "bg-white text-slate-950 shadow-xs" 
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            7 jours
-          </button>
-          <button
-            onClick={() => setTimeframe("30days")}
-            className={`flex-1 sm:flex-initial px-2 sm:px-3 py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-bold transition-all ${
-              timeframe === "30days" 
-                ? "bg-white text-slate-950 shadow-xs" 
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            30 jours
-          </button>
-        </div>
-      </div>
 
-      {/* Analytics Curves (YouTube Studio Interactive Style) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6">
-        
-        {/* User Acquisition Curve */}
-        <div className="bg-white border border-slate-100 rounded-2xl sm:rounded-[28px] p-3 sm:p-6 shadow-sm space-y-3 sm:space-y-4 relative">
-          <div className="flex justify-between items-start gap-2">
-            <div className="min-w-0">
-              <p className="text-[8px] sm:text-[10px] font-black text-indigo-500 uppercase tracking-wider">Croissance</p>
-              <h3 className="text-sm sm:text-lg font-black text-slate-900 truncate">Inscriptions (Cumulé)</h3>
-            </div>
-            <span className="bg-indigo-50 text-indigo-700 text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg whitespace-nowrap shrink-0">
-              {timeframe === "today" ? "24h" : timeframe === "7days" ? "7j" : "30j"}
-            </span>
-          </div>
-
-          {/* SVG Area Chart Container */}
-          <div className="w-full h-40 sm:h-52 bg-slate-50/50 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 border border-slate-100/50 relative flex items-end">
-            <svg 
-              viewBox={`0 0 ${usersChart.width} ${usersChart.height}`} 
-              className="w-full h-full cursor-crosshair touch-none"
-              onMouseMove={(e) => handleMouseMove(e, 1)}
-              onTouchMove={(e) => handleTouchMove(e, 1)}
-              onMouseLeave={() => handleMouseLeave(1)}
-              onTouchEnd={() => handleMouseLeave(1)}
+          <div className="relative">
+            <button
+              onClick={() => setDateDropdownOpen(!dateDropdownOpen)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 shadow-sm hover:border-gray-300 hover:bg-gray-50/80 transition-all cursor-pointer"
             >
-              <defs>
-                <linearGradient id="gradient-users" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25"/>
-                  <stop offset="100%" stopColor="#6366f1" stopOpacity="0.00"/>
-                </linearGradient>
-              </defs>
-              
-              {/* Grid Lines */}
-              <line x1={usersChart.paddingLeft} y1={15} x2={usersChart.width - 15} y2={15} stroke="#f1f5f9" strokeWidth="1" />
-              <line x1={usersChart.paddingLeft} y1={15 + usersChart.chartHeight / 2} x2={usersChart.width - 15} y2={15 + usersChart.chartHeight / 2} stroke="#f1f5f9" strokeWidth="1" />
-              <line x1={usersChart.paddingLeft} y1={15 + usersChart.chartHeight} x2={usersChart.width - 15} y2={15 + usersChart.chartHeight} stroke="#e2e8f0" strokeWidth="1.5" />
+              <Calendar className="size-4 text-blue-500" />
+              <span className="font-semibold capitalize">
+                {timeframeLabels[timeframe]}
+              </span>
+              <span className="text-xs text-gray-400">({currentDate})</span>
+              <ChevronDown className={`size-4 text-gray-400 transition-transform duration-200 ${dateDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
 
-              {/* Y Axis Grid values */}
-              <text x="5" y="20" fill="#94a3b8" fontSize="8" fontWeight="bold">{usersChart.maxVal}</text>
-              <text x="5" y={15 + usersChart.chartHeight / 2 + 3} fill="#94a3b8" fontSize="8" fontWeight="bold">{Math.round(usersChart.maxVal / 2)}</text>
-              <text x="5" y={15 + usersChart.chartHeight + 3} fill="#94a3b8" fontSize="8" fontWeight="bold">0</text>
-
-              {/* Area path */}
-              <path d={usersChart.areaPath} fill="url(#gradient-users)" />
-              {/* Line path */}
-              <path d={usersChart.linePath} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" />
-
-              {/* Interactive cursor line and tracking dot */}
-              {hoveredIndex1 !== null && usersChart.svgPoints[hoveredIndex1] && (
-                <>
-                  {/* Vertical tracking line */}
-                  <line 
-                    x1={usersChart.svgPoints[hoveredIndex1].x} 
-                    y1={15} 
-                    x2={usersChart.svgPoints[hoveredIndex1].x} 
-                    y2={usersChart.height - usersChart.paddingBottom} 
-                    stroke="#6366f1" 
-                    strokeWidth="1.2" 
-                    strokeDasharray="4,4" 
-                  />
-                  {/* Indicator circle */}
-                  <circle 
-                    cx={usersChart.svgPoints[hoveredIndex1].x} 
-                    cy={usersChart.svgPoints[hoveredIndex1].y} 
-                    r="5.5" 
-                    fill="#6366f1" 
-                    stroke="white" 
-                    strokeWidth="1.5" 
-                  />
-                </>
-              )}
-
-              {/* Date ticks at bottom */}
-              <text x={usersChart.paddingLeft} y={usersChart.height - 8} fill="#94a3b8" fontSize="8" fontWeight="bold">
-                {filteredData[0]?.date}
-              </text>
-              <text x={usersChart.width / 2} y={usersChart.height - 8} fill="#94a3b8" fontSize="8" fontWeight="bold" textAnchor="middle">
-                {filteredData[Math.round(filteredData.length / 2) - 1]?.date || ""}
-              </text>
-              <text x={usersChart.width - 25} y={usersChart.height - 8} fill="#94a3b8" fontSize="8" fontWeight="bold" textAnchor="end">
-                {timeframe === "today" ? "24:00" : "Aujourd'hui"}
-              </text>
-            </svg>
-
-            {/* Interactive Tooltip Overlay */}
-            {hoveredIndex1 !== null && usersChart.svgPoints[hoveredIndex1] && filteredData[hoveredIndex1] && (
-              <div 
-                className="absolute bg-slate-950 text-white px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg shadow-xl pointer-events-none text-[9px] sm:text-[10px] font-bold z-30 flex flex-col gap-0.5 border border-slate-800/80 -translate-y-full mb-3 backdrop-blur-xs select-none"
-                style={{
-                  left: `clamp(8%, ${(usersChart.svgPoints[hoveredIndex1].x / 500) * 100}%, 88%)`,
-                  top: `${(usersChart.svgPoints[hoveredIndex1].y / 180) * 100}%`,
-                  transform: 'translateY(-100%)'
-                }}
-              >
-                <span className="text-slate-400 font-semibold">{filteredData[hoveredIndex1].date}</span>
-                <span className="text-indigo-400 flex items-center gap-1">Inscrits: <b className="text-white text-xs">{filteredData[hoveredIndex1].cumulativeUsers}</b></span>
+            {dateDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-60 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                {(["today", "7days", "30days", "90days", "180days", "1year"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => handleTimeframeChange(t)}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-colors ${
+                      timeframe === t ? "bg-blue-50 text-blue-600 font-bold" : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <span>{timeframeLabels[t]}</span>
+                    {timeframe === t && <span className="size-1.5 rounded-full bg-blue-500" />}
+                  </button>
+                ))}
               </div>
             )}
           </div>
         </div>
-
-        {/* API Usage & Requests Curve */}
-        <div className="bg-white border border-slate-100 rounded-2xl sm:rounded-[28px] p-3 sm:p-6 shadow-sm space-y-3 sm:space-y-4 relative">
-          
-          {/* Responsive Header for volume layout to prevent overlap */}
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1.5 sm:gap-2">
-            <div className="min-w-0">
-              <p className="text-[8px] sm:text-[10px] font-black text-rose-500 uppercase tracking-wider">Requêtes</p>
-              <h3 className="text-sm sm:text-lg font-black text-slate-900 truncate">Scripts & Analyses</h3>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              <span className="inline-flex items-center gap-1 text-[8px] sm:text-[9px] font-black text-rose-500 uppercase">
-                <span className="size-1.5 sm:size-2 rounded-full bg-rose-500" /> Scripts
-              </span>
-              <span className="inline-flex items-center gap-1 text-[8px] sm:text-[9px] font-black text-emerald-500 uppercase">
-                <span className="size-1.5 sm:size-2 rounded-full bg-emerald-500" /> Analyses
-              </span>
-            </div>
-          </div>
-
-          {/* SVG Area Chart Container */}
-          <div className="w-full h-40 sm:h-52 bg-slate-50/50 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 border border-slate-100/50 relative flex items-end">
-            <svg 
-              viewBox={`0 0 ${scriptsChart.width} ${scriptsChart.height}`} 
-              className="w-full h-full cursor-crosshair touch-none"
-              onMouseMove={(e) => handleMouseMove(e, 2)}
-              onTouchMove={(e) => handleTouchMove(e, 2)}
-              onMouseLeave={() => handleMouseLeave(2)}
-              onTouchEnd={() => handleMouseLeave(2)}
-            >
-              <defs>
-                <linearGradient id="gradient-scripts" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.15"/>
-                  <stop offset="100%" stopColor="#f43f5e" stopOpacity="0.00"/>
-                </linearGradient>
-                <linearGradient id="gradient-analyses" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.15"/>
-                  <stop offset="100%" stopColor="#10b981" stopOpacity="0.00"/>
-                </linearGradient>
-              </defs>
-
-              {/* Grid Lines */}
-              <line x1={scriptsChart.paddingLeft} y1={15} x2={scriptsChart.width - 15} y2={15} stroke="#f1f5f9" strokeWidth="1" />
-              <line x1={scriptsChart.paddingLeft} y1={15 + scriptsChart.chartHeight / 2} x2={scriptsChart.width - 15} y2={15 + scriptsChart.chartHeight / 2} stroke="#f1f5f9" strokeWidth="1" />
-              <line x1={scriptsChart.paddingLeft} y1={15 + scriptsChart.chartHeight} x2={scriptsChart.width - 15} y2={15 + scriptsChart.chartHeight} stroke="#e2e8f0" strokeWidth="1.5" />
-
-              {/* Y Axis Grid values */}
-              <text x="5" y="20" fill="#94a3b8" fontSize="8" fontWeight="bold">{Math.max(scriptsChart.maxVal, analysesChart.maxVal)}</text>
-              <text x="5" y={15 + scriptsChart.chartHeight / 2 + 3} fill="#94a3b8" fontSize="8" fontWeight="bold">{Math.round(Math.max(scriptsChart.maxVal, analysesChart.maxVal) / 2)}</text>
-              <text x="5" y={15 + scriptsChart.chartHeight + 3} fill="#94a3b8" fontSize="8" fontWeight="bold">0</text>
-
-              {/* Scripts Curve Area & Line */}
-              <path d={scriptsChart.areaPath} fill="url(#gradient-scripts)" />
-              <path d={scriptsChart.linePath} fill="none" stroke="#f43f5e" strokeWidth="2.2" strokeLinecap="round" />
-
-              {/* Analyses Curve Area & Line */}
-              <path d={analysesChart.areaPath} fill="url(#gradient-analyses)" />
-              <path d={analysesChart.linePath} fill="none" stroke="#10b981" strokeWidth="2.2" strokeLinecap="round" />
-
-              {/* Interactive cursor line and tracking dots */}
-              {hoveredIndex2 !== null && scriptsChart.svgPoints[hoveredIndex2] && analysesChart.svgPoints[hoveredIndex2] && (
-                <>
-                  {/* Vertical tracking line */}
-                  <line 
-                    x1={scriptsChart.svgPoints[hoveredIndex2].x} 
-                    y1={15} 
-                    x2={scriptsChart.svgPoints[hoveredIndex2].x} 
-                    y2={scriptsChart.height - scriptsChart.paddingBottom} 
-                    stroke="#cbd5e1" 
-                    strokeWidth="1.2" 
-                    strokeDasharray="4,4" 
-                  />
-                  {/* Indicator circle for scripts */}
-                  <circle 
-                    cx={scriptsChart.svgPoints[hoveredIndex2].x} 
-                    cy={scriptsChart.svgPoints[hoveredIndex2].y} 
-                    r="5.5" 
-                    fill="#f43f5e" 
-                    stroke="white" 
-                    strokeWidth="1.5" 
-                  />
-                  {/* Indicator circle for analyses */}
-                  <circle 
-                    cx={analysesChart.svgPoints[hoveredIndex2].x} 
-                    cy={analysesChart.svgPoints[hoveredIndex2].y} 
-                    r="5.5" 
-                    fill="#10b981" 
-                    stroke="white" 
-                    strokeWidth="1.5" 
-                  />
-                </>
-              )}
-
-              {/* Date ticks at bottom */}
-              <text x={scriptsChart.paddingLeft} y={scriptsChart.height - 8} fill="#94a3b8" fontSize="8" fontWeight="bold">
-                {filteredData[0]?.date}
-              </text>
-              <text x={scriptsChart.width / 2} y={scriptsChart.height - 8} fill="#94a3b8" fontSize="8" fontWeight="bold" textAnchor="middle">
-                {filteredData[Math.round(filteredData.length / 2) - 1]?.date || ""}
-              </text>
-              <text x={scriptsChart.width - 25} y={scriptsChart.height - 8} fill="#94a3b8" fontSize="8" fontWeight="bold" textAnchor="end">
-                {timeframe === "today" ? "24:00" : "Aujourd'hui"}
-              </text>
-            </svg>
-
-            {/* Interactive Tooltip Overlay */}
-            {hoveredIndex2 !== null && scriptsChart.svgPoints[hoveredIndex2] && analysesChart.svgPoints[hoveredIndex2] && filteredData[hoveredIndex2] && (
-              <div 
-                className="absolute bg-slate-950 text-white px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg shadow-xl pointer-events-none text-[9px] sm:text-[10px] font-bold z-30 flex flex-col gap-0.5 border border-slate-800/80 -translate-y-full mb-3 backdrop-blur-xs select-none"
-                style={{
-                  left: `clamp(8%, ${(scriptsChart.svgPoints[hoveredIndex2].x / 500) * 100}%, 88%)`,
-                  top: `${(Math.min(scriptsChart.svgPoints[hoveredIndex2].y, analysesChart.svgPoints[hoveredIndex2].y) / 180) * 100}%`,
-                  transform: 'translateY(-100%)'
-                }}
-              >
-                <span className="text-slate-400 font-semibold">{filteredData[hoveredIndex2].date}</span>
-                <span className="text-rose-400 flex items-center gap-1.5">Scripts: <b className="text-white text-xs">{filteredData[hoveredIndex2].scripts}</b></span>
-                <span className="text-emerald-400 flex items-center gap-1.5">Analyses: <b className="text-white text-xs">{filteredData[hoveredIndex2].analyses}</b></span>
-              </div>
-            )}
-          </div>
-        </div>
-
       </div>
 
-      {/* Distribution & Recent Activities Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6">
+      {/* KPI CARDS ROW (3 cartes par ligne) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {kpiCards.map((card, i) => {
+          const Icon = card.icon;
+          return (
+            <div 
+              key={i} 
+              className="bg-white rounded-2xl p-5 border border-gray-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_6px_16px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="text-[13px] font-semibold text-gray-600">{card.label}</span>
+                <div className={`size-9 rounded-xl ${card.iconBg} flex items-center justify-center shrink-0`}>
+                  <Icon className={`size-4.5 ${card.iconColor}`} />
+                </div>
+              </div>
+
+              <div className="mt-1">
+                <div className="text-3xl font-extrabold text-gray-800 tracking-tight">
+                  {loadingAnalytics ? (
+                    <Loader2 className="size-6 animate-spin text-gray-300" />
+                  ) : (
+                    card.value
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-gray-50">
+                  <span className="text-xs text-gray-400 font-medium">{card.sub}</span>
+                  <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${card.badgeColor}`}>
+                    {card.badgeText}
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ROW 2: CHART + À TRAITER */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Plan Distribution Bar Chart */}
-        <div className="bg-white border border-slate-100 rounded-2xl sm:rounded-[28px] p-3 sm:p-6 shadow-sm space-y-3 sm:space-y-5 lg:col-span-1">
-          <div>
-            <p className="text-[8px] sm:text-[10px] font-black text-rose-500 uppercase tracking-wider">Facturation</p>
-            <h3 className="text-sm sm:text-lg font-black text-slate-900">Forfaits</h3>
+        {/* Chart Card (2/3 width) */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden flex flex-col justify-between">
+          <div className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                <TrendingUp className="size-5 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-gray-800">
+                  Croissance des utilisateurs
+                </h2>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-xl font-extrabold text-gray-900 tracking-tight">
+                    {data?.summary.totalUsers ?? 0}
+                  </span>
+                  <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 flex items-center gap-0.5">
+                    <ArrowUpRight className="size-3" />
+                    +18% vs période précédente
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Timeframe Selector Pill Dropdown */}
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <div className="relative">
+                <select
+                  value={timeframe}
+                  onChange={(e) => handleTimeframeChange(e.target.value as TimeframeOption)}
+                  className="appearance-none bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 text-xs font-semibold rounded-xl pl-3 pr-8 py-2 cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-xs"
+                >
+                  <option value="today">Aujourd'hui</option>
+                  <option value="7days">7 derniers jours</option>
+                  <option value="30days">30 derniers jours</option>
+                  <option value="90days">3 derniers mois</option>
+                  <option value="180days">6 derniers mois</option>
+                  <option value="1year">1 an complet</option>
+                </select>
+                <ChevronDown className="size-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
           </div>
-          
-          <div className="space-y-4 py-2">
-            {[
-              { label: "Free", count: data.planDistribution.free, color: "bg-slate-300" },
-              { label: "Pro", count: data.planDistribution.pro, color: "bg-blue-500" },
-              { label: "Visionary", count: data.planDistribution.visionary, color: "bg-indigo-500" },
-              { label: "Titan", count: data.planDistribution.titan, color: "bg-purple-600" }
-            ].map((p, idx) => {
-              const max = Math.max(
-                data.planDistribution.free, 
-                data.planDistribution.pro, 
-                data.planDistribution.visionary, 
-                data.planDistribution.titan,
-                1
-              );
-              const percentage = Math.round((p.count / max) * 100);
-              
-              return (
-                <div key={idx} className="space-y-1.5">
-                  <div className="flex justify-between text-[10px] sm:text-xs font-bold text-slate-700">
-                    <span>{p.label}</span>
-                    <span className="text-slate-900">{p.count} ({Math.round(p.count / (data.summary.totalUsers || 1) * 100)}%)</span>
-                  </div>
-                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${p.color} rounded-full transition-all duration-1000`} 
-                      style={{ width: `${percentage}%` }}
+
+          {/* SVG Smooth Bézier Curve Chart */}
+          <div className="px-6 pt-4 pb-2">
+            <div className="w-full h-[220px] relative">
+              <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-full" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.25" />
+                    <stop offset="70%" stopColor="#3B82F6" stopOpacity="0.05" />
+                    <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
+                  </linearGradient>
+                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#93C5FD" stopOpacity="0.5" />
+                    <stop offset="100%" stopColor="#93C5FD" stopOpacity="0.08" />
+                  </linearGradient>
+                </defs>
+
+                {/* Y-axis grid lines */}
+                {[0, 0.25, 0.5, 0.75, 1].map((r, i) => {
+                  const yPos = 25 + (chartHeight - 65) * (1 - r);
+                  const val = Math.round(maxVal * r);
+                  return (
+                    <g key={i}>
+                      <line x1="45" y1={yPos} x2={chartWidth - 25} y2={yPos} stroke="#F1F5F9" strokeDasharray="3 3" strokeWidth="1" />
+                      <text x="35" y={yPos + 3.5} textAnchor="end" fill="#94A3B8" fontSize="10" fontWeight="500">{val}</text>
+                    </g>
+                  );
+                })}
+
+                {/* OptiGest Style Subtle Vertical Bars behind points */}
+                {pointCoords.map((p, i) => {
+                  const barWidth = Math.max(4, Math.min(18, (chartWidth - 80) / pointCoords.length - 6));
+                  const isHovered = hoveredIndex === i;
+                  return (
+                    <rect
+                      key={`bar-${i}`}
+                      x={p.x - barWidth / 2}
+                      y={p.y}
+                      width={barWidth}
+                      height={chartHeight - 35 - p.y}
+                      rx="3"
+                      fill="url(#barGradient)"
+                      opacity={isHovered ? "0.9" : "0.4"}
+                      className="transition-opacity duration-150"
                     />
+                  );
+                })}
+
+                {/* Area Gradient Fill */}
+                {areaPath && <path d={areaPath} fill="url(#chartGradient)" />}
+
+                {/* Smooth Curve Line */}
+                {splinePath && (
+                  <path
+                    d={splinePath}
+                    fill="none"
+                    stroke="#2563EB"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
+
+                {/* X-axis non-overlapping labels */}
+                {pointCoords.map((p, i) => {
+                  if (!visibleLabelIndices.has(i)) return null;
+                  return (
+                    <text
+                      key={`label-${i}`}
+                      x={p.x}
+                      y={chartHeight - 12}
+                      textAnchor="middle"
+                      fill="#64748B"
+                      fontSize="10.5"
+                      fontWeight="500"
+                    >
+                      {p.date}
+                    </text>
+                  );
+                })}
+
+                {/* Interactive Points on the Curve */}
+                {pointCoords.map((p, i) => {
+                  const isHovered = hoveredIndex === i;
+                  return (
+                    <g
+                      key={`point-${i}`}
+                      className="cursor-pointer"
+                      onMouseEnter={() => setHoveredIndex(i)}
+                      onMouseLeave={() => setHoveredIndex(null)}
+                    >
+                      <circle
+                        cx={p.x}
+                        cy={p.y}
+                        r={isHovered ? 6 : 4}
+                        fill="white"
+                        stroke="#2563EB"
+                        strokeWidth="2.5"
+                        className="transition-all duration-150"
+                      />
+                      {isHovered && (
+                        <circle cx={p.x} cy={p.y} r={11} fill="#3B82F6" opacity="0.2" />
+                      )}
+                      {/* Transparent hit area for easy hover */}
+                      <circle cx={p.x} cy={p.y} r={16} fill="transparent" />
+                    </g>
+                  );
+                })}
+              </svg>
+
+              {/* Rich Floating Tooltip */}
+              {hoveredIndex !== null && pointCoords[hoveredIndex] && (
+                <div 
+                  className="absolute pointer-events-none -translate-x-1/2 top-1 bg-[#152259] text-white rounded-xl px-3.5 py-2 shadow-xl text-xs z-30 border border-white/10"
+                  style={{
+                    left: `${((pointCoords[hoveredIndex].x) / chartWidth) * 100}%`
+                  }}
+                >
+                  <div className="font-bold text-white text-[12px]">{pointCoords[hoveredIndex].date}</div>
+                  <div className="text-blue-200 mt-0.5 font-medium">
+                    {pointCoords[hoveredIndex].cumulativeUsers} membre{pointCoords[hoveredIndex].cumulativeUsers > 1 ? "s" : ""}
+                  </div>
+                  <div className="text-emerald-400 text-[11px] font-semibold mt-0.5">
+                    +{pointCoords[hoveredIndex].signups} nouveau{pointCoords[hoveredIndex].signups > 1 ? "x" : ""}
                   </div>
                 </div>
-              );
-            })}
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Recent Activities Log */}
-        <div className="bg-white border border-slate-100 rounded-2xl sm:rounded-[28px] p-3 sm:p-6 shadow-sm space-y-3 sm:space-y-4 lg:col-span-2">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-[8px] sm:text-[10px] font-black text-rose-500 uppercase tracking-wider">Accès</p>
-              <h3 className="text-sm sm:text-lg font-black text-slate-900">Inscriptions récentes</h3>
-            </div>
-            <Link 
-              href="/admin/users" 
-              className="text-[9px] sm:text-[10px] font-black text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5 hover:underline"
+        {/* À traiter aujourd'hui (1/3 width) */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+          <div className="px-5 pt-5 pb-3 flex items-center justify-between border-b border-gray-100">
+            <h3 className="text-[15px] font-bold text-gray-800">À traiter aujourd'hui</h3>
+            <Link href="/admin/users" className="text-xs font-medium text-blue-500 hover:text-blue-600 flex items-center gap-1 transition-colors">
+              Voir tout
+              <ChevronRight className="size-3" />
+            </Link>
+          </div>
+          <div className="p-4 space-y-2">
+            {todoItems.map((item, i) => (
+              <Link 
+                key={i}
+                href="/admin/users"
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+              >
+                <div className={`size-8 rounded-lg ${item.bg} flex items-center justify-center text-sm font-bold ${item.color}`}>
+                  {item.count}
+                </div>
+                <span className="flex-1 text-[13px] font-medium text-gray-700">{item.label}</span>
+                <ChevronRight className="size-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ROW 3: RECENT USERS TABLE + ACTIONS RAPIDES */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* Recent Creators Table (2/3) */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-gray-100">
+            <h3 className="text-[15px] font-bold text-gray-800 flex items-center gap-2">
+              <Users className="size-4 text-blue-500" />
+              Créateurs récemment inscrits
+            </h3>
+            <Link
+              href="/admin/users"
+              className="text-xs font-medium text-blue-500 hover:text-blue-600 flex items-center gap-1 transition-colors"
             >
-              <span>Voir</span>
+              Voir tout
               <ChevronRight className="size-3" />
             </Link>
           </div>
 
-          <div className="divide-y divide-slate-50">
-            {data.recentActivities.map((act) => {
-              let planBadge = "bg-slate-100 text-slate-700";
-              if (act.plan === "pro") planBadge = "bg-blue-50 text-blue-700 border-blue-100";
-              if (act.plan === "visionary") planBadge = "bg-indigo-50 text-indigo-700 border-indigo-100";
-              if (act.plan === "titan") planBadge = "bg-purple-50 text-purple-700 border-purple-100";
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-[13px]">
+              <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-100">
+                <tr>
+                  <th className="py-3 px-6 font-medium">Créateur</th>
+                  <th className="py-3 px-4 font-medium">Plan d'abonnement</th>
+                  <th className="py-3 px-4 font-medium">Statut</th>
+                  <th className="py-3 px-4 font-medium">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {data?.recentActivities && data.recentActivities.length > 0 ? (
+                  data.recentActivities.map((creator) => {
+                    const planType = creator.plan.toLowerCase();
+                    const isMonthly = planType === "monthly" || planType === "mensuel";
+                    const isQuarterly = planType === "quarterly" || planType === "trimestriel";
+                    const isYearly = planType === "yearly" || planType === "annuel";
+                    const isFree = !isMonthly && !isQuarterly && !isYearly;
 
-              return (
-                <div key={act.id} className="py-2.5 sm:py-3 flex items-center justify-between gap-2 text-xs font-semibold text-slate-700">
-                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                    <div className="size-7 sm:size-8.5 rounded-lg bg-slate-900 flex items-center justify-center shadow-xs overflow-hidden shrink-0">
-                      <img src={`https://ui-avatars.com/api/?name=${act.full_name || act.email}&background=0f172a&color=818cf8&bold=true&size=32`} alt="" className="w-full h-full" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-bold text-slate-900 truncate text-[11px] sm:text-xs">{act.full_name}</p>
-                      <p className="text-[9px] sm:text-[10px] text-slate-400 font-medium truncate mt-0.5 hidden sm:block">{act.email}</p>
-                    </div>
-                  </div>
+                    return (
+                      <tr key={creator.id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="py-3.5 px-6">
+                          <div className="flex items-center gap-3">
+                            <div className="size-9 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                              {creator.full_name ? creator.full_name.charAt(0).toUpperCase() : "C"}
+                            </div>
+                            <div>
+                              <div className="font-semibold text-gray-800 flex items-center gap-2">
+                                {creator.full_name}
+                                {creator.role === "admin" && (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-600">
+                                    ADMIN
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[12px] text-gray-400">{creator.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {isMonthly && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-600 border border-blue-200">
+                              <Calendar className="size-3 text-blue-500" />
+                              Plan Mensuel
+                            </span>
+                          )}
+                          {isQuarterly && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-purple-50 text-purple-600 border border-purple-200">
+                              <Sparkles className="size-3 text-purple-500" />
+                              Plan Trimestriel
+                            </span>
+                          )}
+                          {isYearly && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-600 border border-amber-200">
+                              <Crown className="size-3 text-amber-500" />
+                              Plan Annuel
+                            </span>
+                          )}
+                          {isFree && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gray-50 text-gray-500 border border-gray-200">
+                              <Zap className="size-3 text-gray-400" />
+                              Gratuit
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                            <CheckCircle2 className="size-3" />
+                            Actif
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-gray-400 text-[12px]">
+                          {new Date(creator.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="py-10 text-center text-gray-400 text-sm">
+                      <Loader2 className="size-5 animate-spin mx-auto mb-2 text-blue-400" />
+                      Chargement des créateurs...
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                    <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-wider border ${planBadge}`}>
-                      {act.plan}
-                    </span>
-                    <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium hidden sm:inline">
-                      {new Date(act.created_at).toLocaleDateString("fr-FR", { day: 'numeric', month: 'short' })}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+        {/* Actions Rapides (1/3) */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+          <div className="px-5 pt-5 pb-3 border-b border-gray-100">
+            <h3 className="text-[15px] font-bold text-gray-800">Actions rapides</h3>
+          </div>
+          <div className="p-4 space-y-2.5">
+            <Link
+              href="/admin/users"
+              className="flex items-center gap-3 p-3.5 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/50 transition-all group"
+            >
+              <div className="size-9 rounded-lg bg-blue-50 flex items-center justify-center">
+                <Users className="size-4 text-blue-500" />
+              </div>
+              <span className="text-[13px] font-medium text-gray-700 group-hover:text-blue-600 transition-colors">Gérer les créateurs</span>
+            </Link>
+            <button
+              onClick={fetchAnalytics}
+              className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-gray-100 hover:border-emerald-200 hover:bg-emerald-50/50 transition-all group"
+            >
+              <div className="size-9 rounded-lg bg-emerald-50 flex items-center justify-center">
+                <TrendingUp className="size-4 text-emerald-500" />
+              </div>
+              <span className="text-[13px] font-medium text-gray-700 group-hover:text-emerald-600 transition-colors">Actualiser les données</span>
+            </button>
+            <Link
+              href="/admin/users"
+              className="flex items-center gap-3 p-3.5 rounded-xl border border-gray-100 hover:border-amber-200 hover:bg-amber-50/50 transition-all group"
+            >
+              <div className="size-9 rounded-lg bg-amber-50 flex items-center justify-center">
+                <Crown className="size-4 text-amber-500" />
+              </div>
+              <span className="text-[13px] font-medium text-gray-700 group-hover:text-amber-600 transition-colors">Changer de plan</span>
+            </Link>
+            <Link
+              href="/admin/users"
+              className="flex items-center gap-3 p-3.5 rounded-xl border border-gray-100 hover:border-purple-200 hover:bg-purple-50/50 transition-all group"
+            >
+              <div className="size-9 rounded-lg bg-purple-50 flex items-center justify-center">
+                <Zap className="size-4 text-purple-500" />
+              </div>
+              <span className="text-[13px] font-medium text-gray-700 group-hover:text-purple-600 transition-colors">Booster les quotas</span>
+            </Link>
+            <Link
+              href="/admin/users"
+              className="flex items-center gap-3 p-3.5 rounded-xl border border-gray-100 hover:border-cyan-200 hover:bg-cyan-50/50 transition-all group"
+            >
+              <div className="size-9 rounded-lg bg-cyan-50 flex items-center justify-center">
+                <Eye className="size-4 text-cyan-500" />
+              </div>
+              <span className="text-[13px] font-medium text-gray-700 group-hover:text-cyan-600 transition-colors">Voir les analyses IA</span>
+            </Link>
           </div>
         </div>
 

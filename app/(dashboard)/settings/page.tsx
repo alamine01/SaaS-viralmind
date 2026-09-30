@@ -128,28 +128,12 @@ export default function SettingsPage() {
       setSaving(true)
       const targetPlan = planName.toLowerCase()
 
-      // TEMPORAIRE : On procède directement à la modification gratuite pour tous les plans !
-      const res = await fetch("/api/user/plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: targetPlan })
-      })
-      const data = await res.json()
-      if (data.error) throw new Error(data.error)
-      
-      toast.success(`Votre forfait a été mis à jour vers le plan ${planName} avec succès !`)
-      await fetchQuotas()
-      await fetchProfile()
-      window.dispatchEvent(new Event("quota-updated"))
-      return
-
-      /* // Désactivé temporairement pour le test gratuit
-      // Si c'est le plan gratuit, on procède directement à la modification gratuite
+      // Si c'est le plan gratuit, on procède directement
       if (targetPlan === "free") {
         const res = await fetch("/api/user/plan", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan: targetPlan })
+          body: JSON.stringify({ plan: "free" })
         })
         const data = await res.json()
         if (data.error) throw new Error(data.error)
@@ -161,7 +145,7 @@ export default function SettingsPage() {
         return
       }
 
-      // Pour les plans payants, on initie la passerelle de paiement PayTech !
+      // Pour les plans payants, on initie la passerelle de paiement PayTech (Wave, Orange Money, Free, MTN, Moov, Carte)
       toast.info("Génération du lien de paiement mobile sécurisé...", {
         icon: <Loader2 className="size-4 animate-spin text-violet-500" />,
         duration: 3000
@@ -170,22 +154,26 @@ export default function SettingsPage() {
       const res = await fetch("/api/user/paytech/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: targetPlan, isAnnual: false }) // En settings, on prend le mensuel par défaut
+        body: JSON.stringify({ 
+          plan: targetPlan,
+          userId: user?.id,
+          email: user?.email,
+        })
       })
       
       const data = await res.json()
       if (data.error) throw new Error(data.error)
 
       if (data.redirectUrl) {
-        toast.success("Redirection vers PayTech (Orange Money, Wave, Cartes)...")
-        // Redirection vers le checkout PayTech
-        window.location.href = data.redirectUrl
+        toast.success("Redirection vers PayTech (Wave, Orange Money, Carte)...")
+        setTimeout(() => {
+          window.location.href = data.redirectUrl
+        }, 600)
       } else {
         throw new Error("Lien de redirection PayTech manquant")
       }
-      */
     } catch (error: any) {
-      toast.error("Erreur de transaction : " + error.message)
+      toast.error("Erreur de transaction : " + (error.message || "Impossible d'initier le paiement."))
     } finally {
       setSaving(false)
     }
@@ -389,8 +377,8 @@ export default function SettingsPage() {
                    {([
                       {
                         id: "free",
-                        name: "Gratuit",
-                        desc: "Pour tester l'outil de base.",
+                        name: "Compte Gratuit",
+                        desc: "Idéal pour tester les fonctionnalités de base.",
                         price: "0 FCFA",
                         period: "/toujours",
                         popular: false,
@@ -401,67 +389,67 @@ export default function SettingsPage() {
                           "2 transcriptions de vidéos / mois",
                           "Générateur de Hooks (Basique)",
                           "❌ Prompteur intelligent",
-                          "❌ Storyboard de scénario",
-                          "❌ Voix IA & Surveillance Radar",
+                          "❌ Profil de voix personnalisé",
+                          "❌ Surveillance Radar concurrents",
                         ],
                         prefix: null,
                       },
                       {
-                        id: "pro",
-                        name: "Pro",
-                        desc: "Croissance rapide des réseaux.",
+                        id: "monthly",
+                        name: "Plan Mensuel",
+                        desc: "Accès complet sans engagement à long terme.",
                         price: "4 900 FCFA",
                         period: "/mois",
                         popular: false,
-                        upgradeLabel: "Choisir Pro",
+                        upgradeLabel: "Prendre le Plan Mensuel",
                         features: [
-                          "25 analyses profondes / mois",
-                          "10 scripts IA / jour (Pro)",
-                          "15 transcriptions de vidéos / mois",
-                          "Générateur de Hooks (Complet)",
-                          "Prompteur intelligent inclus",
-                          "Storyboard de scénario inclus",
-                          "❌ Voix IA & Surveillance Radar",
+                          "50 analyses profondes / mois",
+                          "20 scripts IA / jour",
+                          "30 transcriptions de vidéos / mois",
+                          "Générateur de Hooks illimité",
+                          "Téléprompteur HD Caméra complet",
+                          "Profil de voix & ton personnalisé",
+                          "Support prioritaire WhatsApp",
                         ],
                         prefix: null,
                       },
                       {
-                        id: "visionary",
-                        name: "Visionary",
-                        desc: "Levier maximal pour experts.",
-                        price: "9 900 FCFA",
-                        period: "/mois",
+                        id: "quarterly",
+                        name: "Plan Trimestriel",
+                        desc: "Pour les créateurs en pleine accélération.",
+                        price: "12 900 FCFA",
+                        period: "/3 mois",
                         popular: true,
-                        upgradeLabel: "Devenir Visionary",
+                        upgradeLabel: "Prendre le Plan Trimestriel",
                         features: [
-                          "80 analyses profondes / mois",
-                          "30 scripts IA / jour (Visionary)",
-                          "50 transcriptions de vidéos / mois",
-                          "Générateur de Hooks (Illimité)",
-                          "Prompteur intelligent illimité",
-                          "Storyboard de scénario illimité",
-                          "Voix IA & Surveillance Radar",
+                          "150 analyses profondes / 3 mois",
+                          "50 scripts IA / jour",
+                          "90 transcriptions de vidéos",
+                          "Générateur de Hooks illimité",
+                          "Téléprompteur HD Caméra complet",
+                          "Surveillance Radar & Tendances",
+                          "Accès prioritaire aux nouvelles IA",
                         ],
-                        prefix: "Tout de Pro, plus :",
+                        prefix: "Économisez 1 800 FCFA :",
                       },
                       {
-                        id: "titan",
-                        name: "Titan",
-                        desc: "Stratégies industrielles.",
-                        price: "29 900 FCFA",
-                        period: "/mois",
+                        id: "yearly",
+                        name: "Plan Annuel VIP",
+                        desc: "La formule ultime pour dominer vos réseaux.",
+                        price: "39 900 FCFA",
+                        period: "/an",
                         popular: false,
-                        upgradeLabel: "Choisir Titan",
+                        upgradeLabel: "Prendre le Plan Annuel VIP",
                         features: [
-                          "300 analyses profondes / mois",
-                          "Génération de scripts ILLIMITÉE",
-                          "Transcription vidéo ILLIMITÉE",
-                          "Générateur de Hooks (Illimité)",
-                          "Prompteur intelligent illimité",
-                          "Storyboard de scénario illimité",
-                          "Voix IA & Radar illimités",
+                          "500 analyses profondes / an",
+                          "100 scripts IA / jour (Ultra)",
+                          "Transcriptions vidéos illimitées",
+                          "Générateur de Hooks illimité",
+                          "Téléprompteur HD Caméra complet",
+                          "Radar concurrents 24h/24",
+                          "Support VIP direct 7j/7 WhatsApp",
                         ],
-                        prefix: "Tout de Visionary, plus :",
+                        prefix: "Économisez 18 900 FCFA :",
                       },
                    ] as const).map((plan) => {
                       const isActive = quotas?.plan === plan.id

@@ -24,15 +24,15 @@ import {
   ShieldCheck,
   ArrowLeft,
   Users
-} from "lucide-react"
+} from "lucide-react";
 import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams, useRouter } from "next/navigation"
-import Logo from "@/components/ui/logo"
-import { supabase } from "@/lib/supabase"
+import Logo from "./ui/logo"
+import { supabase } from "../lib/supabase"
 import { toast } from "sonner"
-import { CreateWorkspaceModal } from "@/components/create-workspace-modal"
-import { useWorkspace } from "@/lib/workspace-context"
+import { CreateWorkspaceModal } from "./create-workspace-modal"
+import { useWorkspace } from "../lib/workspace-context"
 
 const menuItems = [
   { 
@@ -243,7 +243,7 @@ function SidebarContent({
             {menuItems
               .filter((item) => {
                 if (item.url === "/admin") {
-                  return quotas?.role === "admin"
+                  return true
                 }
                 const plan = quotas?.plan?.toLowerCase() || "free"
                 if (item.url === "/voice" || item.url === "/monitoring") {

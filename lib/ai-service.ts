@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-export const analyzeVideo = async (videoUrl: string, title: string, transcript: string, audioUrl?: string) => {
+export const analyzeVideo = async (videoUrl: string, title: string, transcript: string, audioUrl?: string, images?: string[]) => {
   console.log("DEBUG: GEMINI_API_KEY présent ?", !!process.env.GEMINI_API_KEY);
   
   const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
@@ -13,61 +13,105 @@ export const analyzeVideo = async (videoUrl: string, title: string, transcript: 
   if (audioUrl) {
     console.log("DEBUG: Tentative de téléchargement de la vidéo depuis :", audioUrl);
     try {
-      const videoResp = await fetch(audioUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          'Referer': 'https://www.tiktok.com/'
-        }
-      });
-      const videoBuffer = await videoResp.arrayBuffer();
-      const firstBytes = Buffer.from(videoBuffer.slice(0, 50)).toString('hex');
-      console.log("DEBUG: Taille vidéo:", videoBuffer.byteLength, "octets. Premiers octets (hex):", firstBytes);
-      
-      if (videoBuffer.byteLength < 5000) {
-        console.warn("ATTENTION: Le fichier semble trop petit pour une vidéo. C'est peut-être une erreur 403 ou 404.");
+      let referer = 'https://www.instagram.com/';
+      if (audioUrl.includes('tiktok') || videoUrl.includes('tiktok')) {
+        referer = 'https://www.tiktok.com/';
+      } else if (audioUrl.includes('youtube') || audioUrl.includes('googlevideo') || videoUrl.includes('youtube') || videoUrl.includes('youtu.be')) {
+        referer = 'https://www.youtube.com/';
       }
 
-      const base64Video = Buffer.from(videoBuffer).toString('base64');
-      promptParts.push({
-        inlineData: {
-          data: base64Video,
-          mimeType: "video/mp4"
+      const videoResp = await fetch(audioUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Referer': referer
         }
       });
+
+      if (videoResp.ok) {
+        const videoBuffer = await videoResp.arrayBuffer();
+        console.log("DEBUG: Taille vidéo:", videoBuffer.byteLength, "octets.");
+        
+        if (videoBuffer.byteLength >= 5000) {
+          let mimeType = videoResp.headers.get('content-type')?.split(';')[0].trim() || 'video/mp4';
+          if (mimeType.includes('html') || !mimeType || mimeType === 'application/octet-stream') {
+            if (audioUrl.includes('mime_type=audio_mpeg') || audioUrl.includes('.mp3')) {
+              mimeType = 'audio/mpeg';
+            } else {
+              mimeType = 'video/mp4';
+            }
+          }
+          console.log("DEBUG: MimeType final utilisé pour Gemini:", mimeType);
+
+          const base64Video = Buffer.from(videoBuffer).toString('base64');
+          promptParts.push({
+            inlineData: {
+              data: base64Video,
+              mimeType: mimeType
+            }
+          });
+        } else {
+          console.warn("ATTENTION: Le fichier téléchargé est trop petit (< 5 Ko), ignoré pour l'IA.");
+        }
+      } else {
+        console.warn(`ATTENTION: Échec du téléchargement vidéo (HTTP status ${videoResp.status}).`);
+      }
     } catch (e) {
       console.error("Failed to fetch video for AI", e);
     }
   }
 
+  if (images && images.length > 0) {
+    const imagesToProcess = images.slice(0, 10);
+    console.log(`DEBUG: Tentative de téléchargement de ${imagesToProcess.length} images de diaporama...`);
+    for (let i = 0; i < imagesToProcess.length; i++) {
+      try {
+        const imgResp = await fetch(imagesToProcess[i]);
+        if (imgResp.ok) {
+          const imgBuffer = await imgResp.arrayBuffer();
+          const base64Img = Buffer.from(imgBuffer).toString('base64');
+          const mimeType = imgResp.headers.get('content-type') || 'image/jpeg';
+          promptParts.push({
+            inlineData: {
+              data: base64Img,
+              mimeType: mimeType
+            }
+          });
+        }
+      } catch (e) {
+        console.error(`Failed to fetch image ${i} for AI`, e);
+      }
+    }
+  }
+
   const prompt = `
-    Tu es un expert en analyse de contenu viral et en stratégie marketing de contenu court.
+    Tu es un expert en analyse de contenu viral et en transcription audio/vidéo.
     
-    Analyse cette vidéo virale en te basant UNIQUEMENT sur les données réelles fournies ci-dessous.
-    NE RIEN INVENTER. NE PAS DÉDUIRE. NE PAS EXTRAPOLER au-delà de ce qui est dit dans la transcription.
+    Analyse cette vidéo virale.
     
     Données de la vidéo :
     - URL : ${videoUrl}
     - Titre : "${title}"
-    - Transcription réelle mot à mot : "${transcript}"
-    ${audioUrl ? "- Un fichier vidéo a également été joint pour l'analyse visuelle." : ""}
+    - Légende / Description fournies : "${transcript}"
+    ${audioUrl ? "- Un fichier vidéo/audio complet a été joint à ce prompt pour l'analyse vocale." : ""}
+    ${images && images.length > 0 ? "- Les images du diaporama ont été jointes à ce prompt." : ""}
     
     INSTRUCTIONS STRICTES :
-    1. RÉPONDS EXCLUSIVEMENT EN FRANÇAIS (sauf pour le champ "original_transcript").
-    2. BASE-TOI UNIQUEMENT sur la transcription fournie. Ne complète pas, n'invente pas.
-    3. Si un fichier vidéo est joint, analyse les textes incrustés et le style visuel SANS inventer de dialogue.
-    4. Tous les champs doivent être remplis avec des données extraites de la transcription réelle.
+    1. RÉPONDS EXCLUSIVEMENT EN FRANÇAIS (sauf pour le champ "original_transcript" qui conserve la langue d'origine).
+    2. SI UN FICHIER VIDÉO/AUDIO EST JOINT : ÉCOUTE attentivement la bande sonore et la voix humaine parlée. Transcris INTÉGRALEMENT tout le discours mot à mot en français (champ "full_transcript") et dans sa langue originale (champ "original_transcript"). Si du texte apparaît à l'écran (sous-titres/OCR), inclus-le également.
+    3. SI AUCUN FICHIER VIDÉO/AUDIO N'EST JOINT et que la description fournie est générique ("Analyse basée sur le contenu visuel.") ou vide : NE PAS INVENTER OU GÉNÉRER DE TRANSCRIPTION FICTIVE. Indique exactement "Transcription non disponible (impossible d'extraire la bande audio de cette vidéo)." dans "full_transcript" et "original_transcript".
+    4. Tous les champs du JSON doivent être soigneusement remplis.
     
     Réponds au format JSON strict :
     {
       "visual_description": "Description du style visuel observé ou déduit du titre (1 phrase).",
-      "hook": "L'accroche EXACTE telle qu'elle apparaît dans la transcription (premières secondes).",
-      "whyItWorks": "Pourquoi cette vidéo fonctionne — basé sur la transcription (en français).",
+      "hook": "L'accroche EXACTE telle qu'elle apparaît dans la transcription ou au début de la vidéo.",
+      "whyItWorks": "Pourquoi cette vidéo fonctionne (en français).",
       "structure": {
         "Hook": "...",
         "Développement": "...",
         "Conclusion": "..."
       },
-      "summary": "Résumé stratégique de 3-4 phrases décrivant le message, le positionnement, le ton et l'audience cible.",
+      "summary": "Résumé stratégique de 3-4 phrases décrivant le message, le positionnement et l'audience.",
       "action_plan": [
         "Étape 1 : ...",
         "Étape 2 : ...",
@@ -76,8 +120,8 @@ export const analyzeVideo = async (videoUrl: string, title: string, transcript: 
       "emotion": "L'émotion principale déclenchée chez le spectateur.",
       "patterns": ["pattern 1", "pattern 2", "pattern 3"],
       "viral_score": 0,
-      "full_transcript": "Transcription intégrale mot à mot EN FRANÇAIS avec \"...\" pour les pauses.",
-      "original_transcript": "Transcription mot à mot dans la langue originale avec \"...\" pour les pauses."
+      "full_transcript": "Transcription intégrale mot à mot EN FRANÇAIS.",
+      "original_transcript": "Transcription mot à mot dans la langue originale."
     }
     
     Réponds UNIQUEMENT avec le JSON brut valide, sans markdown.
@@ -90,7 +134,6 @@ export const analyzeVideo = async (videoUrl: string, title: string, transcript: 
   const text = response.text();
   
   try {
-     // Basic cleanup in case Gemini adds markdown code blocks
      const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
      return JSON.parse(jsonStr);
   } catch (e) {

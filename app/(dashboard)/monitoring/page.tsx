@@ -59,6 +59,70 @@ const getPlatformBadge = (platform: string) => {
   }
 }
 
+function CompetitorAvatar({ 
+  avatarUrl, 
+  handle, 
+  platform, 
+  size = "sm" 
+}: { 
+  avatarUrl?: string; 
+  handle: string; 
+  platform: string; 
+  size?: "sm" | "lg" 
+}) {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [avatarUrl, handle]);
+
+  const initial = (handle || "C").replace(/^@/, "").charAt(0).toUpperCase();
+
+  const isTikTok = platform?.toLowerCase() === "tiktok";
+  const isInstagram = platform?.toLowerCase() === "instagram";
+  const isYouTube = platform?.toLowerCase() === "youtube";
+
+  const gradient = isTikTok 
+    ? "from-cyan-500 to-blue-600 shadow-cyan-500/20" 
+    : isInstagram 
+      ? "from-pink-500 via-rose-500 to-purple-600 shadow-pink-500/20" 
+      : isYouTube 
+        ? "from-red-500 to-rose-600 shadow-red-500/20" 
+        : "from-violet-500 to-indigo-600 shadow-violet-500/20";
+
+  if (size === "sm") {
+    return (
+      <div className={`size-10 rounded-xl overflow-hidden flex items-center justify-center shrink-0 shadow-sm relative ${hasError || !avatarUrl ? `bg-gradient-to-br ${gradient} text-white font-black text-sm` : ''}`}>
+        {avatarUrl && !hasError ? (
+          <img 
+            src={avatarUrl} 
+            alt={`@${handle}`} 
+            className="w-full h-full object-cover"
+            onError={() => setHasError(true)}
+          />
+        ) : (
+          <span>{initial}</span>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`size-16 md:size-20 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 shadow-xl border-2 border-white/10 relative ${hasError || !avatarUrl ? `bg-gradient-to-br ${gradient} text-white font-black text-2xl md:text-3xl` : ''}`}>
+      {avatarUrl && !hasError ? (
+        <img 
+          src={avatarUrl} 
+          alt={`@${handle}`} 
+          className="w-full h-full object-cover"
+          onError={() => setHasError(true)}
+        />
+      ) : (
+        <span className="drop-shadow-md">{initial}</span>
+      )}
+    </div>
+  );
+}
+
 export default function MonitoringPage() {
   const { activeCollection } = useWorkspace()
   const router = useRouter()
@@ -368,8 +432,8 @@ export default function MonitoringPage() {
                            className="fixed inset-0 z-40" 
                            onClick={() => setIsPlatformDropdownOpen(false)}
                          />
-                         {/* Dropdown Options List */}
-                         <div className="absolute left-0 right-0 mt-2 bg-gray-900 dark:bg-gray-800 border border-gray-700/60 rounded-xl py-1.5 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
+                         {/* Dropdown Options List - Opening Upwards */}
+                         <div className="absolute left-0 right-0 bottom-full mb-2 bg-gray-900 dark:bg-gray-800 border border-gray-700/60 rounded-xl py-1.5 shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200 overflow-hidden">
                            {[
                              { id: "instagram", name: "Instagram" },
                              { id: "tiktok", name: "TikTok" },
@@ -382,10 +446,10 @@ export default function MonitoringPage() {
                                  setPlatform(opt.id)
                                  setIsPlatformDropdownOpen(false)
                                }}
-                               className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors flex items-center justify-between ${
+                               className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors flex items-center justify-between cursor-pointer ${
                                  platform === opt.id 
                                    ? 'bg-violet-600 text-white' 
-                                   : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                                   : 'text-gray-300 hover:bg-white/10 hover:text-white'
                                }`}
                              >
                                {opt.name}
@@ -486,28 +550,12 @@ export default function MonitoringPage() {
                       }`}
                     >
                        <div className="flex items-center gap-3 min-w-0">
-                          <div className={`size-9 rounded-lg overflow-hidden flex items-center justify-center shrink-0 ${
-                             isSelected 
-                               ? 'bg-violet-500/20 text-violet-500' 
-                               : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-400 group-hover:bg-gray-200 dark:group-hover:bg-gray-600 transition-colors'
-                           }`}>
-                              {acc.avatar_url ? (
-                                <img 
-                                  src={acc.avatar_url} 
-                                  alt={`@${acc.handle}`} 
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = "none";
-                                    const parent = (e.target as HTMLImageElement).parentElement;
-                                    if (parent) {
-                                      const svg = parent.querySelector("svg");
-                                      if (svg) svg.style.display = "block";
-                                    }
-                                  }}
-                                />
-                              ) : null}
-                              <Video className="size-4" style={{ display: acc.avatar_url ? "none" : "block" }} />
-                           </div>
+                          <CompetitorAvatar 
+                            avatarUrl={acc.avatar_url} 
+                            handle={acc.handle} 
+                            platform={acc.platform} 
+                            size="sm" 
+                          />
                           <div className="min-w-0">
                              <p className={`text-sm font-bold truncate leading-tight ${
                                isSelected ? 'text-violet-900 dark:text-violet-100' : 'text-gray-900 dark:text-gray-150'
@@ -574,13 +622,12 @@ export default function MonitoringPage() {
                       <div className="absolute right-[-10%] bottom-[-20%] size-60 bg-violet-600/20 blur-3xl rounded-full" />
                       
                       <div className="flex items-center gap-4 relative z-10">
-                          {selectedAccount.avatar_url && (
-                             <img 
-                               src={selectedAccount.avatar_url} 
-                               alt={selectedAccount.handle} 
-                               className="size-16 rounded-full object-cover border-2 border-violet-500/50 shadow-md shrink-0"
-                             />
-                          )}
+                          <CompetitorAvatar 
+                            avatarUrl={selectedAccount.avatar_url} 
+                            handle={selectedAccount.handle} 
+                            platform={selectedAccount.platform} 
+                            size="lg" 
+                          />
                           <div className="space-y-3">
                              <div className="flex items-center gap-3 flex-wrap">
                                 <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight">@{selectedAccount.handle}</h2>

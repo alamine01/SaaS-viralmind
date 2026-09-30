@@ -18,7 +18,9 @@ import {
   ChevronDown,
   Flame,
   Globe,
-  MonitorPlay
+  MonitorPlay,
+  Volume2,
+  VolumeX
 } from "lucide-react"
 
 // YouTube icon (lucide doesn't have one)
@@ -56,14 +58,64 @@ const getScoreLabel = (score: number) => {
   return "Normal"
 }
 
-function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
+function VideoCard({ item, onClick, isMuted, setIsMuted }: { item: any; onClick: () => void; isMuted: boolean; setIsMuted: (m: boolean) => void }) {
   const [imageError, setImageError] = useState(false)
   const [thumbnailSrc, setThumbnailSrc] = useState(item.thumbnail || "")
+  const [shouldPlay, setShouldPlay] = useState(false)
+  const [directVideoUrl, setDirectVideoUrl] = useState<string | null>(null)
+  const [loadingVideo, setLoadingVideo] = useState(false)
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isHoveredRef = useRef(false)
 
   useEffect(() => {
     setImageError(false)
     setThumbnailSrc(item.thumbnail || "")
+    setDirectVideoUrl(null)
   }, [item])
+
+  const handleMouseEnter = () => {
+    isHoveredRef.current = true
+    // Debounce to avoid playing videos when scrolling quickly past them
+    hoverTimeoutRef.current = setTimeout(async () => {
+      setShouldPlay(true)
+      if (!directVideoUrl && !loadingVideo) {
+        setLoadingVideo(true)
+        try {
+          const res = await fetch("/api/download-video", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: item.url || item.video_url })
+          })
+          const data = await res.json()
+          if (isHoveredRef.current && data.downloadUrl) {
+            setDirectVideoUrl(data.downloadUrl)
+          }
+        } catch (e) {
+          console.error("Failed to fetch direct video URL", e)
+        } finally {
+          setLoadingVideo(false)
+        }
+      }
+    }, 500)
+  }
+
+  const handleMouseLeave = () => {
+    isHoveredRef.current = false
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+      hoverTimeoutRef.current = null
+    }
+    setShouldPlay(false)
+  }
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleImageError = () => {
     if (imageError) return
@@ -101,33 +153,121 @@ function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
     }
   }
 
+  const getHoverEmbedUrl = (embedUrl: string, url: string, platform: string) => {
+    if (!embedUrl) return ""
+    const isYt = url?.includes("youtube.com") || url?.includes("youtu.be") || platform?.toLowerCase() === "youtube"
+    const isInsta = url?.includes("instagram.com") || platform?.toLowerCase() === "instagram"
+    const isTikTok = url?.includes("tiktok.com") || platform?.toLowerCase() === "tiktok"
+
+    const hasQueryParams = embedUrl.includes("?")
+    const separator = hasQueryParams ? "&" : "?"
+    
+    if (isYt) {
+      return `${embedUrl}${separator}autoplay=1&mute=1&controls=0&modestbranding=1&loop=1`
+    }
+    if (isTikTok) {
+      return `${embedUrl}${separator}autoplay=1&mute=1`
+    }
+    if (isInsta) {
+      return `${embedUrl}${separator}autoplay=1&muted=1`
+    }
+    return `${embedUrl}${separator}autoplay=1&mute=1`
+  }
+
   const fallback = getFallbackGradient()
+
+  const isVertical = 
+    item.platform?.toLowerCase() === "tiktok" || 
+    item.platform?.toLowerCase() === "instagram" ||
+    item.url?.includes("tiktok.com") ||
+    item.url?.includes("instagram.com") ||
+    item.url?.includes("/shorts/");
 
   return (
     <Card
-      className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col"
+      className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col hover:border-violet-500/50 dark:hover:border-violet-500/50"
       onClick={onClick}
     >
-      <div className="relative aspect-video bg-slate-100 overflow-hidden">
-        {thumbnailSrc && !imageError ? (
-          <img
-            src={thumbnailSrc}
-            alt={item.title}
-            onError={handleImageError}
-            className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className={`size-full flex flex-col items-center justify-center p-4 text-center ${fallback.className}`}>
-            {fallback.icon}
-            <span className="text-[10px] font-bold text-white/80 mt-2 line-clamp-1">{item.author}</span>
+      <div 
+        className="relative aspect-[9/16] bg-slate-100 overflow-hidden"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {shouldPlay ? (
+          <div className="relative size-full bg-slate-950 flex items-center justify-center overflow-hidden">
+            {(!isVertical || loadingVideo || !directVideoUrl) && thumbnailSrc && (
+              <img
+                src={thumbnailSrc}
+                alt=""
+                className="absolute inset-0 size-full object-cover blur-xl opacity-40 scale-110 pointer-events-none"
+              />
+            )}
+
+            {loadingVideo ? (
+              <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/30 backdrop-blur-xs">
+                <Loader2 className="size-8 text-white animate-spin" />
+              </div>
+            ) : directVideoUrl ? (
+              <video
+                src={directVideoUrl}
+                autoPlay
+                muted={isMuted}
+                loop
+                playsInline
+                className={`border-0 pointer-events-none animate-in fade-in duration-300 relative z-10 ${
+                  isVertical ? "size-full object-cover" : "w-full aspect-video object-contain"
+                }`}
+              />
+            ) : item.embed_url ? (
+              <iframe
+                src={getHoverEmbedUrl(item.embed_url, item.url, item.platform)}
+                className={`border-0 pointer-events-none animate-in fade-in duration-300 relative z-10 ${
+                  isVertical ? "size-full" : "w-full aspect-video"
+                }`}
+                allow="autoplay; encrypted-media"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                <Play className="size-16" />
+              </div>
+            )}
           </div>
+        ) : (
+          <>
+            {thumbnailSrc && !imageError ? (
+              <img
+                src={thumbnailSrc}
+                alt={item.title}
+                onError={handleImageError}
+                className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+            ) : (
+              <div className={`size-full flex flex-col items-center justify-center p-4 text-center ${fallback.className}`}>
+                {fallback.icon}
+                <span className="text-[10px] font-bold text-white/80 mt-2 line-clamp-1">{item.author}</span>
+              </div>
+            )}
+
+            <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+              <div className="size-14 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-xl">
+                <Play className="size-6 text-slate-900 ml-0.5" />
+              </div>
+            </div>
+          </>
         )}
 
-        <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-          <div className="size-14 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-xl">
-            <Play className="size-6 text-slate-900 ml-0.5" />
-          </div>
-        </div>
+        {shouldPlay && directVideoUrl && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMuted(!isMuted);
+            }}
+            className="absolute bottom-3 right-3 z-30 size-8 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm flex items-center justify-center text-white transition-all shadow-md active:scale-95 border border-white/10"
+            title={isMuted ? "Activer le son" : "Couper le son"}
+          >
+            {isMuted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+          </button>
+        )}
 
         <div className={`absolute top-3 left-3 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 ${getScoreColor(item.viral_score)}`}>
           <Zap className="size-3" />
@@ -151,7 +291,7 @@ function VideoCard({ item, onClick }: { item: any; onClick: () => void }) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700/60">
+        <div className="flex items-center justify-between pt-2 border-t border-t-gray-100 dark:border-t-gray-700/60">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
                <Eye className="size-3 text-gray-400 dark:text-gray-500" />
@@ -208,6 +348,7 @@ export default function ViralFeedPage() {
   const [previewVideo, setPreviewVideo] = useState<any | null>(null)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const [visibleCount, setVisibleCount] = useState(24)
+  const [isMuted, setIsMuted] = useState(true)
   const sortRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -357,12 +498,14 @@ export default function ViralFeedPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {visibleItems.map((item) => (
               <VideoCard
                 key={item.id}
                 item={item}
                 onClick={() => setPreviewVideo(item)}
+                isMuted={isMuted}
+                setIsMuted={setIsMuted}
               />
             ))}
           </div>
@@ -393,14 +536,35 @@ export default function ViralFeedPage() {
               <X className="size-4" />
             </button>
 
-            <div className="aspect-video bg-black">
+            <div className={`bg-slate-950 relative overflow-hidden flex items-center justify-center ${
+              (previewVideo.platform?.toLowerCase() === "tiktok" || 
+               previewVideo.platform?.toLowerCase() === "instagram" ||
+               previewVideo.url?.includes("tiktok.com") ||
+               previewVideo.url?.includes("instagram.com") ||
+               previewVideo.url?.includes("/shorts/")) 
+                ? "max-h-[60vh] aspect-[9/16] mx-auto rounded-t-2xl" 
+                : "aspect-video"
+            }`}>
               {previewVideo.embed_url ? (
-                <iframe
-                  src={`${previewVideo.embed_url}?autoplay=1`}
-                  className="size-full"
-                  allow="autoplay; encrypted-media"
-                  allowFullScreen
-                />
+                <>
+                  {!(previewVideo.platform?.toLowerCase() === "tiktok" || 
+                     previewVideo.platform?.toLowerCase() === "instagram" ||
+                     previewVideo.url?.includes("tiktok.com") ||
+                     previewVideo.url?.includes("instagram.com") ||
+                     previewVideo.url?.includes("/shorts/")) && previewVideo.thumbnail && (
+                    <img
+                      src={previewVideo.thumbnail}
+                      alt=""
+                      className="absolute inset-0 size-full object-cover blur-xl opacity-40 scale-110 pointer-events-none"
+                    />
+                  )}
+                  <iframe
+                    src={`${previewVideo.embed_url}?autoplay=1`}
+                    className="size-full border-0 relative z-10"
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen
+                  />
+                </>
               ) : (
                 <div className="size-full flex items-center justify-center text-gray-500">
                   <Play className="size-16" />

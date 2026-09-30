@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { scrapeVideoData, getUniqueVideoId } from "@/lib/scraper";
+import { getCleanVideoUrl } from "@/lib/url-utils";
 
 const COBALT_INSTANCES = [
   "https://api.cobalt.blackcat.sweeux.org",
@@ -19,42 +20,7 @@ const INVIDIOUS_INSTANCES = [
   "https://invidious.no-logs.com"
 ];
 
-function getCleanVideoUrl(url: string): { cleanUrl: string; platform: string } {
-  const isYT = url.includes("youtube.com") || url.includes("youtu.be");
-  const isIG = url.includes("instagram.com");
-  const isTT = url.includes("tiktok.com");
 
-  if (isYT) {
-    let videoId = "";
-    if (url.includes("v=")) videoId = url.split("v=")[1].split("&")[0];
-    else if (url.includes("youtu.be/")) videoId = url.split("youtu.be/")[1].split("?")[0];
-    else if (url.includes("youtube.com/shorts/")) videoId = url.split("shorts/")[1].split("?")[0];
-    return {
-      cleanUrl: videoId ? `https://www.youtube.com/watch?v=${videoId}` : url,
-      platform: "youtube"
-    };
-  }
-
-  if (isIG) {
-    const parts = url.split("?")[0].split("/");
-    const index = parts.findIndex(p => p === "reels" || p === "p" || p === "reel");
-    const shortcode = index !== -1 ? parts[index + 1] : parts.filter(Boolean).pop();
-    return {
-      cleanUrl: shortcode ? `https://www.instagram.com/reel/${shortcode}/` : url,
-      platform: "instagram"
-    };
-  }
-
-  if (isTT) {
-    const cleanUrl = url.split("?")[0];
-    return {
-      cleanUrl,
-      platform: "tiktok"
-    };
-  }
-
-  return { cleanUrl: url, platform: "unknown" };
-}
 
 export async function POST(req: Request) {
   try {
@@ -202,9 +168,8 @@ export async function POST(req: Request) {
     }
 
     const filename = `${detectedPlatform}_video_${Date.now()}.mp4`;
-    const proxyUrl = `/api/download-video?proxyUrl=${encodeURIComponent(directUrl)}&filename=${encodeURIComponent(filename)}`;
 
-    return NextResponse.json({ downloadUrl: proxyUrl, filename });
+    return NextResponse.json({ downloadUrl: directUrl, filename });
   } catch (error: any) {
     console.error("Download POST Route Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

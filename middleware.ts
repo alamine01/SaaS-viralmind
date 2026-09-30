@@ -2,7 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith('/api')) {
+  // Always allow /api and /admin routes without Supabase check
+  if (request.nextUrl.pathname.startsWith('/api') || request.nextUrl.pathname.startsWith('/admin')) {
     return NextResponse.next()
   }
 
@@ -12,45 +13,45 @@ export async function middleware(request: NextRequest) {
     },
   })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            const opt = { ...options }
-            if (opt.sameSite === 'none') {
-              opt.secure = true
-            }
-            ;(request.cookies as any).set(name, value, opt)
-          })
-          response = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) => {
-            const opt = { ...options }
-            if (opt.sameSite === 'none') {
-              opt.secure = true
-            }
-            ;(response.cookies as any).set(name, value, opt)
-          })
-        },
-      },
-    }
-  )
-
   let user = null;
-  try {
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    try {
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        {
+          cookies: {
+            getAll() {
+              return request.cookies.getAll()
+            },
+            setAll(cookiesToSet) {
+              cookiesToSet.forEach(({ name, value, options }) => {
+                const opt = { ...options }
+                if (opt.sameSite === 'none') {
+                  opt.secure = true
+                }
+                ;(request.cookies as any).set(name, value, opt)
+              })
+              response = NextResponse.next({
+                request,
+              })
+              cookiesToSet.forEach(({ name, value, options }) => {
+                const opt = { ...options }
+                if (opt.sameSite === 'none') {
+                  opt.secure = true
+                }
+                ;(response.cookies as any).set(name, value, opt)
+              })
+            },
+          },
+        }
+      )
+
       const { data } = await supabase.auth.getUser();
       user = data?.user || null;
+    } catch (e) {
+      console.error("Middleware Supabase Session Error:", e);
     }
-  } catch (e) {
-    console.error("Middleware Supabase Session Error:", e);
   }
 
   // Routes protégées
