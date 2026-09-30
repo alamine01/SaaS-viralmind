@@ -128,11 +128,22 @@ export default function AdminUsersPage() {
           monthly_analysis_count: modalQuotas
         })
       });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+
+      let data: any = {};
+      const contentType = res.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(`Erreur serveur (${res.status}): ${text.substring(0, 100)}`);
+      }
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Impossible d'enregistrer les modifications");
+      }
 
       toast.success("Profil mis à jour", {
-        description: `L'utilisateur ${editingUser.email || editingUser.full_name} a été mis à jour.`
+        description: `L'utilisateur ${editingUser.email || editingUser.full_name} a été mis à jour avec succès.`
       });
 
       setUsers(prev => prev.map(u => {
@@ -168,8 +179,19 @@ export default function AdminUsersPage() {
       const res = await fetch(`/api/admin/users/${userId}`, {
         method: "DELETE",
       });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+
+      let data: any = {};
+      const contentType = res.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(`Erreur serveur (${res.status}): ${text.substring(0, 100)}`);
+      }
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Impossible de supprimer l'utilisateur");
+      }
 
       toast.success("Utilisateur supprimé", {
         description: `Le compte ${userNameOrEmail} a été définitivement supprimé de la base de données.`,

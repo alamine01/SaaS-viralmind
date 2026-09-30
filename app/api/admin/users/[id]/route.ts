@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
 import { db as firestoreDb } from "../../../../../lib/firebase";
-import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { adminAuth } from "../../../../../lib/firebase-admin";
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
-    const resolvedParams = await params;
-    const { id } = resolvedParams;
+    const rawParams = await context.params;
+    const id = rawParams?.id;
+
+    if (!id) {
+      return NextResponse.json({ error: "ID utilisateur manquant dans l'URL" }, { status: 400 });
+    }
 
     const body = await request.json();
     const { plan, role, monthly_analysis_count } = body;
@@ -21,15 +25,26 @@ export async function PATCH(
       return NextResponse.json({ error: "Utilisateur introuvable dans Firebase" }, { status: 404 });
     }
 
-    const updatePayload: any = {};
+    const updatePayload: any = {
+      updatedAt: serverTimestamp(),
+      updated_at: new Date().toISOString(),
+    };
+
     if (plan !== undefined) {
-      updatePayload.plan = plan.toLowerCase();
+      const normalizedPlan = plan.toLowerCase();
+      updatePayload.plan = normalizedPlan;
+      updatePayload.subscriptionPlan = normalizedPlan;
+      updatePayload.subscriptionStatus = normalizedPlan === "free" ? "inactive" : "active";
     }
+
     if (role !== undefined) {
       updatePayload.role = role.toLowerCase();
     }
+
     if (monthly_analysis_count !== undefined) {
-      updatePayload.dailyQuotas = parseInt(monthly_analysis_count, 10);
+      const parsedQuotas = parseInt(monthly_analysis_count, 10);
+      updatePayload.dailyQuotas = isNaN(parsedQuotas) ? 3 : parsedQuotas;
+      updatePayload.monthly_analysis_count = updatePayload.dailyQuotas;
     }
 
     await updateDoc(userDocRef, updatePayload);
@@ -43,30 +58,34 @@ export async function PATCH(
       },
     });
   } catch (error: any) {
-    console.error("Admin User PATCH 100% Firebase Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Admin User PATCH Error:", error);
+    return NextResponse.json({ error: error.message || "Erreur serveur lors de la mise à jour" }, { status: 500 });
   }
 }
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
-    const resolvedParams = await params;
-    const { id } = resolvedParams;
+    const rawParams = await context.params;
+    const id = rawParams?.id;
+
+    if (!id) {
+      return NextResponse.json({ error: "ID utilisateur manquant dans l'URL" }, { status: 400 });
+    }
 
     // 1. Supprimer le document utilisateur de Firestore
     const userDocRef = doc(firestoreDb, "users", id);
     await deleteDoc(userDocRef);
 
-    // 2. Tenter de supprimer le compte d'authentification Firebase Auth
+    // 2. Tenter de supprimer le compte d'authentification Firebase Auth si adminAuth est initialisé
     try {
       if (adminAuth) {
         await adminAuth.deleteUser(id);
       }
     } catch (authErr) {
-      console.warn("Could not delete from Firebase Auth (might be non-existent or service account issue):", authErr);
+      console.warn("Could not delete from Firebase Auth (non-blocking):", authErr);
     }
 
     return NextResponse.json({
@@ -75,6 +94,6 @@ export async function DELETE(
     });
   } catch (error: any) {
     console.error("Admin User DELETE Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Erreur serveur lors de la suppression" }, { status: 500 });
   }
 }
