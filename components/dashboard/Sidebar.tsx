@@ -423,6 +423,16 @@ export default function Sidebar({
                                 </span>
                               </Link>
                             </li>
+                            <li className="mb-1 last:mb-0">
+                              <Link
+                                href="/admin/payments"
+                                className={"block transition duration-150 truncate " + (pathname === "/admin/payments" ? "text-violet-500" : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")}
+                              >
+                                <span className={`text-sm font-medium transition-opacity duration-200 ${!sidebarExpanded ? "lg:opacity-0 lg:hidden" : "lg:opacity-100 lg:block"}`}>
+                                  Paiements & Facturation
+                                </span>
+                              </Link>
+                            </li>
                           </ul>
                         </div>
                       </React.Fragment>
