@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db as firestoreDb } from "../../../../lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 
 export interface UnifiedUserProfile {
   id: string;
@@ -82,5 +82,60 @@ export async function GET() {
   } catch (error: any) {
     console.error("Admin Users GET 100% Firebase Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const body = await req.json();
+    const id = body.id || body.userId;
+
+    if (!id) {
+      return NextResponse.json({ error: "ID utilisateur manquant" }, { status: 400 });
+    }
+
+    const { plan, role, monthly_analysis_count } = body;
+    const userDocRef = doc(firestoreDb, "users", id);
+    const docSnap = await getDoc(userDocRef);
+
+    if (!docSnap.exists()) {
+      return NextResponse.json({ error: "Utilisateur introuvable dans Firebase" }, { status: 404 });
+    }
+
+    const updatePayload: any = {
+      updatedAt: serverTimestamp(),
+      updated_at: new Date().toISOString(),
+    };
+
+    if (plan !== undefined) {
+      const normalizedPlan = plan.toLowerCase();
+      updatePayload.plan = normalizedPlan;
+      updatePayload.subscriptionPlan = normalizedPlan;
+      updatePayload.subscriptionStatus = normalizedPlan === "free" ? "inactive" : "active";
+    }
+
+    if (role !== undefined) {
+      updatePayload.role = role.toLowerCase();
+    }
+
+    if (monthly_analysis_count !== undefined) {
+      const parsedQuotas = parseInt(monthly_analysis_count, 10);
+      updatePayload.dailyQuotas = isNaN(parsedQuotas) ? 3 : parsedQuotas;
+      updatePayload.monthly_analysis_count = updatePayload.dailyQuotas;
+    }
+
+    await updateDoc(userDocRef, updatePayload);
+
+    return NextResponse.json({
+      success: true,
+      profile: {
+        id,
+        ...docSnap.data(),
+        ...updatePayload,
+      },
+    });
+  } catch (error: any) {
+    console.error("Admin Users PATCH Error:", error);
+    return NextResponse.json({ error: error.message || "Erreur serveur lors de la mise à jour" }, { status: 500 });
   }
 }

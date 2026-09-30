@@ -120,10 +120,11 @@ export default function AdminUsersPage() {
     if (!editingUser) return;
     setSavingUser(true);
     try {
-      const res = await fetch(`/api/admin/users/${editingUser.id}`, {
+      const res = await fetch("/api/admin/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          id: editingUser.id,
           plan: modalPlan,
           role: modalRole,
           monthly_analysis_count: modalQuotas
