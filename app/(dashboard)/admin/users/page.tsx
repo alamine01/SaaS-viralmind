@@ -23,6 +23,7 @@ import {
   Sparkles,
   Download,
   Trash2,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -404,49 +405,67 @@ export default function AdminUsersPage() {
         })}
       </div>
 
-      {/* SEARCH & FILTERS */}
-      <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+      {/* SEARCH & FILTERS - 100% Responsive */}
+      <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
         <div className="relative flex-1">
-          <Search className="size-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="size-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             placeholder="Rechercher par nom, email, téléphone ou UID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-200 text-gray-700 pl-10 pr-4 py-2.5 rounded-xl text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder:text-gray-400"
+            className="w-full bg-gray-50 border border-gray-200 text-gray-700 pl-10 pr-4 py-2.5 rounded-xl text-xs sm:text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder:text-gray-400"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5 text-xs text-gray-400">
-            <Filter className="size-3.5" />
+        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 shrink-0">
+            <Filter className="size-3.5 text-blue-500" />
+            <span>Filtres :</span>
           </div>
-          <select
-            value={selectedPlanFilter}
-            onChange={(e) => setSelectedPlanFilter(e.target.value)}
-            className="bg-gray-50 text-gray-700 px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-          >
-            <option value="all">Tous les Plans</option>
-            <option value="monthly">Plan Mensuel</option>
-            <option value="quarterly">Plan Trimestriel</option>
-            <option value="yearly">Plan Annuel</option>
-            <option value="free">Compte Gratuit</option>
-          </select>
 
-          <select
-            value={selectedRoleFilter}
-            onChange={(e) => setSelectedRoleFilter(e.target.value)}
-            className="bg-gray-50 text-gray-700 px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 cursor-pointer"
-          >
-            <option value="all">Tous les Rôles</option>
-            <option value="admin">Administrateurs</option>
-            <option value="user">Utilisateurs</option>
-          </select>
+          {/* Plan select */}
+          <div className="relative inline-block flex-1 sm:flex-none min-w-[130px]">
+            <select
+              value={selectedPlanFilter}
+              onChange={(e) => setSelectedPlanFilter(e.target.value)}
+              className="w-full appearance-none bg-gray-50 text-gray-700 pl-3.5 pr-8 py-2 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 cursor-pointer shadow-2xs hover:bg-gray-100/80 transition-all"
+            >
+              <option value="all">Tous les Plans</option>
+              <option value="monthly">Plan Mensuel</option>
+              <option value="quarterly">Plan Trimestriel</option>
+              <option value="yearly">Plan Annuel</option>
+              <option value="free">Compte Gratuit</option>
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          </div>
+
+          {/* Role select */}
+          <div className="relative inline-block flex-1 sm:flex-none min-w-[125px]">
+            <select
+              value={selectedRoleFilter}
+              onChange={(e) => setSelectedRoleFilter(e.target.value)}
+              className="w-full appearance-none bg-gray-50 text-gray-700 pl-3.5 pr-8 py-2 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 cursor-pointer shadow-2xs hover:bg-gray-100/80 transition-all"
+            >
+              <option value="all">Tous les Rôles</option>
+              <option value="admin">Administrateurs</option>
+              <option value="user">Utilisateurs</option>
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          </div>
 
           {/* Export CSV Button */}
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-100 text-xs font-semibold transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-100 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
             title="Exporter les créateurs filtrés en CSV"
           >
             <Download className="size-3.5" />
