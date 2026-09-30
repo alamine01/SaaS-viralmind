@@ -6,7 +6,7 @@ import { doc, getDoc } from "firebase/firestore";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { plan, userId: clientUserId, email: clientEmail } = body;
+    const { plan, userId: clientUserId, email: clientEmail, provider, country, phoneNumber } = body;
 
     if (!plan) {
       return NextResponse.json({ error: "Veuillez sélectionner un plan d'abonnement." }, { status: 400 });
@@ -90,10 +90,25 @@ export async function POST(req: Request) {
     const paytechApiKey = process.env.PAYTECH_API_KEY;
     const paytechApiSecret = process.env.PAYTECH_API_SECRET;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const paytechEnv = process.env.PAYTECH_ENV || "test";
 
-    // Payload de paiement PayTech (Wave, Orange Money, MTN, Moov, Carte bancaire)
-    const payload = {
+    // Configuration de l'environnement PayTech ('test' ou 'prod')
+    const rawEnv = (process.env.PAYTECH_ENV || "").toLowerCase();
+    const paytechEnv = (rawEnv === "live" || rawEnv === "prod" || rawEnv === "production") ? "prod" : "test";
+
+    // Ciblage direct du moyen de paiement (Bypass du premier écran de sélection PayTech)
+    let targetPayment: string | undefined = undefined;
+    if (provider) {
+      const p = String(provider).toLowerCase();
+      if (p === "wave") targetPayment = "Wave";
+      else if (p === "orange" || p === "orange_money") targetPayment = "Orange Money";
+      else if (p === "mtn" || p === "mtn_momo") targetPayment = "MTN";
+      else if (p === "moov" || p === "moov_money") targetPayment = "Moov";
+      else if (p === "free" || p === "free_money") targetPayment = "Free Money";
+      else if (p === "card" || p === "carte") targetPayment = "Carte Bancaire";
+    }
+
+    // Payload de paiement PayTech
+    const payload: Record<string, any> = {
       item_name: `ViralMind - ${currentConfig.name} (${currentConfig.period})`,
       item_price: String(price),
       currency: "XOF",
@@ -104,12 +119,19 @@ export async function POST(req: Request) {
         userId, 
         plan: targetPlan, 
         email: userEmail,
+        phone: phoneNumber || "",
+        country: country || "",
+        provider: provider || "",
         price,
       }),
       success_url: `${appUrl}/settings?tab=Abonnement&payment=success&plan=${targetPlan}`,
       cancel_url: `${appUrl}/settings?tab=Abonnement&payment=cancel`,
       ipn_url: `${appUrl}/api/user/paytech/ipn`,
     };
+
+    if (targetPayment) {
+      payload.target_payment = targetPayment;
+    }
 
     console.log("Initialisation paiement PayTech:", payload);
 
